@@ -11,7 +11,7 @@
 - Mappacks for WINOLS
   - `230kompressor_ME2.1.kp`
   - `230kompressor_ME2.1.csv`
-- `xxd` dump of binary file (only used for comparing binary changes in plain text)  `230k_ME21.BIN.XXD`
+- Hex dump of binary file (only used for comparing binary changes in plain text)  `230k_ME21.BIN.XXD`
 
 # Changes
 - Increased fuel tables
@@ -23,6 +23,7 @@
 
 # Relevant information
 - [How to flash ME2.1 ECU](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431/page-4)
+- After modifying the tune you can fix the checksum with ECM titanium
 
 # ECU versión
 
