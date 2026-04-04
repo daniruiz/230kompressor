@@ -3,7 +3,7 @@
 > [!CAUTION]
 > Do not flash any binary directly to your car or you will not be able to start it.
 >
-> Changes to the tune need to be copied manually in order to preserve your key code and other variations in your map.
+> Changes to the tune need to be copied manually in order to preserve your software and variations of your map.
 
 # Content
 - Original map: `230k_ME21_STOCK.BIN`
