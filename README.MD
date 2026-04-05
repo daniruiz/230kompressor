@@ -17,6 +17,7 @@
 - Increased fuel tables
 - Increased spark advance (98 RON gas)
 - Removed MAF limiter
+- Faster Boost Bypass Valve
 - Pops & bangs
 - Increased rev-limiter to 6500rpm
 
