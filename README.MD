@@ -13,20 +13,42 @@
   - `230kompressor_ME2.1.csv`
 - Hex dump of binary file (only used for comparing binary changes in plain text)  `230k_ME21.BIN.XXD`
 
-# Changes
+# Tables
 - Increased fuel tables
-- Increased spark advance (98 RON gas)
+- ~Spark advance (98 RON gas)~
 - Removed MAF limiter
 - Removed torque limiter
 - Faster Boost Bypass Valve
 - Pops & bangs
-- Increased rev-limiter to 6500rpm
-- Increased rev-limiter without abs to 6500rpm (useful for track/drifting)
+- Increased rev-limiter
+- Increased rev-limiter without ABS (useful for track/drifting)
 
 
 # Relevant information
 - [How to flash ME2.1 ECU](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431/page-4)
 - After modifying the tune you can fix the checksum with ECM titanium
+
+# Mods
+
+## STAGE 1 (~210-220hp)
+- 218mm crankshaft pulley
+- Cold air intake
+- Exhaust
+- CAT delete (optional)
+- Zener diode or ECU tune removing MAF limiter (optional)
+
+## STAGE 2 (~230-240hp)
+- [Ported supercharger](https://www.benzworld.org/threads/home-port-job-of-the-eaton-m62-s-c.1516156/)
+- Intercooler
+- Remove MAF and throttle body screen
+- Wideband
+- 320cc Bosch Red injectors 0280155759
+- 1-6 Bar adjustable fpr (adjust pressure to reach ~12.2 AFR at 5200rpm WOT)
+- BOSCH FR6DC spark plugs
+- ECU tune
+
+## Extra mods
+- Shorter diff 3.92 (for example from clk200 not kompressor). Original is 3.46
 
 # ECU versión
 
