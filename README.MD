@@ -35,7 +35,7 @@
 - Cold air intake
 - Exhaust
 - CAT delete (optional)
-- Zener diode or ECU tune removing MAF limiter (optional)
+- Zener diode (4.7v 1w 1N4732A) or ECU tune removing MAF limiter (optional)
 
 ## STAGE 2 (~230-240hp)
 - [Ported supercharger](https://www.benzworld.org/threads/home-port-job-of-the-eaton-m62-s-c.1516156/)
