@@ -49,6 +49,21 @@
 
 ## Extra mods
 - Shorter diff 3.92 (for example from clk200 not kompressor). Original is 3.46
+    - CLK200 W208 A2023502314
+    - SLK200 R170 A1243504598 / A1703501114
+    - C W202
+      - A2023502314
+      - A1243504598
+      - A2023501814
+      - A1703501114
+      - A2023504603
+      - A1243507514
+      - A1243502874
+      - A1243509614
+    - E W210
+        A2023502314
+        A1703501114
+        A2023501814
 
 # ECU versión
 
