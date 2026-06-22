@@ -68,3 +68,23 @@
 
 - HW: 0285454532
 - SW: 114.236438
+
+# Supercharger RPM
+
+According to Eaton's information, the M62 is capable of doing max 14,000 RPM maintained, but many users rise it higher to 15k or even 16k as far as it's not maintained for long periods.
+  
+**Stock:**
+- (185mm crank pulley / 94mm sc pulley) x 6200rpm redline (manual) = 12,201 RPM
+- (185mm crank pulley / 94mm sc pulley) x 5800rpm redline (auto) = 11,414 RPM
+  
+**Crank pulley ONLY**
+- (218mm crank pulley / 94mm sc pulley) x 6200rpm redline (manual) = 14,378 RPM
+- (218mm crank pulley / 94mm sc pulley) x 5800rpm redline (auto) = 13,451 RPM
+  
+**Smaller Charger pulley ONLY**
+- (185mm crank pulley / 87mm sc pulley) x 6200rpm redline (manual) = 13,183 RPM
+- (185mm crank pulley / 87mm sc pulley) x 5800rpm redline (auto) = 12,333 RPM
+  
+**Crank pulley + smaller s/c pulley**
+- (218mm crank pulley / 87mm sc pulley) x 6200rpm redline (manual) = 15,535 RPM
+- (218mm crank pulley / 87mm sc pulley) x 5800rpm redline (auto) = 14,533 RPM
