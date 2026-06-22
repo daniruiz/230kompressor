@@ -1,7 +1,7 @@
 # 230 Kompressor M111 Bosch ME2.1 TUNE
 
 > [!CAUTION]
-> Do not flash any binary directly to your car or you will not be able to start it.
+> Do not flash any binary directly to your ECU.
 >
 > Changes to the tune need to be copied manually in order to preserve your software and variations of your map.
 
@@ -14,18 +14,17 @@
 - Hex dump of binary file (only used for comparing binary changes in plain text)  `230k_ME21.BIN.XXD`
 
 # Tables
-- Increased fuel tables
-- ~Spark advance (98 RON gas)~
-- Removed MAF limiter
-- Removed torque limiter
-- Faster Boost Bypass Valve
-- Pops & bangs
-- Increased rev-limiter
-- Increased rev-limiter without ABS (useful for track/drifting)
+- Fuel
+- Spark Advance
+- Bypass Valve position
+- Rev limiter
+- MAF limiter
+- Torque limiter
+    - If disabled it also removes the 5700rpm limit without ABS
 
 
 # Relevant information
-- [How to flash ME2.1 ECU](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431/page-4)
+- [How to flash ME2.1 ECU](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431)
 - After modifying the tune you can fix the checksum with ECM titanium
 
 # Mods
@@ -61,9 +60,9 @@
       - A1243502874
       - A1243509614
     - E W210
-        A2023502314
-        A1703501114
-        A2023501814
+      - A2023502314
+      - A1703501114
+      - A2023501814
 
 # ECU versión
 
