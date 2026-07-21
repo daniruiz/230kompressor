@@ -1,4 +1,14 @@
-# 230 Kompressor M111 Bosch ME2.1 TUNE
+# Mercedes-Benz M111 230 Kompressor Bosch ME2.1 ECU Tune
+
+This repository contains a reverse-engineered Bosch ME2.1 calibration for the Mercedes-Benz M111 2.3 Kompressor engine.
+
+It includes the original ECU binary, a tuned calibration, WinOLS map packs, and documentation about the most important fuel, ignition and torque maps.
+
+The project is intended for research and educational purposes for Bosch ME2.1 equipped vehicles such as:
+
+- Mercedes C230 Kompressor (W202)
+- Mercedes CLK230 Kompressor (W208)
+- Mercedes SLK230 Kompressor (R170)
 
 > [!CAUTION]
 > Do not flash any binary directly to your ECU.
@@ -6,8 +16,8 @@
 > Changes to the tune need to be copied manually in order to preserve your software and variations of your map.
 
 # Content
-- Original map: `230k_ME21_STOCK.BIN`
-- Tuned map: `230k_ME21.BIN`
+- Original binary map: `230k_ME21_STOCK.BIN`
+- Tuned binary map: `230k_ME21.BIN`
 - Mappacks for WINOLS
   - `230kompressor_ME2.1.kp`
   - `230kompressor_ME2.1.csv`
