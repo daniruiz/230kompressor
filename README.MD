@@ -52,7 +52,7 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
 - Remove MAF and throttle body screen
 - Wideband
 - 320cc Bosch Red injectors 0280155759
-- 1-6 Bar adjustable fpr (adjust pressure to reach ~12.2 AFR at 5200rpm WOT)
+- 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach 11.8-12 AFR at 5200rpm WOT - ~4Bar FPR)
 - BOSCH FR6DC spark plugs
 - ECU tune
 
