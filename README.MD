@@ -28,6 +28,7 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
 - Spark Advance
 - Bypass Valve position
 - Rev limiter
+- Launch Rev limiter
 - MAF limiter
 - Torque limiter
     - If disabled it also removes the 5700rpm limit without ABS
