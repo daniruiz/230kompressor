@@ -19,8 +19,9 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
 - Original binary map: `230k_ME21_STOCK.BIN`
 - Tuned binary map: `230k_ME21.BIN`
 - Mappacks for WINOLS
-  - `230kompressor_ME2.1.kp`
-  - `230kompressor_ME2.1.csv`
+  - `230kompressor_ME2.1.csv` => raw definitions and WinOLS
+  - `230kompressor_ME2.1.kp` => old WinOLS
+  - `230kompressor_ME2.1.xdf` => TunerPro
 - Hex dump of binary file (only used for comparing binary changes in plain text)  `230k_ME21.BIN.XXD`
 
 # Tables
