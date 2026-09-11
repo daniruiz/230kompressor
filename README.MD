@@ -10,6 +10,8 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
 - Mercedes CLK230 Kompressor (W208)
 - Mercedes SLK230 Kompressor (R170)
 
+![](Images/WinOLS.png)
+
 > [!CAUTION]
 > Do not flash any binary directly to your ECU.
 >
