@@ -1,4 +1,4 @@
-# Mercedes-Benz M111 230 Kompressor Bosch ME2.1 ECU Tune
+# ECU tuning resources and binaries for Mercedes 230 Kompressor and 200 Kompressor (M111) with Bosch ME2.1
 
 This repository contains a reverse-engineered Bosch ME2.1 calibration for the Mercedes-Benz M111 2.3 Kompressor engine.
 
