@@ -25,4 +25,4 @@ MAF Limiter;;My maps;eZweidim;eViewText;eBars;eByte;0;0;0;0;0;0;16;16;10;;-1;0;0
 ======= MAP 1 ======= ;;My maps;eEinzel;eViewText;eBars;eByte;0;0;0;0;0;0;1;1;10;;-1;0;0;-;-;1;0;$3FFD;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
 SW Version;;My maps;eEindim;eViewText;eHex;eByte;0;0;0;0;0;0;26;1;10;;-1;0;0;-;-;1;0;$E489;-;;-;1;0;10;0;0;1;-1;eDataSrcNone;0;$0;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
 Launch Rev Limiter;;My maps;eEindim;eViewText;eBars;eLoHi;0;0;0;0;0;0;2;1;10;;-1;0;0;-;-;1;0;$4062;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0
-Launch rev Limiter;;My maps;eEindim;eViewText;eBars;eLoHi;0;0;0;0;0;0;2;1;10;;-1;0;0;-;-;1;0;$30062;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0
+Launch Rev Limiter;;My maps;eEindim;eViewText;eBars;eLoHi;0;0;0;0;0;0;2;1;10;;-1;0;0;-;-;1;0;$30062;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0
