@@ -1,0 +1,1631 @@
+{
+  "images": [
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 1,
+      "name": "======= MAP 1 =======",
+      "address": "$3FFD",
+      "image": "1-======= MAP 1 =======/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 2,
+      "name": "Launch Rev Limiter",
+      "address": "$4128",
+      "image": "2-Launch Rev Limiter/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 3,
+      "name": "Rev Limiter",
+      "address": "$4134",
+      "image": "3-Rev Limiter/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 5825.0,
+      "maximum": 6025.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 4,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$48F0",
+      "image": "4-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 5,
+      "name": "MAF Limiter",
+      "address": "$5F7E",
+      "image": "5-MAF Limiter/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 6,
+      "name": "Boost Bypass Valve position",
+      "address": "$6186",
+      "image": "6-Boost Bypass Valve position/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 7,
+      "name": "Injection (Main)",
+      "address": "$6B12",
+      "image": "7-Injection (Main)/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -5.0,
+      "maximum": 23.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 8,
+      "name": "Injection",
+      "address": "$6C12",
+      "image": "8-Injection/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -14.0,
+      "maximum": 11.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 9,
+      "name": "Injection (Limp)",
+      "address": "$6D12",
+      "image": "9-Injection (Limp)/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 10,
+      "name": "Spark advance at middle throttle (Main loaded)",
+      "address": "$77DA",
+      "image": "10-Spark advance at middle throttle (Main loaded)/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 11,
+      "name": "Spark advance at middle throttle (Main unloaded)",
+      "address": "$78DA",
+      "image": "11-Spark advance at middle throttle (Main unloaded)/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 12,
+      "name": "Spark advance at Wide Open Throttle (Main)",
+      "address": "$79DA",
+      "image": "12-Spark advance at Wide Open Throttle (Main)/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 13,
+      "name": "Spark advance at Wide Open Throttle (Same as Main)",
+      "address": "$7A5A",
+      "image": "13-Spark advance at Wide Open Throttle (Same as Main)/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -33.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 14,
+      "name": "SW Version",
+      "address": "$E29F",
+      "image": "14-SW Version/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 46.0,
+      "maximum": 55.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 15,
+      "name": "======= MAP 2 =======",
+      "address": "$30000",
+      "image": "15-======= MAP 2 =======/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 16,
+      "name": "Launch Rev Limiter",
+      "address": "$30128",
+      "image": "16-Launch Rev Limiter/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 17,
+      "name": "Rev Limiter",
+      "address": "$30134",
+      "image": "17-Rev Limiter/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 5825.0,
+      "maximum": 6025.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 18,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$308F0",
+      "image": "18-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 19,
+      "name": "MAF Limiter",
+      "address": "$31F7E",
+      "image": "19-MAF Limiter/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 20,
+      "name": "Boost Bypass Valve position",
+      "address": "$32186",
+      "image": "20-Boost Bypass Valve position/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 21,
+      "name": "Injection",
+      "address": "$32B12",
+      "image": "21-Injection/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -6.0,
+      "maximum": 25.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 22,
+      "name": "Injection",
+      "address": "$32C12",
+      "image": "22-Injection/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -10.0,
+      "maximum": 10.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 23,
+      "name": "Injection",
+      "address": "$32D12",
+      "image": "23-Injection/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -13.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 24,
+      "name": "Spark advance at middle throttle",
+      "address": "$337DA",
+      "image": "24-Spark advance at middle throttle/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -37.5,
+      "maximum": -5.25
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 25,
+      "name": "Spark advance at middle throttle",
+      "address": "$338DA",
+      "image": "25-Spark advance at middle throttle/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 26,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$339DA",
+      "image": "26-Spark advance at Wide Open Throttle/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -36.0,
+      "maximum": -4.5
+    },
+    {
+      "binary": "230Kompressor_261204573_114.235034.34.BIN",
+      "definition": "230Kompressor_114.235034.csv",
+      "position": 27,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$33A5A",
+      "image": "27-Spark advance at Wide Open Throttle/230Kompressor_261204573_114.235034.34.BIN.png",
+      "minimum": -33.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 1,
+      "name": "======= MAP 1 =======",
+      "address": "$3FFD",
+      "image": "1-======= MAP 1 =======/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 2,
+      "name": "Launch Rev Limiter",
+      "address": "$4062",
+      "image": "2-Launch Rev Limiter/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 3,
+      "name": "Rev Limiter",
+      "address": "$406E",
+      "image": "3-Rev Limiter/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 4,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$4832",
+      "image": "4-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 5,
+      "name": "MAF Limiter",
+      "address": "$5D10",
+      "image": "5-MAF Limiter/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 0.0,
+      "maximum": 215.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 6,
+      "name": "Boost Bypass Valve position",
+      "address": "$5F18",
+      "image": "6-Boost Bypass Valve position/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 7,
+      "name": "Injection (Main)",
+      "address": "$68B0",
+      "image": "7-Injection (Main)/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -6.0,
+      "maximum": 23.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 8,
+      "name": "Injection",
+      "address": "$69B0",
+      "image": "8-Injection/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -14.0,
+      "maximum": 11.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 9,
+      "name": "Injection (Limp)",
+      "address": "$6AB0",
+      "image": "9-Injection (Limp)/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 10,
+      "name": "Spark advance at middle throttle (Main loaded)",
+      "address": "$7618",
+      "image": "10-Spark advance at middle throttle (Main loaded)/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 11,
+      "name": "Spark advance at middle throttle (Main unloaded)",
+      "address": "$7718",
+      "image": "11-Spark advance at middle throttle (Main unloaded)/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 12,
+      "name": "Spark advance at Wide Open Throttle (Main)",
+      "address": "$7818",
+      "image": "12-Spark advance at Wide Open Throttle (Main)/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 13,
+      "name": "Spark advance at Wide Open Throttle (Same as Main)",
+      "address": "$7898",
+      "image": "13-Spark advance at Wide Open Throttle (Same as Main)/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 14,
+      "name": "SW Version",
+      "address": "$E489",
+      "image": "14-SW Version/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 46.0,
+      "maximum": 55.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 15,
+      "name": "======= MAP 2 =======",
+      "address": "$30000",
+      "image": "15-======= MAP 2 =======/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 16,
+      "name": "Launch Rev Limiter",
+      "address": "$30062",
+      "image": "16-Launch Rev Limiter/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 17,
+      "name": "Rev Limiter",
+      "address": "$3006E",
+      "image": "17-Rev Limiter/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 18,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$30832",
+      "image": "18-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 19,
+      "name": "MAF Limiter",
+      "address": "$31D10",
+      "image": "19-MAF Limiter/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 20,
+      "name": "Boost Bypass Valve position",
+      "address": "$31F18",
+      "image": "20-Boost Bypass Valve position/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 21,
+      "name": "Injection",
+      "address": "$328B0",
+      "image": "21-Injection/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -6.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 22,
+      "name": "Injection",
+      "address": "$329B0",
+      "image": "22-Injection/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -10.0,
+      "maximum": 10.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 23,
+      "name": "Injection",
+      "address": "$32AB0",
+      "image": "23-Injection/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -13.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 24,
+      "name": "Spark advance at middle throttle",
+      "address": "$33618",
+      "image": "24-Spark advance at middle throttle/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 25,
+      "name": "Spark advance at middle throttle",
+      "address": "$33718",
+      "image": "25-Spark advance at middle throttle/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 26,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$33818",
+      "image": "26-Spark advance at Wide Open Throttle/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -36.0,
+      "maximum": -4.5
+    },
+    {
+      "binary": "230Kompressor_261204747_114.235404.04.BIN",
+      "definition": "230Kompressor_114.235404.csv",
+      "position": 27,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$33898",
+      "image": "27-Spark advance at Wide Open Throttle/230Kompressor_261204747_114.235404.04.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 1,
+      "name": "======= MAP 1 =======",
+      "address": "$3FFD",
+      "image": "1-======= MAP 1 =======/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 2,
+      "name": "Launch Rev Limiter",
+      "address": "$4062",
+      "image": "2-Launch Rev Limiter/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 3,
+      "name": "Rev Limiter",
+      "address": "$406E",
+      "image": "3-Rev Limiter/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 4,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$48F0",
+      "image": "4-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 5,
+      "name": "MAF Limiter",
+      "address": "$5D72",
+      "image": "5-MAF Limiter/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 0.0,
+      "maximum": 215.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 6,
+      "name": "Boost Bypass Valve position",
+      "address": "$5EFA",
+      "image": "6-Boost Bypass Valve position/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 7,
+      "name": "Injection (Main)",
+      "address": "$69B2",
+      "image": "7-Injection (Main)/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -6.0,
+      "maximum": 23.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 8,
+      "name": "Injection",
+      "address": "$6AB2",
+      "image": "8-Injection/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -12.0,
+      "maximum": 16.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 9,
+      "name": "Injection (Limp)",
+      "address": "$6BB2",
+      "image": "9-Injection (Limp)/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 10,
+      "name": "Spark advance at middle throttle (Main loaded)",
+      "address": "$7688",
+      "image": "10-Spark advance at middle throttle (Main loaded)/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 11,
+      "name": "Spark advance at middle throttle (Main unloaded)",
+      "address": "$7788",
+      "image": "11-Spark advance at middle throttle (Main unloaded)/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 12,
+      "name": "Spark advance at Wide Open Throttle (Main)",
+      "address": "$7888",
+      "image": "12-Spark advance at Wide Open Throttle (Main)/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 13,
+      "name": "Spark advance at Wide Open Throttle (Same as Main)",
+      "address": "$7908",
+      "image": "13-Spark advance at Wide Open Throttle (Same as Main)/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -32.25,
+      "maximum": -0.75
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 14,
+      "name": "SW Version",
+      "address": "$E491",
+      "image": "14-SW Version/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 46.0,
+      "maximum": 57.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 15,
+      "name": "======= MAP 2 =======",
+      "address": "$30000",
+      "image": "15-======= MAP 2 =======/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 16,
+      "name": "Launch Rev Limiter",
+      "address": "$30062",
+      "image": "16-Launch Rev Limiter/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 17,
+      "name": "Rev Limiter",
+      "address": "$3006E",
+      "image": "17-Rev Limiter/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 18,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$308F0",
+      "image": "18-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 19,
+      "name": "MAF Limiter",
+      "address": "$31D72",
+      "image": "19-MAF Limiter/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 20,
+      "name": "Boost Bypass Valve position",
+      "address": "$31EFA",
+      "image": "20-Boost Bypass Valve position/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 21,
+      "name": "Injection",
+      "address": "$329B2",
+      "image": "21-Injection/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -7.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 22,
+      "name": "Injection",
+      "address": "$32AB2",
+      "image": "22-Injection/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -10.0,
+      "maximum": 10.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 23,
+      "name": "Injection",
+      "address": "$32BB2",
+      "image": "23-Injection/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -13.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 24,
+      "name": "Spark advance at middle throttle",
+      "address": "$33688",
+      "image": "24-Spark advance at middle throttle/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 25,
+      "name": "Spark advance at middle throttle",
+      "address": "$33788",
+      "image": "25-Spark advance at middle throttle/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 26,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$33888",
+      "image": "26-Spark advance at Wide Open Throttle/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -36.0,
+      "maximum": -4.5
+    },
+    {
+      "binary": "230Kompressor_261204915_114.235819.20.BIN",
+      "definition": "230Kompressor_114.235819.csv",
+      "position": 27,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$33908",
+      "image": "27-Spark advance at Wide Open Throttle/230Kompressor_261204915_114.235819.20.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 1,
+      "name": "======= MAP 1 =======",
+      "address": "$3FFD",
+      "image": "1-======= MAP 1 =======/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 2,
+      "name": "Launch Rev Limiter",
+      "address": "$4056",
+      "image": "2-Launch Rev Limiter/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 3,
+      "name": "Rev Limiter",
+      "address": "$4062",
+      "image": "3-Rev Limiter/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 4,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$48F0",
+      "image": "4-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 5,
+      "name": "MAF Limiter",
+      "address": "$5E5C",
+      "image": "5-MAF Limiter/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 0.0,
+      "maximum": 215.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 6,
+      "name": "Boost Bypass Valve position",
+      "address": "$5F64",
+      "image": "6-Boost Bypass Valve position/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 7,
+      "name": "Injection (Main)",
+      "address": "$699C",
+      "image": "7-Injection (Main)/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -6.0,
+      "maximum": 23.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 8,
+      "name": "Injection",
+      "address": "$6A9C",
+      "image": "8-Injection/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -12.0,
+      "maximum": 16.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 9,
+      "name": "Injection (Limp)",
+      "address": "$6B9C",
+      "image": "9-Injection (Limp)/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 10,
+      "name": "Spark advance at middle throttle (Main loaded)",
+      "address": "$766A",
+      "image": "10-Spark advance at middle throttle (Main loaded)/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 11,
+      "name": "Spark advance at middle throttle (Main unloaded)",
+      "address": "$776A",
+      "image": "11-Spark advance at middle throttle (Main unloaded)/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 12,
+      "name": "Spark advance at Wide Open Throttle (Main)",
+      "address": "$786A",
+      "image": "12-Spark advance at Wide Open Throttle (Main)/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 13,
+      "name": "Spark advance at Wide Open Throttle (Same as Main)",
+      "address": "$78EA",
+      "image": "13-Spark advance at Wide Open Throttle (Same as Main)/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -32.25,
+      "maximum": -0.75
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 14,
+      "name": "SW Version",
+      "address": "$E4BA",
+      "image": "14-SW Version/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 46.0,
+      "maximum": 57.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 15,
+      "name": "======= MAP 2 =======",
+      "address": "$30000",
+      "image": "15-======= MAP 2 =======/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 16,
+      "name": "Launch Rev Limiter",
+      "address": "$30056",
+      "image": "16-Launch Rev Limiter/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 17,
+      "name": "Rev Limiter",
+      "address": "$30062",
+      "image": "17-Rev Limiter/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 18,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$308F0",
+      "image": "18-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 19,
+      "name": "MAF Limiter",
+      "address": "$31E5C",
+      "image": "19-MAF Limiter/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 20,
+      "name": "Boost Bypass Valve position",
+      "address": "$31F64",
+      "image": "20-Boost Bypass Valve position/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 21,
+      "name": "Injection",
+      "address": "$3299C",
+      "image": "21-Injection/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -7.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 22,
+      "name": "Injection",
+      "address": "$32A9C",
+      "image": "22-Injection/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -10.0,
+      "maximum": 10.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 23,
+      "name": "Injection",
+      "address": "$32B9C",
+      "image": "23-Injection/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -13.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 24,
+      "name": "Spark advance at middle throttle",
+      "address": "$3366A",
+      "image": "24-Spark advance at middle throttle/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 25,
+      "name": "Spark advance at middle throttle",
+      "address": "$3376A",
+      "image": "25-Spark advance at middle throttle/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 26,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$3386A",
+      "image": "26-Spark advance at Wide Open Throttle/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -36.0,
+      "maximum": -4.5
+    },
+    {
+      "binary": "230Kompressor_261206457_114.236338.39.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 27,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$338EA",
+      "image": "27-Spark advance at Wide Open Throttle/230Kompressor_261206457_114.236338.39.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 1,
+      "name": "======= MAP 1 =======",
+      "address": "$3FFD",
+      "image": "1-======= MAP 1 =======/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 2,
+      "name": "Launch Rev Limiter",
+      "address": "$4056",
+      "image": "2-Launch Rev Limiter/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 3,
+      "name": "Rev Limiter",
+      "address": "$4062",
+      "image": "3-Rev Limiter/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 4,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$48F0",
+      "image": "4-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 5,
+      "name": "MAF Limiter",
+      "address": "$5E5C",
+      "image": "5-MAF Limiter/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 0.0,
+      "maximum": 215.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 6,
+      "name": "Boost Bypass Valve position",
+      "address": "$5F64",
+      "image": "6-Boost Bypass Valve position/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 7,
+      "name": "Injection (Main)",
+      "address": "$699C",
+      "image": "7-Injection (Main)/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -6.0,
+      "maximum": 23.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 8,
+      "name": "Injection",
+      "address": "$6A9C",
+      "image": "8-Injection/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -12.0,
+      "maximum": 16.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 9,
+      "name": "Injection (Limp)",
+      "address": "$6B9C",
+      "image": "9-Injection (Limp)/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 10,
+      "name": "Spark advance at middle throttle (Main loaded)",
+      "address": "$766A",
+      "image": "10-Spark advance at middle throttle (Main loaded)/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 11,
+      "name": "Spark advance at middle throttle (Main unloaded)",
+      "address": "$776A",
+      "image": "11-Spark advance at middle throttle (Main unloaded)/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 12,
+      "name": "Spark advance at Wide Open Throttle (Main)",
+      "address": "$786A",
+      "image": "12-Spark advance at Wide Open Throttle (Main)/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 13,
+      "name": "Spark advance at Wide Open Throttle (Same as Main)",
+      "address": "$78EA",
+      "image": "13-Spark advance at Wide Open Throttle (Same as Main)/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 14,
+      "name": "SW Version",
+      "address": "$E4BA",
+      "image": "14-SW Version/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 46.0,
+      "maximum": 56.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 15,
+      "name": "======= MAP 2 =======",
+      "address": "$30000",
+      "image": "15-======= MAP 2 =======/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 16,
+      "name": "Launch Rev Limiter",
+      "address": "$30056",
+      "image": "16-Launch Rev Limiter/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 17,
+      "name": "Rev Limiter",
+      "address": "$30062",
+      "image": "17-Rev Limiter/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 18,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$308F0",
+      "image": "18-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 19,
+      "name": "MAF Limiter",
+      "address": "$31E5C",
+      "image": "19-MAF Limiter/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 20,
+      "name": "Boost Bypass Valve position",
+      "address": "$31F64",
+      "image": "20-Boost Bypass Valve position/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 21,
+      "name": "Injection",
+      "address": "$3299C",
+      "image": "21-Injection/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -7.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 22,
+      "name": "Injection",
+      "address": "$32A9C",
+      "image": "22-Injection/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -10.0,
+      "maximum": 10.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 23,
+      "name": "Injection",
+      "address": "$32B9C",
+      "image": "23-Injection/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -13.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 24,
+      "name": "Spark advance at middle throttle",
+      "address": "$3366A",
+      "image": "24-Spark advance at middle throttle/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 25,
+      "name": "Spark advance at middle throttle",
+      "address": "$3376A",
+      "image": "25-Spark advance at middle throttle/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 26,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$3386A",
+      "image": "26-Spark advance at Wide Open Throttle/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -36.0,
+      "maximum": -4.5
+    },
+    {
+      "binary": "230Kompressor_261206458_114.236438.40.BIN",
+      "definition": "230Kompressor_114.236338-114.236438.csv",
+      "position": 27,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$338EA",
+      "image": "27-Spark advance at Wide Open Throttle/230Kompressor_261206458_114.236438.40.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 1,
+      "name": "======= MAP 1 =======",
+      "address": "$3FFD",
+      "image": "1-======= MAP 1 =======/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 2,
+      "name": "Launch Rev Limiter",
+      "address": "$4056",
+      "image": "2-Launch Rev Limiter/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 3,
+      "name": "Rev Limiter",
+      "address": "$4062",
+      "image": "3-Rev Limiter/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 4,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$4916",
+      "image": "4-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 5,
+      "name": "MAF Limiter",
+      "address": "$5E8E",
+      "image": "5-MAF Limiter/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 0.0,
+      "maximum": 215.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 6,
+      "name": "Boost Bypass Valve position",
+      "address": "$5F96",
+      "image": "6-Boost Bypass Valve position/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 7,
+      "name": "Injection (Main)",
+      "address": "$69D6",
+      "image": "7-Injection (Main)/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -6.0,
+      "maximum": 23.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 8,
+      "name": "Injection",
+      "address": "$6AD6",
+      "image": "8-Injection/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -12.0,
+      "maximum": 16.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 9,
+      "name": "Injection (Limp)",
+      "address": "$6BD6",
+      "image": "9-Injection (Limp)/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 10,
+      "name": "Spark advance at middle throttle (Main loaded)",
+      "address": "$76A4",
+      "image": "10-Spark advance at middle throttle (Main loaded)/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 11,
+      "name": "Spark advance at middle throttle (Main unloaded)",
+      "address": "$77A4",
+      "image": "11-Spark advance at middle throttle (Main unloaded)/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 12,
+      "name": "Spark advance at Wide Open Throttle (Main)",
+      "address": "$78A4",
+      "image": "12-Spark advance at Wide Open Throttle (Main)/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 13,
+      "name": "Spark advance at Wide Open Throttle (Same as Main)",
+      "address": "$7924",
+      "image": "13-Spark advance at Wide Open Throttle (Same as Main)/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -32.25,
+      "maximum": -0.75
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 14,
+      "name": "SW Version",
+      "address": "$D4CF",
+      "image": "14-SW Version/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 46.0,
+      "maximum": 55.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 15,
+      "name": "======= MAP 2 =======",
+      "address": "$30000",
+      "image": "15-======= MAP 2 =======/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 16,
+      "name": "Launch Rev Limiter",
+      "address": "$30056",
+      "image": "16-Launch Rev Limiter/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 17,
+      "name": "Rev Limiter",
+      "address": "$30062",
+      "image": "17-Rev Limiter/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 18,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$30916",
+      "image": "18-Torque Limiter (Forces 5700rpm limiter without ABS)/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 19,
+      "name": "MAF Limiter",
+      "address": "$31E8E",
+      "image": "19-MAF Limiter/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 20,
+      "name": "Boost Bypass Valve position",
+      "address": "$31F96",
+      "image": "20-Boost Bypass Valve position/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 21,
+      "name": "Injection",
+      "address": "$329D6",
+      "image": "21-Injection/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -7.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 22,
+      "name": "Injection",
+      "address": "$32AD6",
+      "image": "22-Injection/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -10.0,
+      "maximum": 10.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 23,
+      "name": "Injection",
+      "address": "$32BD6",
+      "image": "23-Injection/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -13.0,
+      "maximum": 19.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 24,
+      "name": "Spark advance at middle throttle",
+      "address": "$336A4",
+      "image": "24-Spark advance at middle throttle/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 25,
+      "name": "Spark advance at middle throttle",
+      "address": "$337A4",
+      "image": "25-Spark advance at middle throttle/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 26,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$338A4",
+      "image": "26-Spark advance at Wide Open Throttle/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -36.0,
+      "maximum": -4.5
+    },
+    {
+      "binary": "230Kompressor_261206570_114.236643.43.BIN",
+      "definition": "230Kompressor_114.236643.csv",
+      "position": 27,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$33924",
+      "image": "27-Spark advance at Wide Open Throttle/230Kompressor_261206570_114.236643.43.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    }
+  ],
+  "errors": [
+    "200Kompressor_261204746_114.235355.56.BIN: 0 matching CSV files; use --assign",
+    "230Kompressor_261204527_114.235153.52.BIN: 0 matching CSV files; use --assign",
+    "230Kompressor_261204573_114.235035.52.BIN: 0 matching CSV files; use --assign",
+    "230Kompressor_261204746_114.235355.56.BIN: 0 matching CSV files; use --assign",
+    "230Kompressor_261204881_114.235516.16.BIN: 0 matching CSV files; use --assign"
+  ]
+}
