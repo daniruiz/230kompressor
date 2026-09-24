@@ -35,3 +35,7 @@ MAF;;My maps;eEindim;eViewText;eBars;eLoHi;0;0;0;0;0;236;512;1;10;;-1;0;0;-;-;1;
 # WOT Load;;My maps;eEindim;eViewText;eBars;eByte;0;0;0;0;0;236;8;1;10;;-1;0;0;-;-;0.3921;0;$30B9B;-;;-;1;0;10;0;0;1;-1;eDataSrcNone;0;$0;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
 # Load;;My maps;eEindim;eViewText;eBars;eByte;0;0;0;0;0;0;16;1;10;;-1;0;0;-;-;0.3921;0;$4BB3;-;;-;1;0;10;0;0;1;-1;eDataSrcNone;0;$0;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
 # Load Axis Secondary Air;;My maps;eEindim;eViewText;eBars;eByte;0;0;0;0;0;236;16;1;10;;-1;0;0;-;-;0.3921;0;$30BB3;-;;-;1;0;10;0;0;1;-1;eDataSrcNone;0;$0;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
+Temp Ignition Retard;;My maps;eZweidim;eViewText;eBars;eByte;0;0;0;0;0;0;8;8;10;;1;0;0;-;-;0.75;0;$3310C;IAT;;;1;0;10;0;0;0;-1;eRom;0;$30CC7;eByte;0x-1;0;Coolant;;;1;0;10;0;0;0;-1;eRom;0;$30C83;eByte;0x-1;0
+Temp Ignition Retard Weigh based on Load;;My maps;eEindim;eViewText;eBars;eByte;0;0;0;0;0;0;8;1;10;;-1;0;0;-;%;1;0;$7104;Load;;%;0.3921;0;10;0;0;0;-1;eRom;0;$4B8F;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
+Temp Ignition Retard;;My maps;eZweidim;eViewText;eBars;eByte;0;0;0;0;0;0;8;8;10;;1;0;0;-;-;0.75;0;$710C;IAT;;;1;0;10;0;0;0;-1;eRom;0;$4CC7;eByte;0x-1;0;Coolant;;;1;0;10;0;0;0;-1;eRom;0;$4C83;eByte;0x-1;0
+Temp Ignition Retard Weigh based on Load;;My maps;eEindim;eViewText;eBars;eByte;0;0;0;0;0;0;8;1;10;;-1;0;0;-;%;1;0;$33104;Load;;%;0.3921;0;10;0;0;0;-1;eRom;0;$30B8F;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
