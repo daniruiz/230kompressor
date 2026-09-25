@@ -16,14 +16,14 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
 > Do not flash any binary directly to your ECU.
 >
 > Changes to the tune need to be copied manually in order to preserve your software and variations of your map.
+> Modifications to the binary will require fixing its checksum. You can use the script me21_checksum.py to correct it.
 
 # Content
 - Original binary map: `230k_ME21_STOCK.BIN`
 - Tuned binary map: `230k_ME21.BIN`
-- Mappacks for WINOLS
-  - `230kompressor_ME2.1.csv` => raw definitions and WinOLS
-  - `230kompressor_ME2.1.kp` => old WinOLS
-  - `230kompressor_ME2.1.xdf` => TunerPro
+- Mappacks for WINOLS `Map Definitions`
+- Libary of stock binaries `Original Binaries`
+- Advance table definitions `MAPPACK_230kompressor_ME2.1.csv`
 - Hex dump of binary file (only used for comparing binary changes in plain text)  `230k_ME21.BIN.XXD`
 
 # Tables
@@ -35,11 +35,11 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
 - MAF limiter
 - Torque limiter
     - If disabled it also removes the 5700rpm limit without ABS
+- Ignition Retard based on Coolant and and Intake temperature
 
-
-# Relevant information
+# Relevant Links
 - [How to flash ME2.1 ECU](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431)
-- After modifying the tune you can fix the checksum with ECM titanium
+- [Porting supercharger Eaton M62](https://www.benzworld.org/threads/home-port-job-of-the-eaton-m62-s-c.1516156)
 
 # Mods
 
@@ -56,7 +56,7 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
 - Remove MAF and throttle body screen
 - Wideband
 - 320cc Bosch Red injectors 0280155759
-- 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach 11.8-12 AFR at 5200rpm WOT - ~4Bar FPR)
+- 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach 11.8-12 AFR at 5200rpm WOT = ~3.8-4Bar FPR)
 - BOSCH FR6DC spark plugs
 - ECU tune
 
@@ -78,11 +78,6 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
       - A1703501114
       - A2023501814
 
-# ECU versión
-
-- HW: 0285454532
-- SW: 114.236438
-
 # Supercharger RPM
 
 According to Eaton's information, the M62 is capable of doing max 14,000 RPM maintained, but many users rise it higher to 15k or even 16k as far as it's not maintained for long periods.
@@ -102,3 +97,18 @@ According to Eaton's information, the M62 is capable of doing max 14,000 RPM mai
 **Crank pulley + smaller s/c pulley**
 - (218mm crank pulley / 87mm sc pulley) x 6200rpm redline (manual) = 15,535 RPM
 - (218mm crank pulley / 87mm sc pulley) x 5800rpm redline (auto) = 14,533 RPM
+
+# ECU versions
+
+- 200Kompressor_261204746_114.235355.56.BIN
+- 230Kompressor_261204527_114.235153.52.BIN
+- 230Kompressor_261204573_114.235034.34.BIN
+- 230Kompressor_261204573_114.235035.52.BIN
+- 230Kompressor_261204746_114.235355.56.BIN
+- 230Kompressor_261204747_114.235404.04.BIN
+- 230Kompressor_261204881_114.235516.16.BIN
+- 230Kompressor_261204915_114.235819.20.BIN
+- 230Kompressor_261206457_114.236338.39.BIN
+- 230Kompressor_261206458_114.236438.40.BIN
+- 230Kompressor_261206570_114.236643.43.BIN
+
