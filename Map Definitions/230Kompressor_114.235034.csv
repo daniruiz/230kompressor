@@ -26,3 +26,5 @@ Spark advance at Wide Open Throttle;;My maps;eZweidim;eViewText;eRightWinNone;eB
 SW Version;;My maps;eEindim;eViewText;eHex;eByte;0;0;0;0;0;0;26;1;10;;-1;0;0;-;-;1;0;$E29F;-;;-;1;0;10;0;0;1;-1;eDataSrcNone;0;$0;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
 Launch Rev Limiter;;My maps;eEindim;eViewText;eBars;eLoHi;0;0;0;0;0;0;2;1;10;;-1;0;0;-;-;1;0;$4128;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0
 Launch Rev Limiter;;My maps;eEindim;eViewText;eBars;eLoHi;0;0;0;0;0;0;2;1;10;;-1;0;0;-;-;1;0;$30128;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0
+Temp Ignition Retard;;My maps;eZweidim;eViewText;eBars;eByte;0;0;0;0;0;0;8;8;10;;1;0;0;-;-;0.75;0;$72CE;IAT;;;1;0;10;0;0;0;-1;eDataSrcNone;0;$4CC7;eByte;0x-1;0;Coolant;;;1;0;10;0;0;0;-1;eDataSrcNone;0;$4C83;eByte;0x-1;0
+Temp Ignition Retard;;My maps;eZweidim;eViewText;eBars;eByte;0;0;0;0;0;1;8;8;10;;1;0;0;-;-;0.75;0;$332CE;IAT;;;1;0;10;0;0;0;-1;eDataSrcNone;0;$4CC7;eByte;0x-1;0;Coolant;;;1;0;10;0;0;0;-1;eDataSrcNone;0;$4C83;eByte;0x-1;0

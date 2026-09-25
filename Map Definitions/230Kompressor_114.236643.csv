@@ -26,3 +26,5 @@ Launch Rev Limiter;;My maps;eEindim;eViewText;eBars;eLoHi;0;0;0;0;0;0;2;1;10;;-1
 SW Version;;My maps;eEindim;eViewText;eHex;eByte;0;0;0;0;0;0;26;1;10;;-1;0;0;-;-;1;0;$D4CF;-;;-;1;0;10;0;0;1;-1;eDataSrcNone;0;$0;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
 Launch Rev Limiter;;My maps;eEindim;eViewText;eBars;eLoHi;0;0;0;0;0;0;2;1;10;;-1;0;0;-;-;1;0;$30056;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eLoHi;0x-1;0
 MAF Limiter;;My maps;eZweidim;eViewText;eBars;eByte;0;0;0;0;0;0;16;16;10;;-1;0;0;-;-;1;0;$31E8E;-;;-;1;0;10;0;0;1;-1;eDataSrcNone;0;$0;eByte;0x-1;0;-;;-;1;0;10;0;0;0;-1;eDataSrcNone;0;$0;eByte;0x-1;0
+Temp Ignition Retard;;My maps;eZweidim;eViewText;eBars;eByte;0;0;0;0;0;0;5;8;10;;1;0;0;-;-;0.75;0;$717A;IAT;;;1;0;16;0;0;0;-1;eDataSrcNone;0;$4CC7;eByte;0x-1;0;Coolant;;;1;0;10;0;0;0;-1;eDataSrcNone;0;$4C83;eByte;0x-1;0
+Temp Ignition Retard;;My maps;eZweidim;eViewText;eBars;eByte;0;0;0;0;0;0;5;8;10;;1;0;0;-;-;0.75;0;$3317A;IAT;;;1;0;16;0;0;0;-1;eDataSrcNone;0;$4CC7;eByte;0x-1;0;Coolant;;;1;0;10;0;0;0;-1;eDataSrcNone;0;$4C83;eByte;0x-1;0
