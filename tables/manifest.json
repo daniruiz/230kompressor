@@ -581,6 +581,296 @@
       "maximum": -1.5
     },
     {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 1,
+      "name": "======= MAP 1 =======",
+      "address": "$3FFD",
+      "image": "1-======= MAP 1 =======/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 2,
+      "name": "Launch Rev Limiter",
+      "address": "$4062",
+      "image": "2-Launch Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 3,
+      "name": "Rev Limiter",
+      "address": "$406E",
+      "image": "3-Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 4,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$482E",
+      "image": "4-Torque Limiter (Forces 5700rpm limiter without ABS)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 5,
+      "name": "MAF Limiter",
+      "address": "$5E06",
+      "image": "5-MAF Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 6,
+      "name": "Boost Bypass Valve position",
+      "address": "$600E",
+      "image": "6-Boost Bypass Valve position/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 7,
+      "name": "Injection (Main)",
+      "address": "$69A6",
+      "image": "7-Injection (Main)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -3.90625,
+      "maximum": 17.96875
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 8,
+      "name": "Injection",
+      "address": "$6AA6",
+      "image": "8-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -10.9375,
+      "maximum": 8.59375
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 9,
+      "name": "Injection (Limp)",
+      "address": "$6BA6",
+      "image": "9-Injection (Limp)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 10,
+      "name": "Temp Ignition Retard",
+      "address": "$7162",
+      "image": "10-Temp Ignition Retard/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 0.0,
+      "maximum": 14.25
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 11,
+      "name": "Spark advance at middle throttle (Main loaded)",
+      "address": "$766E",
+      "image": "11-Spark advance at middle throttle (Main loaded)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 12,
+      "name": "Spark advance at middle throttle (Main unloaded)",
+      "address": "$776E",
+      "image": "12-Spark advance at middle throttle (Main unloaded)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 13,
+      "name": "Spark advance at Wide Open Throttle (Main)",
+      "address": "$786E",
+      "image": "13-Spark advance at Wide Open Throttle (Main)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -36.0,
+      "maximum": -1.5
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 14,
+      "name": "Spark advance at Wide Open Throttle (Same as Main)",
+      "address": "$78EE",
+      "image": "14-Spark advance at Wide Open Throttle (Same as Main)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -32.25,
+      "maximum": -0.75
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 15,
+      "name": "SW Version",
+      "address": "$E485",
+      "image": "15-SW Version/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 46.0,
+      "maximum": 55.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 16,
+      "name": "======= MAP 2 =======",
+      "address": "$30000",
+      "image": "16-======= MAP 2 =======/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 255.0,
+      "maximum": 255.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 17,
+      "name": "Launch Rev Limiter",
+      "address": "$30062",
+      "image": "17-Launch Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 4112.0,
+      "maximum": 4200.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 18,
+      "name": "Rev Limiter",
+      "address": "$3006E",
+      "image": "18-Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 5800.0,
+      "maximum": 6200.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 19,
+      "name": "Torque Limiter (Forces 5700rpm limiter without ABS)",
+      "address": "$3082E",
+      "image": "19-Torque Limiter (Forces 5700rpm limiter without ABS)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 3008.0,
+      "maximum": 4000.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 20,
+      "name": "MAF Limiter",
+      "address": "$31E06",
+      "image": "20-MAF Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 0.0,
+      "maximum": 222.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 21,
+      "name": "Boost Bypass Valve position",
+      "address": "$3200E",
+      "image": "21-Boost Bypass Valve position/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 0.0,
+      "maximum": 100.011
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 22,
+      "name": "Injection",
+      "address": "$329A6",
+      "image": "22-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -4.6875,
+      "maximum": 14.84375
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 23,
+      "name": "Injection",
+      "address": "$32AA6",
+      "image": "23-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -7.8125,
+      "maximum": 7.8125
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 24,
+      "name": "Injection",
+      "address": "$32BA6",
+      "image": "24-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -10.15625,
+      "maximum": 14.84375
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 25,
+      "name": "Temp Ignition Retard",
+      "address": "$33162",
+      "image": "25-Temp Ignition Retard/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": 0.0,
+      "maximum": 14.25
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 26,
+      "name": "Spark advance at middle throttle",
+      "address": "$3366E",
+      "image": "26-Spark advance at middle throttle/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 27,
+      "name": "Spark advance at middle throttle",
+      "address": "$3376E",
+      "image": "27-Spark advance at middle throttle/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -39.75,
+      "maximum": -1.5
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 28,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$3386E",
+      "image": "28-Spark advance at Wide Open Throttle/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -36.0,
+      "maximum": -4.5
+    },
+    {
+      "binary": "9710-200Kompressor_261204746_114.235355.56.BIN",
+      "definition": "200Kompressor_114.235355.csv",
+      "position": 29,
+      "name": "Spark advance at Wide Open Throttle",
+      "address": "$338EE",
+      "image": "29-Spark advance at Wide Open Throttle/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "minimum": -39.75,
+      "maximum": -3.0
+    },
+    {
       "binary": "9720-230Kompressor_261204747_114.235404.04.BIN",
       "definition": "230Kompressor_114.235404.csv",
       "position": 1,
@@ -2033,7 +2323,6 @@
   ],
   "errors": [
     "9707-230Kompressor_261204573_114.235035.52.BIN: 0 matching CSV files; use --assign",
-    "9710-200Kompressor_261204746_114.235355.56.BIN: 0 matching CSV files; use --assign",
     "9745-230Kompressor_261204881_114.235516.16.BIN: 0 matching CSV files; use --assign"
   ]
 }
