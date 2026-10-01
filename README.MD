@@ -78,6 +78,15 @@ The project is intended for research and educational purposes for Bosch ME2.1 eq
       - A1703501114
       - A2023501814
 
+## Real time tunning
+
+By installing the CobraRTP FlashOnline board, you can add real-time tuning capabilities to the stock ECU (both the ME2.0 and ME2.1).
+
+![](Images/me2.1-cobraRTP.png)  
+![](Images/me2.1-cobraRTP-2.png)  
+
+After modifications, the checksum should normally be corrected, but I just found out the car doesn't care about it. So if you live tune your ECU and forget to update the checksum, next time you start the engine it will work anyway. So the checksum doesn't seem to be relevant for this ECU. It might show an error code when reading through OBD.
+
 # Supercharger RPM
 
 According to Eaton's information, the M62 is capable of doing max 14,000 RPM maintained, but many users rise it higher to 15k or even 16k as far as it's not maintained for long periods.
