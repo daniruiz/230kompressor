@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Export WinOLS CSV definitions as PNG tables. BIN files are never modified."""
+"""Export WinOLS CSV definitions as PNG tables, with ROM or index-based axes.
+
+Axis units and conversions come from the CSV; raw axes are not converted to
+physical units automatically. BIN files are never modified.
+"""
 import argparse
 import csv
 import io
@@ -59,17 +63,21 @@ def read_definitions(path):
     return result
 
 
-def read_values(blob, address, count, organization, signed=False):
+def read_values(blob, address, count, organization, signed=False, skip_bytes=0):
     formats = {'eByte': ('i1' if signed else 'u1'),
                'eLoHi': ('<i2' if signed else '<u2'),
                'eHiLo': ('>i2' if signed else '>u2')}
     if organization not in formats:
         raise ValueError(f'Unsupported DataOrg: {organization}')
     dtype = np.dtype(formats[organization])
-    end = address + count * dtype.itemsize
+    if skip_bytes < 0:
+        raise ValueError('SkipBytes must not be negative')
+    stride = dtype.itemsize + skip_bytes
+    end = address + (count - 1) * stride + dtype.itemsize
     if address < 0 or count <= 0 or end > len(blob):
         raise ValueError(f'Read outside binary bounds: 0x{address:X}..0x{end:X}, size {len(blob)}')
-    return np.frombuffer(blob, dtype=dtype, count=count, offset=address).astype(float)
+    return np.ndarray((count,), dtype=dtype, buffer=blob, offset=address,
+                      strides=(stride,)).astype(float)
 
 
 def extract(blob, row):
@@ -88,20 +96,63 @@ def extract(blob, row):
     return values.reshape(rows, cols)
 
 
-def axis(row, prefix, count):
-    if row.get(prefix + '.DataSrc', 'eDataSrcNone') != 'eDataSrcNone':
-        raise ValueError(f'{prefix}: only calculated eDataSrcNone axes are supported')
-    for suffix in ('.bBackwards', '.bReciprocal', '.SkipBytes'):
+def axis(blob, row, prefix, count):
+    """Read exactly the axis points specified by the definition.
+
+    DataAddr is the first value, not the ECU's descriptor/header. Do not add
+    three bytes or infer a second-bank displacement: the CSV already does that.
+    Unsupported WinOLS modes fail explicitly rather than producing wrong labels.
+    """
+    source = row.get(prefix + '.DataSrc') or 'eDataSrcNone'
+    for suffix in ('.bBackwards', '.bReciprocal', '.DataHeader'):
         if integer(row.get(prefix + suffix) or '0'):
             raise ValueError(f'{prefix + suffix} is unsupported')
-    values = np.arange(count) * number(row.get(prefix + '.Factor') or '1')
+    signature = (row.get(prefix + '.SignatureByte') or '0x-1').strip().lower()
+    if signature not in ('0x-1', '-1', '$-1'):
+        raise ValueError(f'{prefix}.SignatureByte is unsupported')
+    if source == 'eRom':
+        address = row.get(prefix + '.DataAddr')
+        if not address or not address.strip():
+            raise ValueError(f'{prefix}: eRom axis requires DataAddr')
+        try:
+            raw = read_values(blob, integer(address), count,
+                              row.get(prefix + '.DataOrg') or 'eByte',
+                              integer(row.get(prefix + '.bSigned') or '0') != 0,
+                              integer(row.get(prefix + '.SkipBytes') or '0'))
+        except ValueError as exc:
+            raise ValueError(f'{prefix}: {exc}') from exc
+    elif source == 'eDataSrcNone':
+        if integer(row.get(prefix + '.SkipBytes') or '0'):
+            raise ValueError(f'{prefix}.SkipBytes is unsupported for index axes')
+        raw = np.arange(count, dtype=float)
+    else:
+        raise ValueError(f'{prefix}: unsupported DataSrc: {source}')
+    values = raw * number(row.get(prefix + '.Factor') or '1')
     values += number(row.get(prefix + '.Offset') or '0')
-    name = row.get(prefix + '.Name', '-')
-    unit = row.get(prefix + '.Unit', '-')
+    if not np.isfinite(values).all():
+        raise ValueError(f'{prefix}: non-finite axis values')
+    name = (row.get(prefix + '.Name') or '-').strip()
+    unit = (row.get(prefix + '.Unit') or '-').strip()
     label = name if name != '-' else 'Index'
     if unit and unit != '-':
         label += f' [{unit}]'
     return values, label
+
+
+def axis_metadata(row, prefix, values, label):
+    source = row.get(prefix + '.DataSrc') or 'eDataSrcNone'
+    return dict(source=source,
+                address=row.get(prefix + '.DataAddr') if source == 'eRom' else None,
+                label=label, unit=row.get(prefix + '.Unit') or '-',
+                factor=number(row.get(prefix + '.Factor') or '1'),
+                offset=number(row.get(prefix + '.Offset') or '0'),
+                values=values.tolist())
+
+
+def axis_origin(row, prefix):
+    if row.get(prefix + '.DataSrc') == 'eRom':
+        return f"ROM 0x{integer(row[prefix + '.DataAddr']):X}"
+    return 'index 0'
 
 
 def fmt(value, precision=-1):
@@ -113,8 +164,8 @@ def fmt(value, precision=-1):
 def render(job, destination, limits, cmap_name, dpi):
     row, values = job['row'], job['values']
     rows, cols = values.shape
-    x, xlabel = axis(row, 'AxisX', cols)
-    y, ylabel = axis(row, 'AxisY', rows)
+    x, xlabel = job['xaxis']
+    y, ylabel = job['yaxis']
     fig, ax = plt.subplots(figsize=(max(8, cols * .66 + 2.4), max(3.4, rows * .39 + 2.5)))
     cmap = plt.get_cmap(cmap_name)
     lo, hi = limits
@@ -145,7 +196,7 @@ def render(job, destination, limits, cmap_name, dpi):
              f"Address: 0x{integer(row['Fieldvalues.StartAddr']):X} | {rows} × {cols} | "
              f"{row['DataOrg']} | CSV: {job['definition'].name}\n"
              f"Conversion: raw × {row['Fieldvalues.Factor']} + ({row['Fieldvalues.Offset']}) | "
-             'Axes calculated from index 0', fontsize=8)
+             f"Axes: X = {axis_origin(row, 'AxisX')} | Y = {axis_origin(row, 'AxisY')}", fontsize=8)
     fig.tight_layout(rect=(0, .075, 1, .91))
     try:
         fig.savefig(destination, dpi=dpi)
@@ -199,10 +250,11 @@ def main():
         for position, row in enumerate(ordered_rows, start=1):
             try:
                 values = extract(blob, row)
-                axis(row, 'AxisX', values.shape[1])
-                axis(row, 'AxisY', values.shape[0])
+                xaxis = axis(blob, row, 'AxisX', values.shape[1])
+                yaxis = axis(blob, row, 'AxisY', values.shape[0])
                 folder = f"{position}-{safe_name(row['Name'])}"
-                jobs.append(dict(binary=binary, definition=definition, row=row, values=values, folder=folder, position=position))
+                jobs.append(dict(binary=binary, definition=definition, row=row, values=values,
+                                 xaxis=xaxis, yaxis=yaxis, folder=folder, position=position))
             except ValueError as exc:
                 errors.append(f"{binary.name} / {row['Name']} / line {row['_line']}: {exc}")
     # Prevent silent overwrites caused by identical or sanitized names.
@@ -224,7 +276,9 @@ def main():
         manifest.append(dict(binary=job['binary'].name, definition=job['definition'].name,
                              position=job['position'], name=job['row']['Name'], address=job['row']['Fieldvalues.StartAddr'],
                              image=str(destination.relative_to(args.output)),
-                             minimum=float(job['values'].min()), maximum=float(job['values'].max())))
+                             minimum=float(job['values'].min()), maximum=float(job['values'].max()),
+                             axes=dict(x=axis_metadata(job['row'], 'AxisX', *job['xaxis']),
+                                       y=axis_metadata(job['row'], 'AxisY', *job['yaxis']))))
     (args.output / 'manifest.json').write_text(json.dumps({'images': manifest, 'errors': errors}, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'{len(manifest)} images generated in {args.output}; {len(errors)} errors.')
     for error in errors:
