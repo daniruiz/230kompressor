@@ -133,6 +133,8 @@ def axis(blob, row, prefix, count):
         raise ValueError(f'{prefix}: non-finite axis values')
     name = (row.get(prefix + '.Name') or '-').strip()
     unit = (row.get(prefix + '.Unit') or '-').strip()
+    if (row['Name'].strip().casefold() == 'temp ignition retard'):
+        unit = 'ºC'
     label = name if name != '-' else 'Index'
     if unit and unit != '-':
         label += f' [{unit}]'
@@ -141,9 +143,13 @@ def axis(blob, row, prefix, count):
 
 def axis_metadata(row, prefix, values, label):
     source = row.get(prefix + '.DataSrc') or 'eDataSrcNone'
+    unit = (row.get(prefix + '.Unit') or '-').strip()
+    if (row['Name'].strip().casefold() == 'temp ignition retard'
+            and unit.casefold() == '(internal)[raw]'):
+        unit = 'ºC'
     return dict(source=source,
                 address=row.get(prefix + '.DataAddr') if source == 'eRom' else None,
-                label=label, unit=row.get(prefix + '.Unit') or '-',
+                label=label, unit=unit,
                 factor=number(row.get(prefix + '.Factor') or '1'),
                 offset=number(row.get(prefix + '.Offset') or '0'),
                 values=values.tolist())
@@ -252,6 +258,33 @@ def main():
                 values = extract(blob, row)
                 xaxis = axis(blob, row, 'AxisX', values.shape[1])
                 yaxis = axis(blob, row, 'AxisY', values.shape[0])
+
+                # Temp Ignition Retard uses fixed physical temperature axes
+                # instead of the raw/internal values supplied by the CSV/ROM.
+                #
+                # 8x8 layout:
+                #   X/IAT: -30, -14, 0, 15, 17, 30, 60, 101 ºC
+                #   Y/CLT: -29, -10, 15, 30, 50, 80, 101, 132 ºC
+                #
+                # 5x8 layout:
+                #   X/IAT keeps the last five points: 15, 17, 30, 60, 101 ºC
+                #   Y/CLT is unchanged.
+                if row['Name'].strip().casefold() == 'temp ignition retard':
+                    fixed_y = np.array([-29, -10, 15, 30, 50, 80, 101, 132], dtype=float)
+
+                    if values.shape == (8, 8):
+                        fixed_x = np.array([-30, -14, 0, 15, 17, 30, 60, 101], dtype=float)
+                    elif values.shape == (8, 5):
+                        fixed_x = np.array([15, 17, 30, 60, 101], dtype=float)
+                    else:
+                        raise ValueError(
+                            'Temp Ignition Retard fixed axes support 8 x 8 or 5 x 8 tables; '
+                            f'got {values.shape[1]} x {values.shape[0]}'
+                        )
+
+                    xaxis = (fixed_x, xaxis[1])
+                    yaxis = (fixed_y, yaxis[1])
+
                 folder = f"{position}-{safe_name(row['Name'])}"
                 jobs.append(dict(binary=binary, definition=definition, row=row, values=values,
                                  xaxis=xaxis, yaxis=yaxis, folder=folder, position=position))
