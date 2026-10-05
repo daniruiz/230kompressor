@@ -482,37 +482,37 @@
         "x": {
           "source": "eRom",
           "address": "$4D7F",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4D33",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -1298,37 +1298,37 @@
         "x": {
           "source": "eRom",
           "address": "$30D7F",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30D33",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -2056,37 +2056,37 @@
         "x": {
           "source": "eRom",
           "address": "$4CCD",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4C81",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -2873,37 +2873,37 @@
         "x": {
           "source": "eRom",
           "address": "$30CCD",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30C81",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -3631,37 +3631,37 @@
         "x": {
           "source": "eRom",
           "address": "$4CCD",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4C81",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -4448,37 +4448,37 @@
         "x": {
           "source": "eRom",
           "address": "$30CCD",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30C81",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -5206,37 +5206,37 @@
         "x": {
           "source": "eRom",
           "address": "$4CCD",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4C81",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -6023,37 +6023,37 @@
         "x": {
           "source": "eRom",
           "address": "$30CCD",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30C81",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -6781,37 +6781,37 @@
         "x": {
           "source": "eRom",
           "address": "$4CC7",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4C83",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -7598,37 +7598,37 @@
         "x": {
           "source": "eRom",
           "address": "$30CC7",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            21.0,
-            42.0,
-            71.0,
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            -30.0,
+            -14.0,
+            0.0,
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30C83",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -8356,34 +8356,34 @@
         "x": {
           "source": "eRom",
           "address": "$4CF5",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4CB1",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -9170,34 +9170,34 @@
         "x": {
           "source": "eRom",
           "address": "$30CF5",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30CB1",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -9925,34 +9925,34 @@
         "x": {
           "source": "eRom",
           "address": "$4CFD",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4CB9",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -10739,34 +10739,34 @@
         "x": {
           "source": "eRom",
           "address": "$30CFD",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30CB9",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -11494,34 +11494,34 @@
         "x": {
           "source": "eRom",
           "address": "$4D35",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4CF1",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -12308,34 +12308,34 @@
         "x": {
           "source": "eRom",
           "address": "$30D35",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30CF1",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -13063,34 +13063,34 @@
         "x": {
           "source": "eRom",
           "address": "$4D35",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4CF1",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -13877,34 +13877,34 @@
         "x": {
           "source": "eRom",
           "address": "$30D35",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30CF1",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -14632,34 +14632,34 @@
         "x": {
           "source": "eRom",
           "address": "$4D67",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$4D17",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
@@ -15446,34 +15446,34 @@
         "x": {
           "source": "eRom",
           "address": "$30D67",
-          "label": "IAT (internal) [raw]",
+          "label": "IAT (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            108.0,
-            113.0,
-            144.0,
-            199.0,
-            234.0
+            15.0,
+            17.0,
+            30.0,
+            60.0,
+            101.0
           ]
         },
         "y": {
           "source": "eRom",
           "address": "$30D17",
-          "label": "Coolant (internal) [raw]",
+          "label": "Coolant (internal) [ºC]",
           "unit": "raw",
           "factor": 1.0,
           "offset": 0.0,
           "values": [
-            9.0,
-            25.0,
-            70.0,
-            109.0,
-            159.0,
-            211.0,
-            230.0,
-            244.0
+            -29.0,
+            -10.0,
+            15.0,
+            30.0,
+            50.0,
+            80.0,
+            101.0,
+            132.0
           ]
         }
       }
