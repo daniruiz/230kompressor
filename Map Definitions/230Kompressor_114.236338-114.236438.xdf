@@ -193,7 +193,7 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x48f0" mmedelementsizebits="16" mmedrowcount="4" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>-</units>
+      <units>rpm</units>
       <decimalpl>0</decimalpl>
       <min>0</min>
       <max>65535</max>
@@ -907,7 +907,7 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x308f0" mmedelementsizebits="16" mmedrowcount="4" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>-</units>
+      <units>rpm</units>
       <decimalpl>0</decimalpl>
       <min>0</min>
       <max>65535</max>
