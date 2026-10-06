@@ -77,7 +77,7 @@ The map packs cover the following areas. Coverage and naming vary by software ve
 | **Supercharger bypass valve position** | Bypass valve calibration relevant to how much compressed air reaches the engine. |
 | **Rev limiter** | Engine-speed limit settings. |
 | **Launch rev limiter** | Engine-speed limit when stationary. |
-| **MAF-related tables** | Tables historically labeled “MAF limiter,” investigated in connection with supercharger cutout after pulley upgrades. Their complete function is still under investigation. |
+| **Warm-up Bypass command minimum** | Minimum boost bypass valve position during warm-up. |
 | **Fallback RPM Limiter** | Tables associated in project testing with the approximate 5,700 rpm limit when the ABS signal is unavailable. |
 | **Temperature ignition correction** | Tables associated with coolant and intake air temperature (IAT), with load-dependent weighting. |
 
@@ -85,7 +85,7 @@ The map packs cover the following areas. Coverage and naming vary by software ve
 
 One focus of this project is the loss of boost sometimes observed near high engine speeds after installing a larger crankshaft pulley. The reported behavior is that the ECU disengages the supercharger clutch and opens the bypass valve.
 
-The binaries and map comparisons help investigate why different software versions behave differently with the same hardware changes. A table labeled “MAF limiter” should not automatically be interpreted as a simple maximum airflow threshold: edits have also affected starting and mixture behavior during project testing.
+The binaries and map comparisons help investigate why different software versions behave differently with the same hardware changes.
 
 Not all binaries behave equally, and some of them don't limit at all when you increase the supercharger boost. Here's a list of binaries with tested behavior:
 
