@@ -78,7 +78,7 @@ The map packs cover the following areas. Coverage and naming vary by software ve
 | **Rev limiter** | Engine-speed limit settings. |
 | **Launch rev limiter** | Engine-speed limit when stationary. |
 | **MAF-related tables** | Tables historically labeled “MAF limiter,” investigated in connection with supercharger cutout after pulley upgrades. Their complete function is still under investigation. |
-| **Torque limiter** | Tables associated in project testing with the approximately 5,700 rpm limit when the ABS signal is unavailable. |
+| **Fallback RPM Limiter** | Tables associated in project testing with the approximate 5,700 rpm limit when the ABS signal is unavailable. |
 | **Temperature ignition correction** | Tables associated with coolant and intake air temperature (IAT), with load-dependent weighting. |
 
 ### Larger pulleys and supercharger cutout
@@ -101,7 +101,7 @@ Not all binaries behave equally, and some of them don't limit at all when you in
 
 ### The 5,700 rpm limit without ABS
 
-Project testing has linked the reduced rev limit with an unavailable ABS signal to the tables labeled “Torque limiter.” Editing these tables has restored the normal rev limit on the tested setup. This is an observed result for that configuration, rather than proof that the same edit applies to every ECU version.
+Project testing has linked the reduced rev limit with an unavailable ABS signal to the tables labeled **“Fallback RPM Limiter”**. Editing these tables has restored the normal rev limit on the tested setup. This is an observed result for that configuration, rather than proof that the same edit applies to every ECU version.
 
 ### Temperature-related ignition retard
 
