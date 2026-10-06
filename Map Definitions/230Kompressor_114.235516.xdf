@@ -204,21 +204,21 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0005" flags="0x0">
-    <title>MAF Limiter</title>
+    <title>Warm-up Bypass command minimum</title>
     <description>CSV definition. File offset 0x5D5A; 16 columns x 16 rows.
-X: Load (internal); ROM $4BBD; X
+X: Throttle (normalized); ROM $4BBD; X*0.392156862745098
 Y: RPM; ROM $4C61; X*25</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4bbd" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
-      <units>Load (internal) (raw)</units>
+      <units>Throttle (normalized) (% FS)</units>
       <indexcount>16</indexcount>
-      <decimalpl>0</decimalpl>
+      <decimalpl>2</decimalpl>
       <outputtype>1</outputtype>
       <datatype>0</datatype>
       <unittype>0</unittype>
       <DALINK index="0" />
       <embedinfo type="1" />
-      <MATH equation="X">
+      <MATH equation="X*0.392156862745098">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
@@ -918,21 +918,21 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0014" flags="0x0">
-    <title>MAF Limiter</title>
+    <title>Warm-up Bypass command minimum</title>
     <description>CSV definition. File offset 0x31D5A; 16 columns x 16 rows.
-X: Load (internal); ROM $30BBD; X
+X: Throttle (normalized); ROM $30BBD; X*0.392156862745098
 Y: RPM; ROM $30C61; X*25</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30bbd" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
-      <units>Load (internal) (raw)</units>
+      <units>Throttle (normalized) (% FS)</units>
       <indexcount>16</indexcount>
-      <decimalpl>0</decimalpl>
+      <decimalpl>2</decimalpl>
       <outputtype>1</outputtype>
       <datatype>0</datatype>
       <unittype>0</unittype>
       <DALINK index="0" />
       <embedinfo type="1" />
-      <MATH equation="X">
+      <MATH equation="X*0.392156862745098">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
