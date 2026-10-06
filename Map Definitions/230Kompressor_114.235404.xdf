@@ -149,7 +149,7 @@ Y: Row (index); no ROM axis in CSV; zero-based index labels</description>
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0004" flags="0x0">
-    <title>Torque Limiter (Forces 5700rpm limiter without ABS)</title>
+    <title>Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)</title>
     <description>CSV definition. File offset 0x4832; 8 columns x 4 rows.
 X: Variant (index); no ROM axis in CSV; zero-based index labels
 Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
@@ -198,7 +198,7 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
       <min>0</min>
       <max>65535</max>
       <outputtype>1</outputtype>
-      <MATH equation="X">
+      <MATH equation="X*1.5-100">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
@@ -863,7 +863,7 @@ Y: Row (index); no ROM axis in CSV; zero-based index labels</description>
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0013" flags="0x0">
-    <title>Torque Limiter (Forces 5700rpm limiter without ABS)</title>
+    <title>Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)</title>
     <description>CSV definition. File offset 0x30832; 8 columns x 4 rows.
 X: Variant (index); no ROM axis in CSV; zero-based index labels
 Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
@@ -912,7 +912,7 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
       <min>0</min>
       <max>65535</max>
       <outputtype>1</outputtype>
-      <MATH equation="X">
+      <MATH equation="X*1.5-100">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
