@@ -1,13 +1,13 @@
 # Mercedes M111 Kompressor ECU Tuning — Bosch ME2.1 Maps, WinOLS & TunerPro
 
-Free ECU tuning resources and reverse-engineering documentation for **Mercedes-Benz M111 230 Kompressor and 200 Kompressor engines with Bosch ME2.1**. This project brings together ECU binary files, WinOLS map packs (`.kp` / `.csv`), a TunerPro XDF, calibration comparisons and Python tools for checksum correction and map visualization.
+Free ECU tuning resources and reverse-engineering documentation for **Mercedes-Benz M111 230 Kompressor and 200 Kompressor engines with Bosch ME2.1**. This project brings together ECU binary files, WinOLS map packs (`.kp` / `.csv`), TunerPro XDF map definitions (`.xdf`), calibration comparisons and Python tools for checksum correction and map visualization.
 
 The aim is to make these ECUs easier to understand and calibrate: fuel and ignition maps, supercharger bypass control, temperature-related ignition correction, and the limiter behavior encountered with larger supercharger pulleys or missing ABS signals.
 
 > [!TIP]
 > **Need a custom tune for your engine?** Contact **[Daniel at daniel@drasite.com](mailto:daniel@drasite.com) or via [Instagram @dani_ruiz24](https://www.instagram.com/dani_ruiz24/)**.
 
-[WinOLS map packs](Map%20Definitions/) · [TunerPro XDF](MAPPACK_230kompressor_ME2.1.xdf) · [ECU binaries](Original%20Binaries/) · [Map comparison images](tables/) · [Getting started](#getting-started)
+[Map definitions](Map%20Definitions/) · [Stock ECU binaries](Original%20Binaries/) · [Map comparison images](tables/) · [Getting started](#getting-started)
 
 ![Mercedes M111 Bosch ME2.1 fuel and ignition map definitions displayed in WinOLS](Images/WinOLS.png)
 
@@ -28,9 +28,8 @@ The project focuses on the Bosch ME2.1-equipped M111 Kompressor engines found in
 
 | Resource | What it contains |
 | --- | --- |
-| [WinOLS map packs](Map%20Definitions/) | Software-specific `.kp` and `.csv` definitions for locating and editing calibration tables. |
+| [WinOLS and TunerPro map definitions](Map%20Definitions/) | Software-specific `.kp` and `.csv` definitions for locating and editing calibration tables. |
 | [Extended ME2.1 CSV definitions](MAPPACK_230kompressor_ME2.1.csv) | Additional map definitions for binary `230k_ME21.BIN`. |
-| [TunerPro XDF](MAPPACK_230kompressor_ME2.1.xdf) | Definitions identified in the XDF header as **114.235404.04**. This is not a universal XDF for every ME2.1 version. |
 | [Original ECU binaries](Original%20Binaries/) | A collection of M111 Kompressor software versions for analysis and comparison. |
 | [Stock reference binary](230k_ME21_STOCK.BIN) | The project's stock reference file. |
 | [Tuned reference binary](230k_ME21.BIN) | The project's modified calibration for studying changes. |
@@ -43,24 +42,24 @@ The project focuses on the Bosch ME2.1-equipped M111 Kompressor engines found in
 
 These are the versions currently represented in the `Original Binaries` directory. A binary being available does not mean every table has been identified or validated.
 
-| Engine label in archive | ECU software | WinOLS definitions |
-| --- | --- | --- |
-| 230 Kompressor | `114.235034.34` | [CSV](Map%20Definitions/230Kompressor_114.235034.csv) · [KP](Map%20Definitions/230Kompressor_114.235034.kp) |
-| 230 Kompressor | `114.235035.52` | [CSV](Map%20Definitions/230Kompressor_114.235035.csv) · [KP](Map%20Definitions/230Kompressor_114.235035.kp) |
-| 230 Kompressor | `114.235153.52` | [CSV](Map%20Definitions/230Kompressor_114.235153.csv) · [KP](Map%20Definitions/230Kompressor_114.235153.kp) |
-| 200 Kompressor | `114.235355.56` | [CSV](Map%20Definitions/200Kompressor_114.235355.csv) · [KP](Map%20Definitions/200Kompressor_114.235355.kp) |
-| 230 Kompressor | `114.235404.04` | [CSV](Map%20Definitions/230Kompressor_114.235404.csv) · [KP](Map%20Definitions/230Kompressor_114.235404.kp) · [XDF](MAPPACK_230kompressor_ME2.1.xdf) |
-| 230 Kompressor | `114.235516.16` | [CSV](Map%20Definitions/230Kompressor_114.235516.csv) · [KP](Map%20Definitions/230Kompressor_114.235516.kp) |
-| 230 Kompressor | `114.235819.20` | [CSV](Map%20Definitions/230Kompressor_114.235819.csv) · [KP](Map%20Definitions/230Kompressor_114.235819.kp) |
-| 230 Kompressor | `114.236338.39` | [CSV](Map%20Definitions/230Kompressor_114.236338-114.236438.csv) · [KP](Map%20Definitions/230Kompressor_114.236338-114.236438.kp) |
-| 230 Kompressor | `114.236438.40` | [CSV](Map%20Definitions/230Kompressor_114.236338-114.236438.csv) · [KP](Map%20Definitions/230Kompressor_114.236338-114.236438.kp) |
-| 230 Kompressor | `114.236643.43` | [CSV](Map%20Definitions/230Kompressor_114.236643.csv) · [KP](Map%20Definitions/230Kompressor_114.236643.kp) |
+| Engine label in archive | ECU software | WinOLS CSV / KP | Map Definitions XDF |
+| --- | --- | --- | --- |
+| 230 Kompressor | `114.235034.34` | [CSV](Map%20Definitions/230Kompressor_114.235034.csv) · [KP](Map%20Definitions/230Kompressor_114.235034.kp) | [XDF](Map%20Definitions/230Kompressor_114.235034.xdf) |
+| 230 Kompressor | `114.235035.52` | [CSV](Map%20Definitions/230Kompressor_114.235035.csv) · [KP](Map%20Definitions/230Kompressor_114.235035.kp) | [XDF](Map%20Definitions/230Kompressor_114.235035.xdf) |
+| 230 Kompressor | `114.235153.52` | [CSV](Map%20Definitions/230Kompressor_114.235153.csv) · [KP](Map%20Definitions/230Kompressor_114.235153.kp) | [XDF](Map%20Definitions/230Kompressor_114.235153.xdf) |
+| 200 Kompressor | `114.235355.56` | [CSV](Map%20Definitions/200Kompressor_114.235355.csv) · [KP](Map%20Definitions/200Kompressor_114.235355.kp) | [XDF](Map%20Definitions/200Kompressor_114.235355.xdf) |
+| 230 Kompressor | `114.235404.04` | [CSV](Map%20Definitions/230Kompressor_114.235404.csv) · [KP](Map%20Definitions/230Kompressor_114.235404.kp) | [XDF](Map%20Definitions/230Kompressor_114.235404.xdf) |
+| 230 Kompressor | `114.235516.16` | [CSV](Map%20Definitions/230Kompressor_114.235516.csv) · [KP](Map%20Definitions/230Kompressor_114.235516.kp) | [XDF](Map%20Definitions/230Kompressor_114.235516.xdf) |
+| 230 Kompressor | `114.235819.20` | [CSV](Map%20Definitions/230Kompressor_114.235819.csv) · [KP](Map%20Definitions/230Kompressor_114.235819.kp) | [XDF](Map%20Definitions/230Kompressor_114.235819.xdf) |
+| 230 Kompressor | `114.236338.39` | [CSV](Map%20Definitions/230Kompressor_114.236338-114.236438.csv) · [KP](Map%20Definitions/230Kompressor_114.236338-114.236438.kp) | [XDF](Map%20Definitions/230Kompressor_114.236338-114.236438.xdf) |
+| 230 Kompressor | `114.236438.40` | [CSV](Map%20Definitions/230Kompressor_114.236338-114.236438.csv) · [KP](Map%20Definitions/230Kompressor_114.236338-114.236438.kp) | [XDF](Map%20Definitions/230Kompressor_114.236338-114.236438.xdf) |
+| 230 Kompressor | `114.236643.43` | [CSV](Map%20Definitions/230Kompressor_114.236643.csv) · [KP](Map%20Definitions/230Kompressor_114.236643.kp) | [XDF](Map%20Definitions/230Kompressor_114.236643.xdf) |
 
 ## Getting started
 
 1. Read and save your original ECU binary, together with its hardware and software numbers.
 2. Find the matching software version in the table above and download its definitions.
-3. In **WinOLS**, open the binary and import the matching map pack. In **TunerPro**, open the matching binary and select the appropriate XDF; the supplied XDF targets `114.235404.04`.
+3. In **WinOLS** or **TunerPro**, open the binary and import the matching map pack.
 4. Check table addresses, dimensions, axes and units before editing. Use the [comparison images](tables/) to explore differences between versions.
 5. Save changes to a separate file, verify the applicable checksums and keep a record of each calibration revision.
 
