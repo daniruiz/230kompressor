@@ -3,7 +3,7 @@
   <XDFHEADER>
     <flags>0x1</flags>
     <deftitle>230Kompressor_114.236338-114.236438 - CSV definitions</deftitle>
-    <description>Converted from 230Kompressor_114.236338-114.236438(10).csv. CSV addresses, dimensions, axis sources and conversions are preserved. Undefined axes use zero-based indices. No checksum correction included.</description>
+    <description>Synchronized from 230Kompressor_114.236338-114.236438.csv. CSV addresses, dimensions, axis sources, units and conversions are preserved. Undefined axes use zero-based indices. No checksum correction included.</description>
     <author>Daniel Ruiz de Alegria</author>
     <BASEOFFSET offset="0" subtract="0" />
     <DEFAULTS datasizeinbits="8" sigdigits="2" outputtype="1" signed="0" lsbfirst="0" float="0" />
@@ -148,6 +148,52 @@ Y: Row (index); no ROM axis in CSV; zero-based index labels</description>
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
+  <XDFTABLE uniqueid="0x001e" flags="0x0">
+    <title>Injector factor</title>
+    <description>CSV definition. File offset 0x4840; 1 columns x 1 rows.
+X: -; no ROM axis in CSV; zero-based index labels
+Y: -; no ROM axis in CSV; zero-based index labels
+Unsigned byte. Relative to supplied calibration: N/128, stock 128 = 1. Multiplies injection calculation, not a divisor or injector flow in cc/min. Code reads 0x24098 and 0x23FC4. Bank 1.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <units />
+      <indexcount>1</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <LABEL index="0" value="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <units />
+      <indexcount>1</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <LABEL index="0" value="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4840" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>x</units>
+      <decimalpl>7</decimalpl>
+      <min>0</min>
+      <max>1.9921875</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*0.0078125">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
   <XDFTABLE uniqueid="0x0004" flags="0x0">
     <title>Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)</title>
     <description>CSV definition. File offset 0x48F0; 8 columns x 4 rows.
@@ -195,8 +241,8 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
       <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x48f0" mmedelementsizebits="16" mmedrowcount="4" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>rpm</units>
       <decimalpl>0</decimalpl>
-      <min>0</min>
-      <max>65535</max>
+      <min>-100</min>
+      <max>98202.5</max>
       <outputtype>1</outputtype>
       <MATH equation="X*1.5-100">
         <VAR id="X" />
@@ -238,12 +284,12 @@ Y: RPM; ROM $4CA1; X*25</description>
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x5e5c" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>-</units>
-      <decimalpl>0</decimalpl>
+      <units>%</units>
+      <decimalpl>2</decimalpl>
       <min>0</min>
-      <max>255</max>
+      <max>100</max>
       <outputtype>1</outputtype>
-      <MATH equation="X">
+      <MATH equation="X*100/255">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
@@ -285,7 +331,7 @@ Y: RPM; ROM $4CA1; X*25</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x5f64" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
       <decimalpl>2</decimalpl>
-      <min>0.0000</min>
+      <min>0</min>
       <max>100.0110</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.3922">
@@ -330,7 +376,7 @@ Y: Load (internal); ROM $4BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x699c" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
       <decimalpl>2</decimalpl>
-      <min>-100.00000</min>
+      <min>-100</min>
       <max>99.21875</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.78125-100">
@@ -375,7 +421,7 @@ Y: Load (internal); ROM $4BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x6a9c" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
       <decimalpl>2</decimalpl>
-      <min>-100.00000</min>
+      <min>-100</min>
       <max>99.21875</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.78125-100">
@@ -420,7 +466,7 @@ Y: Load (internal); ROM $4BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x6b9c" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
       <decimalpl>2</decimalpl>
-      <min>-100.00000</min>
+      <min>-100</min>
       <max>99.21875</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.78125-100">
@@ -465,7 +511,7 @@ Y: Coolant (internal); ROM $4CF1; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x7140" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="5" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>-</units>
       <decimalpl>1</decimalpl>
-      <min>0.00</min>
+      <min>0</min>
       <max>191.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75">
@@ -510,7 +556,7 @@ Y: Load (internal); ROM $4BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x766a" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>°</units>
       <decimalpl>1</decimalpl>
-      <min>-66.00</min>
+      <min>-66</min>
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
@@ -555,7 +601,7 @@ Y: Load (internal); ROM $4BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x776a" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>°</units>
       <decimalpl>1</decimalpl>
-      <min>-66.00</min>
+      <min>-66</min>
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
@@ -600,7 +646,7 @@ Y: Load (internal); ROM $4BDD; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x786a" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>°</units>
       <decimalpl>1</decimalpl>
-      <min>-66.00</min>
+      <min>-66</min>
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
@@ -645,7 +691,7 @@ Y: Load (internal); ROM $4BDD; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x78ea" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>°</units>
       <decimalpl>1</decimalpl>
-      <min>-66.00</min>
+      <min>-66</min>
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
@@ -660,7 +706,7 @@ X: -; no ROM axis in CSV; zero-based index labels
 Y: -; no ROM axis in CSV; zero-based index labels</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
-      <units>Index</units>
+      <units />
       <indexcount>26</indexcount>
       <decimalpl>0</decimalpl>
       <outputtype>2</outputtype>
@@ -862,6 +908,52 @@ Y: Row (index); no ROM axis in CSV; zero-based index labels</description>
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
+  <XDFTABLE uniqueid="0x001f" flags="0x0">
+    <title>Injector factor</title>
+    <description>CSV definition. File offset 0x30840; 1 columns x 1 rows.
+X: -; no ROM axis in CSV; zero-based index labels
+Y: -; no ROM axis in CSV; zero-based index labels
+Unsigned byte. Relative to supplied calibration: N/128, stock 128 = 1. Multiplies injection calculation, not a divisor or injector flow in cc/min. Code reads 0x24098 and 0x23FC4. Bank 2.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <units />
+      <indexcount>1</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <LABEL index="0" value="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <units />
+      <indexcount>1</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <LABEL index="0" value="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30840" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>x</units>
+      <decimalpl>7</decimalpl>
+      <min>0</min>
+      <max>1.9921875</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*0.0078125">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
   <XDFTABLE uniqueid="0x0013" flags="0x0">
     <title>Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)</title>
     <description>CSV definition. File offset 0x308F0; 8 columns x 4 rows.
@@ -909,8 +1001,8 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
       <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x308f0" mmedelementsizebits="16" mmedrowcount="4" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>rpm</units>
       <decimalpl>0</decimalpl>
-      <min>0</min>
-      <max>65535</max>
+      <min>-100</min>
+      <max>98202.5</max>
       <outputtype>1</outputtype>
       <MATH equation="X*1.5-100">
         <VAR id="X" />
@@ -952,12 +1044,12 @@ Y: RPM; ROM $30CA1; X*25</description>
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x31e5c" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>-</units>
-      <decimalpl>0</decimalpl>
+      <units>%</units>
+      <decimalpl>2</decimalpl>
       <min>0</min>
-      <max>255</max>
+      <max>100</max>
       <outputtype>1</outputtype>
-      <MATH equation="X">
+      <MATH equation="X*100/255">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
@@ -999,7 +1091,7 @@ Y: RPM; ROM $30CA1; X*25</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x31f64" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
       <decimalpl>2</decimalpl>
-      <min>0.0000</min>
+      <min>0</min>
       <max>100.0110</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.3922">
@@ -1044,7 +1136,7 @@ Y: Load (internal); ROM $30BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x3299c" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
       <decimalpl>2</decimalpl>
-      <min>-100.00000</min>
+      <min>-100</min>
       <max>99.21875</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.78125-100">
@@ -1089,7 +1181,7 @@ Y: Load (internal); ROM $30BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x32a9c" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
       <decimalpl>2</decimalpl>
-      <min>-100.00000</min>
+      <min>-100</min>
       <max>99.21875</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.78125-100">
@@ -1134,7 +1226,7 @@ Y: Load (internal); ROM $30BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x32b9c" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
       <decimalpl>2</decimalpl>
-      <min>-100.00000</min>
+      <min>-100</min>
       <max>99.21875</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.78125-100">
@@ -1179,7 +1271,7 @@ Y: Coolant (internal); ROM $30CF1; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x33140" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="5" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>-</units>
       <decimalpl>1</decimalpl>
-      <min>0.00</min>
+      <min>0</min>
       <max>191.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75">
@@ -1224,7 +1316,7 @@ Y: Load (internal); ROM $30BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x3366a" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>-</units>
       <decimalpl>1</decimalpl>
-      <min>-66.00</min>
+      <min>-66</min>
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
@@ -1269,7 +1361,7 @@ Y: Load (internal); ROM $30BF5; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x3376a" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>°</units>
       <decimalpl>1</decimalpl>
-      <min>-66.00</min>
+      <min>-66</min>
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
@@ -1314,7 +1406,7 @@ Y: Load (internal); ROM $30BDD; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x3386a" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>°</units>
       <decimalpl>2</decimalpl>
-      <min>-66.00</min>
+      <min>-66</min>
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
@@ -1359,7 +1451,7 @@ Y: Load (internal); ROM $30BDD; X</description>
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x338ea" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>°</units>
       <decimalpl>2</decimalpl>
-      <min>-66.00</min>
+      <min>-66</min>
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
