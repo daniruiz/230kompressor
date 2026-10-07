@@ -6,7 +6,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "1-======= MAP 1 =======/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -40,7 +40,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4128",
-      "image": "2-Launch Rev Limiter\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "2-Launch Rev Limiter/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -75,7 +75,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$4134",
-      "image": "3-Rev Limiter\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "3-Rev Limiter/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 5825.0,
       "maximum": 6025.0,
       "axes": {
@@ -111,7 +111,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4874",
-      "image": "4-Injector factor\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "4-Injector factor/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -145,7 +145,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48F0",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -189,9 +189,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5F7E",
-      "image": "6-Warm-up Bypass command minimum\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -253,7 +253,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$6186",
-      "image": "7-Boost Bypass Valve position\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "7-Boost Bypass Valve position/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -317,7 +317,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$6B12",
-      "image": "8-Injection (Main)\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "8-Injection (Main)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -3.90625,
       "maximum": 17.96875,
       "axes": {
@@ -381,7 +381,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6C12",
-      "image": "9-Injection\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "9-Injection/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -445,7 +445,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6D12",
-      "image": "10-Injection (Limp)\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "10-Injection (Limp)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -509,7 +509,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$72CE",
-      "image": "11-Temp Ignition Retard\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "11-Temp Ignition Retard/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -557,7 +557,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$77DA",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -621,7 +621,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$78DA",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -685,7 +685,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$79DA",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -741,7 +741,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$7A5A",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -33.75,
       "maximum": -1.5,
       "axes": {
@@ -797,7 +797,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E29F",
-      "image": "16-SW Version\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "16-SW Version/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 46.0,
       "maximum": 55.0,
       "axes": {
@@ -856,7 +856,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "17-======= MAP 2 =======/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -890,7 +890,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30128",
-      "image": "18-Launch Rev Limiter\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "18-Launch Rev Limiter/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -925,7 +925,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$30134",
-      "image": "19-Rev Limiter\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "19-Rev Limiter/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 5825.0,
       "maximum": 6025.0,
       "axes": {
@@ -961,7 +961,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$30874",
-      "image": "20-Injector factor\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "20-Injector factor/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -995,7 +995,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$308F0",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -1039,9 +1039,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31F7E",
-      "image": "22-Warm-up Bypass command minimum\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -1103,7 +1103,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$32186",
-      "image": "23-Boost Bypass Valve position\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "23-Boost Bypass Valve position/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -1167,7 +1167,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$32B12",
-      "image": "24-Injection\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "24-Injection/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -4.6875,
       "maximum": 19.53125,
       "axes": {
@@ -1231,7 +1231,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32C12",
-      "image": "25-Injection\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "25-Injection/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -1295,7 +1295,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32D12",
-      "image": "26-Injection\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "26-Injection/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -1359,7 +1359,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$332CE",
-      "image": "27-Temp Ignition Retard\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "27-Temp Ignition Retard/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -1407,7 +1407,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$337DA",
-      "image": "28-Spark advance at middle throttle\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "28-Spark advance at middle throttle/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -37.5,
       "maximum": -5.25,
       "axes": {
@@ -1471,7 +1471,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$338DA",
-      "image": "29-Spark advance at middle throttle\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "29-Spark advance at middle throttle/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -1535,7 +1535,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$339DA",
-      "image": "30-Spark advance at Wide Open Throttle\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -1591,7 +1591,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33A5A",
-      "image": "31-Spark advance at Wide Open Throttle\\9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -33.75,
       "maximum": -1.5,
       "axes": {
@@ -1647,7 +1647,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "1-======= MAP 1 =======/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -1681,7 +1681,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "2-Launch Rev Limiter/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -1716,7 +1716,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "3-Rev Limiter/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -1753,7 +1753,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$47B2",
-      "image": "4-Injector factor\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "4-Injector factor/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -1787,7 +1787,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$482E",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -1831,9 +1831,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E06",
-      "image": "6-Warm-up Bypass command minimum\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -1895,7 +1895,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$600E",
-      "image": "7-Boost Bypass Valve position\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "7-Boost Bypass Valve position/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -1959,7 +1959,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$699E",
-      "image": "8-Injection (Main)\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "8-Injection (Main)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -3.90625,
       "maximum": 17.96875,
       "axes": {
@@ -2023,7 +2023,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6A9E",
-      "image": "9-Injection\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "9-Injection/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -2087,7 +2087,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6B9E",
-      "image": "10-Injection (Limp)\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "10-Injection (Limp)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -2151,7 +2151,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$715A",
-      "image": "11-Temp Ignition Retard\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "11-Temp Ignition Retard/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -2199,7 +2199,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$7666",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -2263,7 +2263,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$7766",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -2327,7 +2327,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$7866",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -2383,7 +2383,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$78E6",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -32.25,
       "maximum": -0.75,
       "axes": {
@@ -2439,7 +2439,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E485",
-      "image": "16-SW Version\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "16-SW Version/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 46.0,
       "maximum": 55.0,
       "axes": {
@@ -2498,7 +2498,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "17-======= MAP 2 =======/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -2532,7 +2532,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30062",
-      "image": "18-Launch Rev Limiter\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "18-Launch Rev Limiter/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -2567,7 +2567,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$3006E",
-      "image": "19-Rev Limiter\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "19-Rev Limiter/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -2604,7 +2604,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$307B2",
-      "image": "20-Injector factor\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "20-Injector factor/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -2638,7 +2638,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$3082E",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -2682,9 +2682,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31E06",
-      "image": "22-Warm-up Bypass command minimum\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -2746,7 +2746,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$3200E",
-      "image": "23-Boost Bypass Valve position\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "23-Boost Bypass Valve position/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -2810,7 +2810,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$3299E",
-      "image": "24-Injection\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "24-Injection/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -4.6875,
       "maximum": 19.53125,
       "axes": {
@@ -2874,7 +2874,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32A9E",
-      "image": "25-Injection\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "25-Injection/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -2938,7 +2938,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32B9E",
-      "image": "26-Injection\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "26-Injection/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -3002,7 +3002,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$3315A",
-      "image": "27-Temp Ignition Retard\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "27-Temp Ignition Retard/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -3050,7 +3050,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$33666",
-      "image": "28-Spark advance at middle throttle\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "28-Spark advance at middle throttle/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -37.5,
       "maximum": -5.25,
       "axes": {
@@ -3114,7 +3114,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$33766",
-      "image": "29-Spark advance at middle throttle\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "29-Spark advance at middle throttle/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -3178,7 +3178,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33866",
-      "image": "30-Spark advance at Wide Open Throttle\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -3234,7 +3234,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$338E6",
-      "image": "31-Spark advance at Wide Open Throttle\\9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -33.75,
       "maximum": -1.5,
       "axes": {
@@ -3290,7 +3290,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "1-======= MAP 1 =======/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -3324,7 +3324,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "2-Launch Rev Limiter/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -3359,7 +3359,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "3-Rev Limiter/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -3396,7 +3396,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$47B2",
-      "image": "4-Injector factor\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "4-Injector factor/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -3430,7 +3430,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$482E",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -3474,9 +3474,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E06",
-      "image": "6-Warm-up Bypass command minimum\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -3538,7 +3538,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$600E",
-      "image": "7-Boost Bypass Valve position\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "7-Boost Bypass Valve position/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -3602,7 +3602,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$699E",
-      "image": "8-Injection (Main)\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "8-Injection (Main)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -3.90625,
       "maximum": 17.96875,
       "axes": {
@@ -3666,7 +3666,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6A9E",
-      "image": "9-Injection\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "9-Injection/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -3730,7 +3730,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6B9E",
-      "image": "10-Injection (Limp)\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "10-Injection (Limp)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -3794,7 +3794,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$715A",
-      "image": "11-Temp Ignition Retard\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "11-Temp Ignition Retard/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -3842,7 +3842,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$7666",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -3906,7 +3906,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$7766",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -3970,7 +3970,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$7866",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -4026,7 +4026,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$78E6",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -32.25,
       "maximum": -0.75,
       "axes": {
@@ -4082,7 +4082,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E485",
-      "image": "16-SW Version\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "16-SW Version/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 46.0,
       "maximum": 55.0,
       "axes": {
@@ -4141,7 +4141,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "17-======= MAP 2 =======/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -4175,7 +4175,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30062",
-      "image": "18-Launch Rev Limiter\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "18-Launch Rev Limiter/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -4210,7 +4210,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$3006E",
-      "image": "19-Rev Limiter\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "19-Rev Limiter/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -4247,7 +4247,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$307B2",
-      "image": "20-Injector factor\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "20-Injector factor/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -4281,7 +4281,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$3082E",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -4325,9 +4325,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31E06",
-      "image": "22-Warm-up Bypass command minimum\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -4389,7 +4389,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$3200E",
-      "image": "23-Boost Bypass Valve position\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "23-Boost Bypass Valve position/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -4453,7 +4453,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$3299E",
-      "image": "24-Injection\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "24-Injection/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -4.6875,
       "maximum": 19.53125,
       "axes": {
@@ -4517,7 +4517,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32A9E",
-      "image": "25-Injection\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "25-Injection/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -4581,7 +4581,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32B9E",
-      "image": "26-Injection\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "26-Injection/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -4645,7 +4645,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$3315A",
-      "image": "27-Temp Ignition Retard\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "27-Temp Ignition Retard/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -4693,7 +4693,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$33666",
-      "image": "28-Spark advance at middle throttle\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "28-Spark advance at middle throttle/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -37.5,
       "maximum": -5.25,
       "axes": {
@@ -4757,7 +4757,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$33766",
-      "image": "29-Spark advance at middle throttle\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "29-Spark advance at middle throttle/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -4821,7 +4821,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33866",
-      "image": "30-Spark advance at Wide Open Throttle\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -4877,7 +4877,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$338E6",
-      "image": "31-Spark advance at Wide Open Throttle\\9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -33.75,
       "maximum": -1.5,
       "axes": {
@@ -4933,7 +4933,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "1-======= MAP 1 =======/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -4967,7 +4967,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "2-Launch Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -5002,7 +5002,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "3-Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -5039,7 +5039,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$47B2",
-      "image": "4-Injector factor\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "4-Injector factor/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -5073,7 +5073,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$482E",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -5117,9 +5117,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E06",
-      "image": "6-Warm-up Bypass command minimum\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -5181,7 +5181,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$600E",
-      "image": "7-Boost Bypass Valve position\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "7-Boost Bypass Valve position/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -5245,7 +5245,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$69A6",
-      "image": "8-Injection (Main)\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "8-Injection (Main)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -3.90625,
       "maximum": 17.96875,
       "axes": {
@@ -5309,7 +5309,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6AA6",
-      "image": "9-Injection\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "9-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -5373,7 +5373,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6BA6",
-      "image": "10-Injection (Limp)\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "10-Injection (Limp)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -5437,7 +5437,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$7162",
-      "image": "11-Temp Ignition Retard\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "11-Temp Ignition Retard/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -5485,7 +5485,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$766E",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -5549,7 +5549,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$776E",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -5613,7 +5613,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$786E",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -5669,7 +5669,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$78EE",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -32.25,
       "maximum": -0.75,
       "axes": {
@@ -5725,7 +5725,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E485",
-      "image": "16-SW Version\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "16-SW Version/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 46.0,
       "maximum": 55.0,
       "axes": {
@@ -5784,7 +5784,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "17-======= MAP 2 =======/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -5818,7 +5818,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30062",
-      "image": "18-Launch Rev Limiter\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "18-Launch Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -5853,7 +5853,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$3006E",
-      "image": "19-Rev Limiter\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "19-Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -5890,7 +5890,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$307B2",
-      "image": "20-Injector factor\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "20-Injector factor/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -5924,7 +5924,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$3082E",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -5968,9 +5968,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31E06",
-      "image": "22-Warm-up Bypass command minimum\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -6032,7 +6032,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$3200E",
-      "image": "23-Boost Bypass Valve position\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "23-Boost Bypass Valve position/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -6096,7 +6096,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$329A6",
-      "image": "24-Injection\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "24-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -4.6875,
       "maximum": 14.84375,
       "axes": {
@@ -6160,7 +6160,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32AA6",
-      "image": "25-Injection\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "25-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -6224,7 +6224,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32BA6",
-      "image": "26-Injection\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "26-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -6288,7 +6288,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$33162",
-      "image": "27-Temp Ignition Retard\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "27-Temp Ignition Retard/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -6336,7 +6336,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$3366E",
-      "image": "28-Spark advance at middle throttle\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "28-Spark advance at middle throttle/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -6400,7 +6400,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$3376E",
-      "image": "29-Spark advance at middle throttle\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "29-Spark advance at middle throttle/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -6464,7 +6464,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$3386E",
-      "image": "30-Spark advance at Wide Open Throttle\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -6520,7 +6520,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$338EE",
-      "image": "31-Spark advance at Wide Open Throttle\\9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -6576,7 +6576,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "1-======= MAP 1 =======/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -6610,7 +6610,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "2-Launch Rev Limiter/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -6645,7 +6645,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "3-Rev Limiter/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -6682,7 +6682,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$47B8",
-      "image": "4-Injector factor\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "4-Injector factor/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -6716,7 +6716,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$4832",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -6760,9 +6760,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5D10",
-      "image": "6-Warm-up Bypass command minimum\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
-      "maximum": 215.0,
+      "maximum": 84.31372549019606,
       "axes": {
         "x": {
           "source": "eRom",
@@ -6824,7 +6824,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5F18",
-      "image": "7-Boost Bypass Valve position\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "7-Boost Bypass Valve position/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -6888,7 +6888,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$68B0",
-      "image": "8-Injection (Main)\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "8-Injection (Main)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -6952,7 +6952,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$69B0",
-      "image": "9-Injection\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "9-Injection/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -7016,7 +7016,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6AB0",
-      "image": "10-Injection (Limp)\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "10-Injection (Limp)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -7080,7 +7080,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$710C",
-      "image": "11-Temp Ignition Retard\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "11-Temp Ignition Retard/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -7128,7 +7128,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$7618",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -7192,7 +7192,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$7718",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -7256,7 +7256,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$7818",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -7312,7 +7312,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$7898",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -7368,7 +7368,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E489",
-      "image": "16-SW Version\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "16-SW Version/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 46.0,
       "maximum": 55.0,
       "axes": {
@@ -7427,7 +7427,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "17-======= MAP 2 =======/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -7461,7 +7461,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30062",
-      "image": "18-Launch Rev Limiter\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "18-Launch Rev Limiter/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -7496,7 +7496,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$3006E",
-      "image": "19-Rev Limiter\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "19-Rev Limiter/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -7533,7 +7533,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$307B8",
-      "image": "20-Injector factor\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "20-Injector factor/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -7567,7 +7567,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$30832",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -7611,9 +7611,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31D10",
-      "image": "22-Warm-up Bypass command minimum\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -7675,7 +7675,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$31F18",
-      "image": "23-Boost Bypass Valve position\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "23-Boost Bypass Valve position/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -7739,7 +7739,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$328B0",
-      "image": "24-Injection\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "24-Injection/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -4.6875,
       "maximum": 14.84375,
       "axes": {
@@ -7803,7 +7803,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$329B0",
-      "image": "25-Injection\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "25-Injection/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -7867,7 +7867,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32AB0",
-      "image": "26-Injection\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "26-Injection/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -7931,7 +7931,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$3310C",
-      "image": "27-Temp Ignition Retard\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "27-Temp Ignition Retard/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -7979,7 +7979,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$33618",
-      "image": "28-Spark advance at middle throttle\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "28-Spark advance at middle throttle/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -8043,7 +8043,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$33718",
-      "image": "29-Spark advance at middle throttle\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "29-Spark advance at middle throttle/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -8107,7 +8107,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33818",
-      "image": "30-Spark advance at Wide Open Throttle\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -8163,7 +8163,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33898",
-      "image": "31-Spark advance at Wide Open Throttle\\9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -8219,7 +8219,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "1-======= MAP 1 =======/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -8253,7 +8253,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "2-Launch Rev Limiter/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -8288,7 +8288,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "3-Rev Limiter/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -8325,7 +8325,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4852",
-      "image": "4-Injector factor\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "4-Injector factor/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -8359,7 +8359,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48E8",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -8403,9 +8403,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5D5A",
-      "image": "6-Warm-up Bypass command minimum\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
-      "maximum": 215.0,
+      "maximum": 84.31372549019606,
       "axes": {
         "x": {
           "source": "eRom",
@@ -8467,7 +8467,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5EE2",
-      "image": "7-Boost Bypass Valve position\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "7-Boost Bypass Valve position/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -8531,7 +8531,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$69D2",
-      "image": "8-Injection (Main)\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "8-Injection (Main)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -8595,7 +8595,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6AD2",
-      "image": "9-Injection\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "9-Injection/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -8659,7 +8659,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6BD2",
-      "image": "10-Injection (Limp)\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "10-Injection (Limp)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -8723,7 +8723,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$7206",
-      "image": "11-Temp Ignition Retard\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "11-Temp Ignition Retard/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -8768,7 +8768,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$76A8",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -8832,7 +8832,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$77A8",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -8896,7 +8896,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$78A8",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -8952,7 +8952,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$7928",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -9008,7 +9008,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E491",
-      "image": "16-SW Version\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "16-SW Version/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 46.0,
       "maximum": 56.0,
       "axes": {
@@ -9067,7 +9067,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "17-======= MAP 2 =======/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -9101,7 +9101,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30062",
-      "image": "18-Launch Rev Limiter\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "18-Launch Rev Limiter/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -9136,7 +9136,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$3006E",
-      "image": "19-Rev Limiter\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "19-Rev Limiter/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -9173,7 +9173,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$30852",
-      "image": "20-Injector factor\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "20-Injector factor/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -9207,7 +9207,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$308E8",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -9251,9 +9251,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31D5A",
-      "image": "22-Warm-up Bypass command minimum\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -9315,7 +9315,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$31EE2",
-      "image": "23-Boost Bypass Valve position\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "23-Boost Bypass Valve position/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -9379,7 +9379,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$329D2",
-      "image": "24-Injection\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "24-Injection/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -5.46875,
       "maximum": 14.84375,
       "axes": {
@@ -9443,7 +9443,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32AD2",
-      "image": "25-Injection\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "25-Injection/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -9507,7 +9507,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32BD2",
-      "image": "26-Injection\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "26-Injection/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -9571,7 +9571,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$33206",
-      "image": "27-Temp Ignition Retard\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "27-Temp Ignition Retard/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -9616,7 +9616,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$336A8",
-      "image": "28-Spark advance at middle throttle\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "28-Spark advance at middle throttle/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -9680,7 +9680,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$337A8",
-      "image": "29-Spark advance at middle throttle\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "29-Spark advance at middle throttle/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -9744,7 +9744,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$338A8",
-      "image": "30-Spark advance at Wide Open Throttle\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -9800,7 +9800,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33928",
-      "image": "31-Spark advance at Wide Open Throttle\\9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -9856,7 +9856,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "1-======= MAP 1 =======/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -9890,7 +9890,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "2-Launch Rev Limiter/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -9925,7 +9925,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "3-Rev Limiter/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -9962,7 +9962,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$485A",
-      "image": "4-Injector factor\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "4-Injector factor/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -9996,7 +9996,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48F0",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -10040,9 +10040,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5D72",
-      "image": "6-Warm-up Bypass command minimum\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
-      "maximum": 215.0,
+      "maximum": 84.31372549019606,
       "axes": {
         "x": {
           "source": "eRom",
@@ -10104,7 +10104,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5EFA",
-      "image": "7-Boost Bypass Valve position\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "7-Boost Bypass Valve position/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -10168,7 +10168,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$69B2",
-      "image": "8-Injection (Main)\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "8-Injection (Main)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -10232,7 +10232,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6AB2",
-      "image": "9-Injection\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "9-Injection/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -10296,7 +10296,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6BB2",
-      "image": "10-Injection (Limp)\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "10-Injection (Limp)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -10360,7 +10360,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$71E6",
-      "image": "11-Temp Ignition Retard\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "11-Temp Ignition Retard/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -10405,7 +10405,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$7688",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -10469,7 +10469,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$7788",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -10533,7 +10533,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$7888",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -10589,7 +10589,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$7908",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -32.25,
       "maximum": -0.75,
       "axes": {
@@ -10645,7 +10645,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E491",
-      "image": "16-SW Version\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "16-SW Version/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 46.0,
       "maximum": 57.0,
       "axes": {
@@ -10704,7 +10704,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "17-======= MAP 2 =======/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -10738,7 +10738,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30062",
-      "image": "18-Launch Rev Limiter\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "18-Launch Rev Limiter/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -10773,7 +10773,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$3006E",
-      "image": "19-Rev Limiter\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "19-Rev Limiter/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -10810,7 +10810,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$3085A",
-      "image": "20-Injector factor\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "20-Injector factor/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -10844,7 +10844,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$308F0",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -10888,9 +10888,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31D72",
-      "image": "22-Warm-up Bypass command minimum\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -10952,7 +10952,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$31EFA",
-      "image": "23-Boost Bypass Valve position\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "23-Boost Bypass Valve position/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -11016,7 +11016,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$329B2",
-      "image": "24-Injection\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "24-Injection/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -5.46875,
       "maximum": 14.84375,
       "axes": {
@@ -11080,7 +11080,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32AB2",
-      "image": "25-Injection\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "25-Injection/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -11144,7 +11144,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32BB2",
-      "image": "26-Injection\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "26-Injection/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -11208,7 +11208,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$331E6",
-      "image": "27-Temp Ignition Retard\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "27-Temp Ignition Retard/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -11253,7 +11253,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$33688",
-      "image": "28-Spark advance at middle throttle\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "28-Spark advance at middle throttle/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -11317,7 +11317,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$33788",
-      "image": "29-Spark advance at middle throttle\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "29-Spark advance at middle throttle/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -11381,7 +11381,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33888",
-      "image": "30-Spark advance at Wide Open Throttle\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -11437,7 +11437,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33908",
-      "image": "31-Spark advance at Wide Open Throttle\\9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -11493,7 +11493,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "1-======= MAP 1 =======/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -11527,7 +11527,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4056",
-      "image": "2-Launch Rev Limiter\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "2-Launch Rev Limiter/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -11562,7 +11562,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$4062",
-      "image": "3-Rev Limiter\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "3-Rev Limiter/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -11599,7 +11599,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4840",
-      "image": "4-Injector factor\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "4-Injector factor/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -11633,7 +11633,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48F0",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -11677,9 +11677,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E5C",
-      "image": "6-Warm-up Bypass command minimum\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
-      "maximum": 215.0,
+      "maximum": 84.31372549019606,
       "axes": {
         "x": {
           "source": "eRom",
@@ -11741,7 +11741,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5F64",
-      "image": "7-Boost Bypass Valve position\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "7-Boost Bypass Valve position/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -11805,7 +11805,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$699C",
-      "image": "8-Injection (Main)\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "8-Injection (Main)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -11869,7 +11869,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6A9C",
-      "image": "9-Injection\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "9-Injection/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -11933,7 +11933,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6B9C",
-      "image": "10-Injection (Limp)\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "10-Injection (Limp)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -11997,7 +11997,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$7140",
-      "image": "11-Temp Ignition Retard\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "11-Temp Ignition Retard/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -12042,7 +12042,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$766A",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -12106,7 +12106,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$776A",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -12170,7 +12170,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$786A",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -12226,7 +12226,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$78EA",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -32.25,
       "maximum": -0.75,
       "axes": {
@@ -12282,7 +12282,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E4BA",
-      "image": "16-SW Version\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "16-SW Version/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 32.0,
       "maximum": 57.0,
       "axes": {
@@ -12341,7 +12341,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "17-======= MAP 2 =======/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -12375,7 +12375,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30056",
-      "image": "18-Launch Rev Limiter\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "18-Launch Rev Limiter/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -12410,7 +12410,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$30062",
-      "image": "19-Rev Limiter\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "19-Rev Limiter/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -12447,7 +12447,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$30840",
-      "image": "20-Injector factor\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "20-Injector factor/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -12481,7 +12481,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$308F0",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -12525,9 +12525,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31E5C",
-      "image": "22-Warm-up Bypass command minimum\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -12589,7 +12589,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$31F64",
-      "image": "23-Boost Bypass Valve position\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "23-Boost Bypass Valve position/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -12653,7 +12653,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$3299C",
-      "image": "24-Injection\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "24-Injection/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -5.46875,
       "maximum": 14.84375,
       "axes": {
@@ -12717,7 +12717,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32A9C",
-      "image": "25-Injection\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "25-Injection/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -12781,7 +12781,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32B9C",
-      "image": "26-Injection\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "26-Injection/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -12845,7 +12845,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$33140",
-      "image": "27-Temp Ignition Retard\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "27-Temp Ignition Retard/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -12890,7 +12890,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$3366A",
-      "image": "28-Spark advance at middle throttle\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "28-Spark advance at middle throttle/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -12954,7 +12954,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$3376A",
-      "image": "29-Spark advance at middle throttle\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "29-Spark advance at middle throttle/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -13018,7 +13018,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$3386A",
-      "image": "30-Spark advance at Wide Open Throttle\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -13074,7 +13074,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$338EA",
-      "image": "31-Spark advance at Wide Open Throttle\\9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -13130,7 +13130,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "1-======= MAP 1 =======/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -13164,7 +13164,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4056",
-      "image": "2-Launch Rev Limiter\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "2-Launch Rev Limiter/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -13199,7 +13199,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$4062",
-      "image": "3-Rev Limiter\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "3-Rev Limiter/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -13236,7 +13236,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4840",
-      "image": "4-Injector factor\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "4-Injector factor/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -13270,7 +13270,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48F0",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -13314,9 +13314,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E5C",
-      "image": "6-Warm-up Bypass command minimum\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
-      "maximum": 215.0,
+      "maximum": 84.31372549019606,
       "axes": {
         "x": {
           "source": "eRom",
@@ -13378,7 +13378,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5F64",
-      "image": "7-Boost Bypass Valve position\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "7-Boost Bypass Valve position/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -13442,7 +13442,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$699C",
-      "image": "8-Injection (Main)\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "8-Injection (Main)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -13506,7 +13506,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6A9C",
-      "image": "9-Injection\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "9-Injection/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -13570,7 +13570,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6B9C",
-      "image": "10-Injection (Limp)\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "10-Injection (Limp)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -13634,7 +13634,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$7140",
-      "image": "11-Temp Ignition Retard\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "11-Temp Ignition Retard/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -13679,7 +13679,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$766A",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -13743,7 +13743,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$776A",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -13807,7 +13807,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$786A",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -13863,7 +13863,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$78EA",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -13919,7 +13919,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$E4BA",
-      "image": "16-SW Version\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "16-SW Version/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 32.0,
       "maximum": 56.0,
       "axes": {
@@ -13978,7 +13978,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "17-======= MAP 2 =======/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -14012,7 +14012,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30056",
-      "image": "18-Launch Rev Limiter\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "18-Launch Rev Limiter/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -14047,7 +14047,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$30062",
-      "image": "19-Rev Limiter\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "19-Rev Limiter/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -14084,7 +14084,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$30840",
-      "image": "20-Injector factor\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "20-Injector factor/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -14118,7 +14118,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$308F0",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -14162,9 +14162,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31E5C",
-      "image": "22-Warm-up Bypass command minimum\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -14226,7 +14226,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$31F64",
-      "image": "23-Boost Bypass Valve position\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "23-Boost Bypass Valve position/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -14290,7 +14290,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$3299C",
-      "image": "24-Injection\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "24-Injection/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -5.46875,
       "maximum": 14.84375,
       "axes": {
@@ -14354,7 +14354,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32A9C",
-      "image": "25-Injection\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "25-Injection/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -14418,7 +14418,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32B9C",
-      "image": "26-Injection\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "26-Injection/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -14482,7 +14482,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$33140",
-      "image": "27-Temp Ignition Retard\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "27-Temp Ignition Retard/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -14527,7 +14527,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$3366A",
-      "image": "28-Spark advance at middle throttle\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "28-Spark advance at middle throttle/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -14591,7 +14591,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$3376A",
-      "image": "29-Spark advance at middle throttle\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "29-Spark advance at middle throttle/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -14655,7 +14655,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$3386A",
-      "image": "30-Spark advance at Wide Open Throttle\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -14711,7 +14711,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$338EA",
-      "image": "31-Spark advance at Wide Open Throttle\\9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -14767,7 +14767,7 @@
       "position": 1,
       "name": "======= MAP 1 =======",
       "address": "$3FFD",
-      "image": "1-======= MAP 1 =======\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "1-======= MAP 1 =======/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -14801,7 +14801,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4056",
-      "image": "2-Launch Rev Limiter\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "2-Launch Rev Limiter/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -14836,7 +14836,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$4062",
-      "image": "3-Rev Limiter\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "3-Rev Limiter/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -14873,7 +14873,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4846",
-      "image": "4-Injector factor\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "4-Injector factor/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -14907,7 +14907,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$4916",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -14951,9 +14951,9 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E8E",
-      "image": "6-Warm-up Bypass command minimum\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "6-Warm-up Bypass command minimum/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
-      "maximum": 215.0,
+      "maximum": 84.31372549019606,
       "axes": {
         "x": {
           "source": "eRom",
@@ -15015,7 +15015,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5F96",
-      "image": "7-Boost Bypass Valve position\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "7-Boost Bypass Valve position/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -15079,7 +15079,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$69D6",
-      "image": "8-Injection (Main)\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "8-Injection (Main)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -15143,7 +15143,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6AD6",
-      "image": "9-Injection\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "9-Injection/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -15207,7 +15207,7 @@
       "position": 10,
       "name": "Injection (Limp)",
       "address": "$6BD6",
-      "image": "10-Injection (Limp)\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "10-Injection (Limp)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -15271,7 +15271,7 @@
       "position": 11,
       "name": "Temp Ignition Retard",
       "address": "$717A",
-      "image": "11-Temp Ignition Retard\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "11-Temp Ignition Retard/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -15316,7 +15316,7 @@
       "position": 12,
       "name": "Spark advance at middle throttle (Main loaded)",
       "address": "$76A4",
-      "image": "12-Spark advance at middle throttle (Main loaded)\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "12-Spark advance at middle throttle (Main loaded)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -15380,7 +15380,7 @@
       "position": 13,
       "name": "Spark advance at middle throttle (Main unloaded)",
       "address": "$77A4",
-      "image": "13-Spark advance at middle throttle (Main unloaded)\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "13-Spark advance at middle throttle (Main unloaded)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -15444,7 +15444,7 @@
       "position": 14,
       "name": "Spark advance at Wide Open Throttle (Main)",
       "address": "$78A4",
-      "image": "14-Spark advance at Wide Open Throttle (Main)\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "14-Spark advance at Wide Open Throttle (Main)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -36.0,
       "maximum": -1.5,
       "axes": {
@@ -15500,7 +15500,7 @@
       "position": 15,
       "name": "Spark advance at Wide Open Throttle (Same as Main)",
       "address": "$7924",
-      "image": "15-Spark advance at Wide Open Throttle (Same as Main)\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "15-Spark advance at Wide Open Throttle (Same as Main)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -32.25,
       "maximum": -0.75,
       "axes": {
@@ -15556,7 +15556,7 @@
       "position": 16,
       "name": "SW Version",
       "address": "$D4CF",
-      "image": "16-SW Version\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "16-SW Version/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 46.0,
       "maximum": 55.0,
       "axes": {
@@ -15615,7 +15615,7 @@
       "position": 17,
       "name": "======= MAP 2 =======",
       "address": "$30000",
-      "image": "17-======= MAP 2 =======\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "17-======= MAP 2 =======/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -15649,7 +15649,7 @@
       "position": 18,
       "name": "Launch Rev Limiter",
       "address": "$30056",
-      "image": "18-Launch Rev Limiter\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "18-Launch Rev Limiter/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -15684,7 +15684,7 @@
       "position": 19,
       "name": "Rev Limiter",
       "address": "$30062",
-      "image": "19-Rev Limiter\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "19-Rev Limiter/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -15721,7 +15721,7 @@
       "position": 20,
       "name": "Injector factor",
       "address": "$30846",
-      "image": "20-Injector factor\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "20-Injector factor/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -15755,7 +15755,7 @@
       "position": 21,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$30916",
-      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "21-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -15799,9 +15799,9 @@
       "position": 22,
       "name": "Warm-up Bypass command minimum",
       "address": "$31E8E",
-      "image": "22-Warm-up Bypass command minimum\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "22-Warm-up Bypass command minimum/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
-      "maximum": 222.0,
+      "maximum": 87.05882352941175,
       "axes": {
         "x": {
           "source": "eRom",
@@ -15863,7 +15863,7 @@
       "position": 23,
       "name": "Boost Bypass Valve position",
       "address": "$31F96",
-      "image": "23-Boost Bypass Valve position\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "23-Boost Bypass Valve position/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -15927,7 +15927,7 @@
       "position": 24,
       "name": "Injection",
       "address": "$329D6",
-      "image": "24-Injection\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "24-Injection/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -5.46875,
       "maximum": 14.84375,
       "axes": {
@@ -15991,7 +15991,7 @@
       "position": 25,
       "name": "Injection",
       "address": "$32AD6",
-      "image": "25-Injection\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "25-Injection/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -7.8125,
       "maximum": 7.8125,
       "axes": {
@@ -16055,7 +16055,7 @@
       "position": 26,
       "name": "Injection",
       "address": "$32BD6",
-      "image": "26-Injection\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "26-Injection/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -10.15625,
       "maximum": 14.84375,
       "axes": {
@@ -16119,7 +16119,7 @@
       "position": 27,
       "name": "Temp Ignition Retard",
       "address": "$3317A",
-      "image": "27-Temp Ignition Retard\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "27-Temp Ignition Retard/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
       "maximum": 14.25,
       "axes": {
@@ -16164,7 +16164,7 @@
       "position": 28,
       "name": "Spark advance at middle throttle",
       "address": "$336A4",
-      "image": "28-Spark advance at middle throttle\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "28-Spark advance at middle throttle/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
@@ -16228,7 +16228,7 @@
       "position": 29,
       "name": "Spark advance at middle throttle",
       "address": "$337A4",
-      "image": "29-Spark advance at middle throttle\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "29-Spark advance at middle throttle/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -39.75,
       "maximum": -1.5,
       "axes": {
@@ -16292,7 +16292,7 @@
       "position": 30,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$338A4",
-      "image": "30-Spark advance at Wide Open Throttle\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "30-Spark advance at Wide Open Throttle/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -36.0,
       "maximum": -4.5,
       "axes": {
@@ -16348,7 +16348,7 @@
       "position": 31,
       "name": "Spark advance at Wide Open Throttle",
       "address": "$33924",
-      "image": "31-Spark advance at Wide Open Throttle\\9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "31-Spark advance at Wide Open Throttle/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -39.75,
       "maximum": -3.0,
       "axes": {
