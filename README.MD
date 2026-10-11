@@ -108,22 +108,25 @@ The definitions include ignition correction associated with coolant and intake a
 
 ## 230 Kompressor tuning
 
-### STAGE 1 (~210-220hp)
+### STAGE 1 (~220hp)
 - 218mm crankshaft pulley
 - Cold air intake
 - Exhaust
 - CAT delete (optional)
 - ECU tune
 
-### STAGE 2 (~230-240hp)
+### STAGE 2 (~220-230hp)
 - [Ported supercharger](https://www.benzworld.org/threads/home-port-job-of-the-eaton-m62-s-c.1516156/)
 - Intercooler
 - Remove the MAF and throttle body screens
 - Wideband oxygen sensor
 - 320cc Bosch Red injectors 0280155759
-- 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach 11.8-12 AFR at 5,200rpm WOT = ~3.8-4Bar FPR)
 - BOSCH FR6DC spark plugs
 - ECU tune
+
+### STAGE 3 (~230-250hp)
+- 84mm supercharger pulley
+- 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach ~11.8 AFR at 5,200rpm WOT)
 
 ### Eaton M62 supercharger speed and pulley ratios
 
