@@ -6,7 +6,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "01-======= BANK 1 =======/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 0.0,
       "axes": {
@@ -40,7 +40,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4128",
-      "image": "2-Launch Rev Limiter/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "02-Launch Rev Limiter/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -75,7 +75,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$4134",
-      "image": "3-Rev Limiter/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "03-Rev Limiter/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 5825.0,
       "maximum": 6025.0,
       "axes": {
@@ -111,7 +111,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4874",
-      "image": "4-Injector factor/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "04-Injector factor/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -145,7 +145,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48F0",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -189,7 +189,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5F7E",
-      "image": "6-Warm-up Bypass command minimum/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 87.05882352941175,
       "axes": {
@@ -253,7 +253,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$6186",
-      "image": "7-Boost Bypass Valve position/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "07-Boost Bypass Valve position/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -317,7 +317,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$6B12",
-      "image": "8-Injection (Main)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "08-Injection (Main)/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -3.90625,
       "maximum": 17.96875,
       "axes": {
@@ -381,7 +381,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6C12",
-      "image": "9-Injection/9640-230Kompressor_261204573_114.235034.34.BIN.png",
+      "image": "09-Injection/9640-230Kompressor_261204573_114.235034.34.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -2224,7 +2224,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "01-======= BANK 1 =======/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -2258,7 +2258,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "02-Launch Rev Limiter/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -2293,7 +2293,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "03-Rev Limiter/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -2330,7 +2330,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$47B2",
-      "image": "4-Injector factor/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "04-Injector factor/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -2364,7 +2364,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$482E",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -2408,7 +2408,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E06",
-      "image": "6-Warm-up Bypass command minimum/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
       "maximum": 87.05882352941175,
       "axes": {
@@ -2472,7 +2472,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$600E",
-      "image": "7-Boost Bypass Valve position/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "07-Boost Bypass Valve position/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -2536,7 +2536,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$699E",
-      "image": "8-Injection (Main)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "08-Injection (Main)/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -3.90625,
       "maximum": 17.96875,
       "axes": {
@@ -2600,7 +2600,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6A9E",
-      "image": "9-Injection/9646-230Kompressor_261204527_114.235153.52.BIN.png",
+      "image": "09-Injection/9646-230Kompressor_261204527_114.235153.52.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -4444,7 +4444,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "01-======= BANK 1 =======/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -4478,7 +4478,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "02-Launch Rev Limiter/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -4513,7 +4513,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "03-Rev Limiter/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -4550,7 +4550,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$47B2",
-      "image": "4-Injector factor/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "04-Injector factor/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -4584,7 +4584,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$482E",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -4628,7 +4628,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E06",
-      "image": "6-Warm-up Bypass command minimum/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
       "maximum": 87.05882352941175,
       "axes": {
@@ -4692,7 +4692,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$600E",
-      "image": "7-Boost Bypass Valve position/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "07-Boost Bypass Valve position/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -4756,7 +4756,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$699E",
-      "image": "8-Injection (Main)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "08-Injection (Main)/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -3.90625,
       "maximum": 17.96875,
       "axes": {
@@ -4820,7 +4820,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6A9E",
-      "image": "9-Injection/9707-230Kompressor_261204573_114.235035.52.BIN.png",
+      "image": "09-Injection/9707-230Kompressor_261204573_114.235035.52.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -6664,7 +6664,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "01-======= BANK 1 =======/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -6698,7 +6698,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "02-Launch Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -6733,7 +6733,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "03-Rev Limiter/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -6770,7 +6770,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$47B2",
-      "image": "4-Injector factor/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "04-Injector factor/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -6804,7 +6804,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$482E",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -6848,7 +6848,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E06",
-      "image": "6-Warm-up Bypass command minimum/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
       "maximum": 87.05882352941175,
       "axes": {
@@ -6912,7 +6912,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$600E",
-      "image": "7-Boost Bypass Valve position/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "07-Boost Bypass Valve position/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -6976,7 +6976,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$69A6",
-      "image": "8-Injection (Main)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "08-Injection (Main)/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -3.90625,
       "maximum": 17.96875,
       "axes": {
@@ -7040,7 +7040,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6AA6",
-      "image": "9-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
+      "image": "09-Injection/9710-200Kompressor_261204746_114.235355.56.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -8884,7 +8884,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "01-======= BANK 1 =======/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -8918,7 +8918,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "02-Launch Rev Limiter/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -8953,7 +8953,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "03-Rev Limiter/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -8990,7 +8990,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$47B8",
-      "image": "4-Injector factor/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "04-Injector factor/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -9024,7 +9024,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$4832",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -9068,7 +9068,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5D10",
-      "image": "6-Warm-up Bypass command minimum/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
       "maximum": 84.31372549019606,
       "axes": {
@@ -9132,7 +9132,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5F18",
-      "image": "7-Boost Bypass Valve position/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "07-Boost Bypass Valve position/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -9196,7 +9196,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$68B0",
-      "image": "8-Injection (Main)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "08-Injection (Main)/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -9260,7 +9260,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$69B0",
-      "image": "9-Injection/9720-230Kompressor_261204747_114.235404.04.BIN.png",
+      "image": "09-Injection/9720-230Kompressor_261204747_114.235404.04.BIN.png",
       "minimum": -10.9375,
       "maximum": 8.59375,
       "axes": {
@@ -11104,7 +11104,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "01-======= BANK 1 =======/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -11138,7 +11138,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "02-Launch Rev Limiter/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -11173,7 +11173,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "03-Rev Limiter/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -11210,7 +11210,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4852",
-      "image": "4-Injector factor/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "04-Injector factor/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -11244,7 +11244,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48E8",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -11288,7 +11288,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5D5A",
-      "image": "6-Warm-up Bypass command minimum/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
       "maximum": 84.31372549019606,
       "axes": {
@@ -11352,7 +11352,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5EE2",
-      "image": "7-Boost Bypass Valve position/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "07-Boost Bypass Valve position/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -11416,7 +11416,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$69D2",
-      "image": "8-Injection (Main)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "08-Injection (Main)/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -11480,7 +11480,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6AD2",
-      "image": "9-Injection/9745-230Kompressor_261204881_114.235516.16.BIN.png",
+      "image": "09-Injection/9745-230Kompressor_261204881_114.235516.16.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -13318,7 +13318,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "01-======= BANK 1 =======/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -13352,7 +13352,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4062",
-      "image": "2-Launch Rev Limiter/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "02-Launch Rev Limiter/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -13387,7 +13387,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$406E",
-      "image": "3-Rev Limiter/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "03-Rev Limiter/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -13424,7 +13424,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$485A",
-      "image": "4-Injector factor/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "04-Injector factor/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -13458,7 +13458,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48F0",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -13502,7 +13502,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5D72",
-      "image": "6-Warm-up Bypass command minimum/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
       "maximum": 84.31372549019606,
       "axes": {
@@ -13566,7 +13566,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5EFA",
-      "image": "7-Boost Bypass Valve position/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "07-Boost Bypass Valve position/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -13630,7 +13630,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$69B2",
-      "image": "8-Injection (Main)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "08-Injection (Main)/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -13694,7 +13694,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6AB2",
-      "image": "9-Injection/9817-230Kompressor_261204915_114.235819.20.BIN.png",
+      "image": "09-Injection/9817-230Kompressor_261204915_114.235819.20.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -15532,7 +15532,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "01-======= BANK 1 =======/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -15566,7 +15566,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4056",
-      "image": "2-Launch Rev Limiter/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "02-Launch Rev Limiter/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -15601,7 +15601,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$4062",
-      "image": "3-Rev Limiter/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "03-Rev Limiter/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -15638,7 +15638,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4840",
-      "image": "4-Injector factor/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "04-Injector factor/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -15672,7 +15672,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48F0",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -15716,7 +15716,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E5C",
-      "image": "6-Warm-up Bypass command minimum/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
       "maximum": 84.31372549019606,
       "axes": {
@@ -15780,7 +15780,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5F64",
-      "image": "7-Boost Bypass Valve position/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "07-Boost Bypass Valve position/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -15844,7 +15844,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$699C",
-      "image": "8-Injection (Main)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "08-Injection (Main)/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -15908,7 +15908,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6A9C",
-      "image": "9-Injection/9903-230Kompressor_261206457_114.236338.39.BIN.png",
+      "image": "09-Injection/9903-230Kompressor_261206457_114.236338.39.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -17746,7 +17746,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "01-======= BANK 1 =======/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -17780,7 +17780,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4056",
-      "image": "2-Launch Rev Limiter/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "02-Launch Rev Limiter/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -17815,7 +17815,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$4062",
-      "image": "3-Rev Limiter/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "03-Rev Limiter/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -17852,7 +17852,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4840",
-      "image": "4-Injector factor/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "04-Injector factor/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -17886,7 +17886,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$48F0",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -17930,7 +17930,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E5C",
-      "image": "6-Warm-up Bypass command minimum/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
       "maximum": 84.31372549019606,
       "axes": {
@@ -17994,7 +17994,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5F64",
-      "image": "7-Boost Bypass Valve position/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "07-Boost Bypass Valve position/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -18058,7 +18058,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$699C",
-      "image": "8-Injection (Main)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "08-Injection (Main)/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -18122,7 +18122,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6A9C",
-      "image": "9-Injection/9906-230Kompressor_261206458_114.236438.40.BIN.png",
+      "image": "09-Injection/9906-230Kompressor_261206458_114.236438.40.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
@@ -19960,7 +19960,7 @@
       "position": 1,
       "name": "======= BANK 1 =======",
       "address": "$4000",
-      "image": "1-======= BANK 1 =======/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "01-======= BANK 1 =======/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 255.0,
       "maximum": 255.0,
       "axes": {
@@ -19994,7 +19994,7 @@
       "position": 2,
       "name": "Launch Rev Limiter",
       "address": "$4056",
-      "image": "2-Launch Rev Limiter/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "02-Launch Rev Limiter/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 4112.0,
       "maximum": 4200.0,
       "axes": {
@@ -20029,7 +20029,7 @@
       "position": 3,
       "name": "Rev Limiter",
       "address": "$4062",
-      "image": "3-Rev Limiter/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "03-Rev Limiter/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 5800.0,
       "maximum": 6200.0,
       "axes": {
@@ -20066,7 +20066,7 @@
       "position": 4,
       "name": "Injector factor",
       "address": "$4846",
-      "image": "4-Injector factor/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "04-Injector factor/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 1.0,
       "maximum": 1.0,
       "axes": {
@@ -20100,7 +20100,7 @@
       "position": 5,
       "name": "Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)",
       "address": "$4916",
-      "image": "5-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "05-Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 4412.0,
       "maximum": 5900.0,
       "axes": {
@@ -20144,7 +20144,7 @@
       "position": 6,
       "name": "Warm-up Bypass command minimum",
       "address": "$5E8E",
-      "image": "6-Warm-up Bypass command minimum/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "06-Warm-up Bypass command minimum/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
       "maximum": 84.31372549019606,
       "axes": {
@@ -20208,7 +20208,7 @@
       "position": 7,
       "name": "Boost Bypass Valve position",
       "address": "$5F96",
-      "image": "7-Boost Bypass Valve position/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "07-Boost Bypass Valve position/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": 0.0,
       "maximum": 100.011,
       "axes": {
@@ -20272,7 +20272,7 @@
       "position": 8,
       "name": "Injection (Main)",
       "address": "$69D6",
-      "image": "8-Injection (Main)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "08-Injection (Main)/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -4.6875,
       "maximum": 17.96875,
       "axes": {
@@ -20336,7 +20336,7 @@
       "position": 9,
       "name": "Injection",
       "address": "$6AD6",
-      "image": "9-Injection/9914-230Kompressor_261206570_114.236643.43.BIN.png",
+      "image": "09-Injection/9914-230Kompressor_261206570_114.236643.43.BIN.png",
       "minimum": -9.375,
       "maximum": 12.5,
       "axes": {
