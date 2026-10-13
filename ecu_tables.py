@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export WinOLS CSV definitions as PNG tables, with ROM or index-based axes.
+"""Export WinOLS CSV definitions as PNG tables, MAF curves and ASCII SW versions.
 
 Axis units and conversions come from the CSV; raw axes are not converted to
 physical units automatically. BIN files are never modified.
@@ -36,6 +36,11 @@ def safe_name(value):
     if not value or value in ('.', '..'):
         raise ValueError('Empty or invalid file/folder name')
     return value
+
+
+def table_name(row):
+    """Match table names with or without an exported numeric prefix."""
+    return re.sub(r'^\d+\s*-\s*', '', row['Name'].strip()).casefold()
 
 
 def read_definitions(path):
@@ -94,6 +99,24 @@ def extract(blob, row):
     if not np.isfinite(values).all():
         raise ValueError('Non-finite values')
     return values.reshape(rows, cols)
+
+
+def extract_ascii(blob, row):
+    """Decode the original SW bytes without applying numeric conversions."""
+    if row['DataOrg'] != 'eByte':
+        raise ValueError('SW Version requires byte data')
+    for key in ('SkipBytes', 'LineSkipBytes'):
+        if integer(row.get(key) or '0'):
+            raise ValueError(f'SW Version: {key} is unsupported')
+    cols, rows = integer(row['Columns']), integer(row['Rows'])
+    if cols <= 0 or rows <= 0 or cols * rows > 100000:
+        raise ValueError('Invalid or excessive dimensions')
+    raw = read_values(blob, integer(row['Fieldvalues.StartAddr']),
+                      rows * cols, 'eByte').astype('u1').tobytes()
+    text = raw.rstrip(b'\x00 ').decode('ascii')
+    if any(ord(char) < 32 or ord(char) == 127 for char in text):
+        raise ValueError('SW Version contains non-printable ASCII bytes')
+    return text
 
 
 def axis(blob, row, prefix, count):
@@ -168,10 +191,44 @@ def fmt(value, precision=-1):
 
 
 def render(job, destination, limits, cmap_name, dpi):
+    if 'text' in job:
+        fig, ax = plt.subplots(figsize=(10, 2.4))
+        ax.set_axis_off()
+        ax.text(.5, .5, job['text'], ha='center', va='center',
+                fontsize=18, family='monospace', transform=ax.transAxes,
+                parse_math=False)
+        fig.tight_layout()
+        try:
+            fig.savefig(destination, dpi=dpi)
+        finally:
+            plt.close(fig)
+        return
+
     row, values = job['row'], job['values']
     rows, cols = values.shape
     x, xlabel = job['xaxis']
     y, ylabel = job['yaxis']
+    if (re.match(r'^maf\b', table_name(row))
+            and values.size == 512 and 1 in values.shape):
+        coordinates, label = (x, xlabel) if rows == 1 else (y, ylabel)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(coordinates, values.ravel(), color='#2463a6', linewidth=1.8)
+        ax.set_xlabel(label)
+        unit = row.get('Fieldvalues.Unit', '-')
+        value_label = row.get('Fieldvalues.Name') or 'Value'
+        ax.set_ylabel(value_label + (f' [{unit}]' if unit != '-' else ''))
+        lo, hi = limits
+        margin = (hi - lo) * .05 if hi != lo else .5
+        ax.set_ylim(lo - margin, hi + margin)
+        ax.grid(alpha=.25)
+        ax.set_title(row['Name'] + '\n' + job['binary'].name, fontsize=11)
+        fig.tight_layout()
+        try:
+            fig.savefig(destination, dpi=dpi)
+        finally:
+            plt.close(fig)
+        return
+
     fig, ax = plt.subplots(figsize=(max(8, cols * .66 + 2.4), max(3.4, rows * .39 + 2.5)))
     cmap = plt.get_cmap(cmap_name)
     lo, hi = limits
@@ -255,6 +312,11 @@ def main():
         ordered_rows = sorted(rows, key=lambda row: integer(row['Fieldvalues.StartAddr']))
         for position, row in enumerate(ordered_rows, start=1):
             try:
+                if table_name(row) == 'sw version':
+                    jobs.append(dict(binary=binary, definition=definition, row=row,
+                                     text=extract_ascii(blob, row), position=position,
+                                     folder=f"{position}-{safe_name(row['Name'])}"))
+                    continue
                 values = extract(blob, row)
                 xaxis = axis(blob, row, 'AxisX', values.shape[1])
                 yaxis = axis(blob, row, 'AxisY', values.shape[0])
@@ -296,6 +358,8 @@ def main():
         parser.error('Two definitions produce the same output path; correct their names/addresses')
     ranges = defaultdict(list)
     for job in jobs:
+        if 'text' in job:
+            continue
         key = (job['row']['Name'].casefold(), job['row'].get('Fieldvalues.Unit'))
         ranges[key].extend([float(job['values'].min()), float(job['values'].max())])
     args.output.mkdir(parents=True, exist_ok=True)
@@ -303,6 +367,14 @@ def main():
     for job in jobs:
         destination = args.output / job['folder'] / (job['binary'].name + '.png')
         destination.parent.mkdir(parents=True, exist_ok=True)
+        if 'text' in job:
+            render(job, destination, None, args.cmap, args.dpi)
+            manifest.append(dict(binary=job['binary'].name, definition=job['definition'].name,
+                                 position=job['position'], name=job['row']['Name'],
+                                 address=job['row']['Fieldvalues.StartAddr'],
+                                 image=str(destination.relative_to(args.output)),
+                                 text=job['text']))
+            continue
         key = (job['row']['Name'].casefold(), job['row'].get('Fieldvalues.Unit'))
         bounds = ranges[key] if args.scale == 'name' else [job['values'].min(), job['values'].max()]
         render(job, destination, (min(bounds), max(bounds)), args.cmap, args.dpi)
