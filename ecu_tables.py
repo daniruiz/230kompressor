@@ -310,12 +310,13 @@ def main():
         blob = binary.read_bytes()
         # Sort numerically by address; preserve CSV order for equal addresses.
         ordered_rows = sorted(rows, key=lambda row: integer(row['Fieldvalues.StartAddr']))
+        prefix_width = len(str(len(ordered_rows)))
         for position, row in enumerate(ordered_rows, start=1):
             try:
                 if table_name(row) == 'sw version':
                     jobs.append(dict(binary=binary, definition=definition, row=row,
                                      text=extract_ascii(blob, row), position=position,
-                                     folder=f"{position}-{safe_name(row['Name'])}"))
+                                     folder=f"{position:0{prefix_width}d}-{safe_name(row['Name'])}"))
                     continue
                 values = extract(blob, row)
                 xaxis = axis(blob, row, 'AxisX', values.shape[1])
@@ -347,7 +348,7 @@ def main():
                     xaxis = (fixed_x, xaxis[1])
                     yaxis = (fixed_y, yaxis[1])
 
-                folder = f"{position}-{safe_name(row['Name'])}"
+                folder = f"{position:0{prefix_width}d}-{safe_name(row['Name'])}"
                 jobs.append(dict(binary=binary, definition=definition, row=row, values=values,
                                  xaxis=xaxis, yaxis=yaxis, folder=folder, position=position))
             except ValueError as exc:
