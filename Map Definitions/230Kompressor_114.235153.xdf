@@ -555,7 +555,7 @@ Y: Coolant (internal); ROM $4C81; X</description>
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x715a" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>-</units>
+      <units>°</units>
       <decimalpl>1</decimalpl>
       <min>0</min>
       <max>191.25</max>
@@ -1918,7 +1918,7 @@ Y: Coolant (internal); ROM $30C81; X</description>
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x3315a" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>-</units>
+      <units>°</units>
       <decimalpl>1</decimalpl>
       <min>0</min>
       <max>191.25</max>
