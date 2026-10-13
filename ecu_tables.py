@@ -43,6 +43,39 @@ def table_name(row):
     return re.sub(r'^\d+\s*-\s*', '', row['Name'].strip()).casefold()
 
 
+def assign_table_folders(definitions):
+    """Give corresponding tables one global index across all CSV versions.
+
+    Match by bank, normalized name and occurrence within that bank. Addresses
+    and dimensions can vary between versions. Order the resulting catalog by
+    each table's lowest observed address, retaining CSV order for ties.
+    """
+    catalog = {}
+    identified_rows = []
+    for _, rows in definitions:
+        bank = None
+        occurrences = Counter()
+        for row in sorted(rows, key=lambda r: integer(r['Fieldvalues.StartAddr'])):
+            name = table_name(row)
+            marker = re.fullmatch(r'=+\s*bank\s+(\d+)\s*=+', name)
+            if marker:
+                bank = int(marker.group(1))
+            occurrences[bank, name] += 1
+            key = (bank, name, occurrences[bank, name])
+            address = integer(row['Fieldvalues.StartAddr'])
+            if key not in catalog:
+                catalog[key] = [address, safe_name(row['Name'])]
+            else:
+                catalog[key][0] = min(catalog[key][0], address)
+            identified_rows.append((row, key))
+    width = len(str(len(catalog)))
+    folders = {}
+    for position, key in enumerate(sorted(catalog, key=lambda k: catalog[k][0]), 1):
+        folders[key] = (position, f'{position:0{width}d}-{catalog[key][1]}')
+    for row, key in identified_rows:
+        row['_position'], row['_folder'] = folders[key]
+
+
 def read_definitions(path):
     data = path.read_bytes()
     try:
@@ -287,6 +320,7 @@ def main():
     binaries = [p for p in sorted(args.binaries.iterdir()) if p.is_file() and p.suffix.lower() == '.bin']
     if not definitions or not binaries:
         parser.error('.bin and .csv files are required in the specified folders')
+    assign_table_folders(definitions.values())
     assignments = {}
     for item in args.assign:
         if '=' not in item:
@@ -310,13 +344,13 @@ def main():
         blob = binary.read_bytes()
         # Sort numerically by address; preserve CSV order for equal addresses.
         ordered_rows = sorted(rows, key=lambda row: integer(row['Fieldvalues.StartAddr']))
-        prefix_width = len(str(len(ordered_rows)))
-        for position, row in enumerate(ordered_rows, start=1):
+        for row in ordered_rows:
+            position, folder = row['_position'], row['_folder']
             try:
                 if table_name(row) == 'sw version':
                     jobs.append(dict(binary=binary, definition=definition, row=row,
                                      text=extract_ascii(blob, row), position=position,
-                                     folder=f"{position:0{prefix_width}d}-{safe_name(row['Name'])}"))
+                                     folder=folder))
                     continue
                 values = extract(blob, row)
                 xaxis = axis(blob, row, 'AxisX', values.shape[1])
@@ -348,7 +382,6 @@ def main():
                     xaxis = (fixed_x, xaxis[1])
                     yaxis = (fixed_y, yaxis[1])
 
-                folder = f"{position:0{prefix_width}d}-{safe_name(row['Name'])}"
                 jobs.append(dict(binary=binary, definition=definition, row=row, values=values,
                                  xaxis=xaxis, yaxis=yaxis, folder=folder, position=position))
             except ValueError as exc:
