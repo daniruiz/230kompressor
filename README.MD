@@ -29,7 +29,6 @@ The project focuses on the Bosch ME2.1-equipped M111 Kompressor engines found in
 | Resource | What it contains |
 | --- | --- |
 | [WinOLS and TunerPro map definitions](Map%20Definitions/) | Software-specific `.kp` and `.csv` definitions for locating and editing calibration tables. |
-| [Extended ME2.1 CSV definitions](MAPPACK_230kompressor_ME2.1.csv) | Additional map definitions for binary `230k_ME21.BIN`. |
 | [Original ECU binaries](Original%20Binaries/) | A collection of M111 Kompressor software versions for analysis and comparison. |
 | [Stock reference binary](230k_ME21_STOCK.BIN) | The project's stock reference file. |
 | [Tuned reference binary](230k_ME21.BIN) | The project's modified calibration for studying changes. |
