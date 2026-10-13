@@ -294,6 +294,52 @@ Y: RPM; ROM $4C61; X*25</description>
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
+  <XDFTABLE uniqueid="0x0023" flags="0x0">
+    <title>Supercharger Clutch State</title>
+    <description>CSV definition. File offset 0x5E62; 16 columns x 8 rows.
+Bank 1. Discrete unsigned-byte state map, 16 columns x 8 rows. 0: Disengaged; 1: Engaged; 2: Hold previous state (other values also retain state in this lookup branch). Indexed read at 0x2DEF6: RPM index * 16 + throttle index; no interpolation of states. X input is throttle-position byte F74F, NOT calculated load F74D or pedal position. X display = N*100/255 percent of internal full scale; Y input F74B, N*25 rpm. Axis addresses skip their 3-byte descriptors. Other enable conditions and the minimum-load gate also affect clutch control.
+X: Throttle position (normalized); ROM $4D21; X*0.392156862745098
+Y: RPM; ROM $4BF5; X*25</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4d21" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle position (normalized) (% FS)</units>
+      <indexcount>16</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4bf5" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM (rpm)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x5e62" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>state</units>
+      <decimalpl>0</decimalpl>
+      <min>0</min>
+      <max>255</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
   <XDFTABLE uniqueid="0x0006" flags="0x0">
     <title>Boost Bypass Valve position</title>
     <description>CSV definition. File offset 0x5EE2; 16 columns x 16 rows.
@@ -1653,6 +1699,52 @@ Y: RPM; ROM $30C61; X*25</description>
       <max>99.99999999999999</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x0024" flags="0x0">
+    <title>Supercharger Clutch State</title>
+    <description>CSV definition. File offset 0x31E62; 16 columns x 8 rows.
+Bank 2. Discrete unsigned-byte state map, 16 columns x 8 rows. 0: Disengaged; 1: Engaged; 2: Hold previous state (other values also retain state in this lookup branch). Indexed read at 0x2DEF6: RPM index * 16 + throttle index; no interpolation of states. X input is throttle-position byte F74F, NOT calculated load F74D or pedal position. X display = N*100/255 percent of internal full scale; Y input F74B, N*25 rpm. Axis addresses skip their 3-byte descriptors. Other enable conditions and the minimum-load gate also affect clutch control.
+X: Throttle position (normalized); ROM $30D21; X*0.392156862745098
+Y: RPM; ROM $30BF5; X*25</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30d21" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle position (normalized) (% FS)</units>
+      <indexcount>16</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30bf5" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM (rpm)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x31e62" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>state</units>
+      <decimalpl>0</decimalpl>
+      <min>0</min>
+      <max>255</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
