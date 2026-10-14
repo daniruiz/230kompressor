@@ -11,9 +11,7 @@
   </XDFHEADER>
   <XDFTABLE uniqueid="0x0001" flags="0x0">
     <title>======= BANK 1 =======</title>
-    <description>CSV definition. File offset 0x4000; 1 columns x 1 rows.
-X: -; no ROM axis in CSV; zero-based index labels
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units />
@@ -56,9 +54,7 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0002" flags="0x0">
     <title>Launch Rev Limiter</title>
-    <description>CSV definition. File offset 0x4062; 2 columns x 1 rows.
-X: Column (index); no ROM axis in CSV; zero-based index labels
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Column (index) (index)</units>
@@ -102,9 +98,7 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0003" flags="0x0">
     <title>Rev Limiter</title>
-    <description>CSV definition. File offset 0x406E; 2 columns x 3 rows.
-X: Column (index); no ROM axis in CSV; zero-based index labels
-Y: Row (index); no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Column (index) (index)</units>
@@ -150,10 +144,7 @@ Y: Row (index); no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x001e" flags="0x0">
     <title>Injector factor</title>
-    <description>CSV definition. File offset 0x47B2; 1 columns x 1 rows.
-Unsigned byte. Relative to supplied calibration: N/128, stock 128 = 1. Multiplies injection calculation, not a divisor or injector flow in cc/min. Code reads 0x23E26 and 0x23D52. Bank 1.
-X: -; no ROM axis in CSV; zero-based index labels
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units />
@@ -184,21 +175,19 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x47b2" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>x</units>
-      <decimalpl>7</decimalpl>
+      <units>%</units>
+      <decimalpl>2</decimalpl>
       <min>0</min>
-      <max>1.9921875</max>
+      <max>199.21875</max>
       <outputtype>1</outputtype>
-      <MATH equation="X*0.0078125">
+      <MATH equation="X*0.78125">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0004" flags="0x0">
     <title>Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)</title>
-    <description>CSV definition. File offset 0x482E; 8 columns x 4 rows.
-X: Variant (index); no ROM axis in CSV; zero-based index labels
-Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Variant (index) (index)</units>
@@ -240,7 +229,7 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x482e" mmedelementsizebits="16" mmedrowcount="4" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>rpm</units>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <min>-100</min>
       <max>98202.5</max>
       <outputtype>1</outputtype>
@@ -251,14 +240,12 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0005" flags="0x0">
     <title>Warm-up Bypass command minimum</title>
-    <description>CSV definition. File offset 0x5E06; 16 columns x 16 rows.
-X: Throttle (normalized); ROM $4BA9; X*0.392156862745098
-Y: RPM; ROM $4C49; X*25</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4ba9" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>Throttle (normalized) (% FS)</units>
       <indexcount>16</indexcount>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <outputtype>1</outputtype>
       <datatype>0</datatype>
       <unittype>0</unittype>
@@ -285,7 +272,7 @@ Y: RPM; ROM $4C49; X*25</description>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x5e06" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <min>0</min>
       <max>99.99999999999999</max>
       <outputtype>1</outputtype>
@@ -296,15 +283,12 @@ Y: RPM; ROM $4C49; X*25</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0023" flags="0x0">
     <title>Supercharger Clutch State</title>
-    <description>CSV definition. File offset 0x5F0E; 16 columns x 16 rows.
-Bank 1. Discrete unsigned-byte state map, 16 columns x 16 rows. 0: Disengaged; 1: Engaged; 2: Hold previous state (other values also retain state in this lookup branch). Indexed read at 0x2DB30: RPM index * 16 + throttle index; no interpolation of states. X input is throttle-position byte F74F, NOT calculated load F74D or pedal position. X display = N*100/255 percent of internal full scale; Y input F74B, N*25 rpm. Axis addresses skip their 3-byte descriptors. Other enable conditions and the minimum-load gate also affect clutch control.
-X: Throttle position (normalized); ROM $4CF1; X*0.392156862745098
-Y: RPM; ROM $4C49; X*25</description>
+    <description>Clutch states: 0 = Disengaged, 1 = Engaged, 2 = Hold previous state.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4cf1" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>Throttle position (normalized) (% FS)</units>
       <indexcount>16</indexcount>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <outputtype>1</outputtype>
       <datatype>0</datatype>
       <unittype>0</unittype>
@@ -342,14 +326,12 @@ Y: RPM; ROM $4C49; X*25</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0006" flags="0x0">
     <title>Boost Bypass Valve position</title>
-    <description>CSV definition. File offset 0x600E; 16 columns x 16 rows.
-X: Throttle (normalized); ROM $4CF1; X*0.392156862745098
-Y: RPM; ROM $4C49; X*25</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4cf1" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>Throttle (normalized) (% FS)</units>
       <indexcount>16</indexcount>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <outputtype>1</outputtype>
       <datatype>0</datatype>
       <unittype>0</unittype>
@@ -376,7 +358,7 @@ Y: RPM; ROM $4C49; X*25</description>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x600e" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <min>0</min>
       <max>100.011</max>
       <outputtype>1</outputtype>
@@ -387,9 +369,7 @@ Y: RPM; ROM $4C49; X*25</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0007" flags="0x0">
     <title>Injection (Main)</title>
-    <description>CSV definition. File offset 0x699E; 16 columns x 16 rows.
-X: RPM; ROM $4C49; X*25
-Y: Load (internal); ROM $4BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -432,9 +412,7 @@ Y: Load (internal); ROM $4BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0008" flags="0x0">
     <title>Injection</title>
-    <description>CSV definition. File offset 0x6A9E; 16 columns x 16 rows.
-X: RPM; ROM $4C49; X*25
-Y: Load (internal); ROM $4BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -477,9 +455,7 @@ Y: Load (internal); ROM $4BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0009" flags="0x0">
     <title>Injection (Not used)</title>
-    <description>CSV definition. File offset 0x6B9E; 16 columns x 16 rows.
-X: RPM; ROM $4C49; X*25
-Y: Load (internal); ROM $4BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -522,10 +498,7 @@ Y: Load (internal); ROM $4BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0020" flags="0x0">
     <title>Temp Ignition Retard multiplier by load</title>
-    <description>CSV definition. File offset 0x7152; 8 columns x 1 rows.
-8-point unsigned-byte curve. Code 0x248FA reads the curve using coordinate 0x8288. Axis data at 0x4B91, after the 3-byte descriptor. Axis input is calculated load F74D, NOT throttle/pedal position. Axis values are original internal units (raw), with factor 1 and offset 0. Multiplier = N*100/256 percent (128 = 50%, 255 = 99.609375%). Applied thermal correction = floor(thermal_lookup * multiplier_raw / 256), then 0.75 degrees per unit. One row with the 8 load points on X.
-X: Load (internal); ROM $4B91; X
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4b91" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>Load (internal) (raw)</units>
@@ -557,20 +530,18 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x7152" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
-      <decimalpl>3</decimalpl>
+      <decimalpl>0</decimalpl>
       <min>0</min>
-      <max>99.609375</max>
+      <max>100</max>
       <outputtype>1</outputtype>
-      <MATH equation="X*0.390625">
+      <MATH equation="X*100/255">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x000A" flags="0x0">
     <title>Temp Ignition Retard</title>
-    <description>CSV definition. File offset 0x715A; 8 columns x 8 rows.
-X: IAT (internal); ROM $4CCD; X
-Y: Coolant (internal); ROM $4C81; X</description>
+    <description>Real temperature axes (degrees C), in table order: X / IAT = [-30, -14, 0, 15, 17, 30, 60, 101]. Y / coolant = [-29, -10, 15, 30, 50, 80, 101, 132]. The displayed ROM axes use internal raw units.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4ccd" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>IAT (internal) (raw)</units>
@@ -613,9 +584,7 @@ Y: Coolant (internal); ROM $4C81; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x000B" flags="0x0">
     <title>Spark advance at middle throttle (Main)</title>
-    <description>CSV definition. File offset 0x7666; 16 columns x 16 rows.
-X: RPM; ROM $4C49; X*25
-Y: Load (internal); ROM $4BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -658,9 +627,7 @@ Y: Load (internal); ROM $4BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x000C" flags="0x0">
     <title>Spark advance at middle throttle</title>
-    <description>CSV definition. File offset 0x7766; 16 columns x 16 rows.
-X: RPM; ROM $4C49; X*25
-Y: Load (internal); ROM $4BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -703,9 +670,7 @@ Y: Load (internal); ROM $4BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x000D" flags="0x0">
     <title>Spark advance at Wide Open Throttle (Main)</title>
-    <description>CSV definition. File offset 0x7866; 16 columns x 8 rows.
-X: RPM; ROM $4C49; X*25
-Y: Load (internal); ROM $4B9D; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -748,9 +713,7 @@ Y: Load (internal); ROM $4B9D; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x000E" flags="0x0">
     <title>Spark advance at Wide Open Throttle</title>
-    <description>CSV definition. File offset 0x78E6; 16 columns x 8 rows.
-X: RPM; ROM $4C49; X*25
-Y: Load (internal); ROM $4B9D; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -793,9 +756,7 @@ Y: Load (internal); ROM $4B9D; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x000F" flags="0x0">
     <title>SW Version</title>
-    <description>CSV definition. File offset 0xE485; 26 columns x 1 rows.
-X: -; no ROM axis in CSV; zero-based index labels
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Index</units>
@@ -863,10 +824,7 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0021" flags="0x0">
     <title>MAF sensor linearization (shared)</title>
-    <description>CSV definition. File offset 0xD202; 512 columns x 1 rows.
-Shared curve outside the switchable calibration banks: 512 unsigned 16-bit little-endian values, 1024 bytes. Indexed word reads at 0x82D6 and 0x8338. Flow display = (N - 2000)*0.1 kg/h; offset word 2000 is stored at 0xD200. ECU subtracts the offset after averaging and clamps negative results to zero. Negative displayed low-end values describe the curve before clamping, not negative measured airflow. Index 0..511; no unverified voltage conversion. Last value 10307 = 830.7 kg/h. Do not duplicate at +0x2C000.
-X: MAF lookup index; no ROM axis in CSV; zero-based index labels
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>MAF lookup index (index)</units>
@@ -1420,9 +1378,7 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0010" flags="0x0">
     <title>======= BANK 2 =======</title>
-    <description>CSV definition. File offset 0x30000; 1 columns x 1 rows.
-X: -; no ROM axis in CSV; zero-based index labels
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units />
@@ -1465,9 +1421,7 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0011" flags="0x0">
     <title>Launch Rev Limiter</title>
-    <description>CSV definition. File offset 0x30062; 2 columns x 1 rows.
-X: Column (index); no ROM axis in CSV; zero-based index labels
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Column (index) (index)</units>
@@ -1511,9 +1465,7 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0012" flags="0x0">
     <title>Rev Limiter</title>
-    <description>CSV definition. File offset 0x3006E; 2 columns x 3 rows.
-X: Column (index); no ROM axis in CSV; zero-based index labels
-Y: Row (index); no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Column (index) (index)</units>
@@ -1559,10 +1511,7 @@ Y: Row (index); no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x001f" flags="0x0">
     <title>Injector factor</title>
-    <description>CSV definition. File offset 0x307B2; 1 columns x 1 rows.
-Unsigned byte. Relative to supplied calibration: N/128, stock 128 = 1. Multiplies injection calculation, not a divisor or injector flow in cc/min. Code reads 0x23E26 and 0x23D52. Bank 2.
-X: -; no ROM axis in CSV; zero-based index labels
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units />
@@ -1593,21 +1542,19 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x307b2" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>x</units>
-      <decimalpl>7</decimalpl>
+      <units>%</units>
+      <decimalpl>2</decimalpl>
       <min>0</min>
-      <max>1.9921875</max>
+      <max>199.21875</max>
       <outputtype>1</outputtype>
-      <MATH equation="X*0.0078125">
+      <MATH equation="X*0.78125">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0013" flags="0x0">
     <title>Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)</title>
-    <description>CSV definition. File offset 0x3082E; 8 columns x 4 rows.
-X: Variant (index); no ROM axis in CSV; zero-based index labels
-Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Variant (index) (index)</units>
@@ -1649,7 +1596,7 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x3082e" mmedelementsizebits="16" mmedrowcount="4" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>rpm</units>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <min>-100</min>
       <max>98202.5</max>
       <outputtype>1</outputtype>
@@ -1660,14 +1607,12 @@ Y: Block (index); no ROM axis in CSV; zero-based index labels</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0014" flags="0x0">
     <title>Warm-up Bypass command minimum</title>
-    <description>CSV definition. File offset 0x31E06; 16 columns x 16 rows.
-X: Throttle (normalized); ROM $30BA9; X*0.392156862745098
-Y: RPM; ROM $30C49; X*25</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30ba9" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>Throttle (normalized) (% FS)</units>
       <indexcount>16</indexcount>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <outputtype>1</outputtype>
       <datatype>0</datatype>
       <unittype>0</unittype>
@@ -1694,7 +1639,7 @@ Y: RPM; ROM $30C49; X*25</description>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x31e06" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <min>0</min>
       <max>99.99999999999999</max>
       <outputtype>1</outputtype>
@@ -1705,15 +1650,12 @@ Y: RPM; ROM $30C49; X*25</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0024" flags="0x0">
     <title>Supercharger Clutch State</title>
-    <description>CSV definition. File offset 0x31F0E; 16 columns x 16 rows.
-Bank 2. Discrete unsigned-byte state map, 16 columns x 16 rows. 0: Disengaged; 1: Engaged; 2: Hold previous state (other values also retain state in this lookup branch). Indexed read at 0x2DB30: RPM index * 16 + throttle index; no interpolation of states. X input is throttle-position byte F74F, NOT calculated load F74D or pedal position. X display = N*100/255 percent of internal full scale; Y input F74B, N*25 rpm. Axis addresses skip their 3-byte descriptors. Other enable conditions and the minimum-load gate also affect clutch control.
-X: Throttle position (normalized); ROM $30CF1; X*0.392156862745098
-Y: RPM; ROM $30C49; X*25</description>
+    <description>Clutch states: 0 = Disengaged, 1 = Engaged, 2 = Hold previous state.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30cf1" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>Throttle position (normalized) (% FS)</units>
       <indexcount>16</indexcount>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <outputtype>1</outputtype>
       <datatype>0</datatype>
       <unittype>0</unittype>
@@ -1751,14 +1693,12 @@ Y: RPM; ROM $30C49; X*25</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0015" flags="0x0">
     <title>Boost Bypass Valve position</title>
-    <description>CSV definition. File offset 0x3200E; 16 columns x 16 rows.
-X: Throttle (normalized); ROM $30CF1; X*0.392156862745098
-Y: RPM; ROM $30C49; X*25</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30cf1" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>Throttle (normalized) (% FS)</units>
       <indexcount>16</indexcount>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <outputtype>1</outputtype>
       <datatype>0</datatype>
       <unittype>0</unittype>
@@ -1785,7 +1725,7 @@ Y: RPM; ROM $30C49; X*25</description>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x3200e" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
-      <decimalpl>2</decimalpl>
+      <decimalpl>0</decimalpl>
       <min>0</min>
       <max>100.011</max>
       <outputtype>1</outputtype>
@@ -1796,9 +1736,7 @@ Y: RPM; ROM $30C49; X*25</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0016" flags="0x0">
     <title>Injection</title>
-    <description>CSV definition. File offset 0x3299E; 16 columns x 16 rows.
-X: RPM; ROM $30C49; X*25
-Y: Load (internal); ROM $30BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -1841,9 +1779,7 @@ Y: Load (internal); ROM $30BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0017" flags="0x0">
     <title>Injection</title>
-    <description>CSV definition. File offset 0x32A9E; 16 columns x 16 rows.
-X: RPM; ROM $30C49; X*25
-Y: Load (internal); ROM $30BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -1886,9 +1822,7 @@ Y: Load (internal); ROM $30BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0018" flags="0x0">
     <title>Injection</title>
-    <description>CSV definition. File offset 0x32B9E; 16 columns x 16 rows.
-X: RPM; ROM $30C49; X*25
-Y: Load (internal); ROM $30BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -1931,10 +1865,7 @@ Y: Load (internal); ROM $30BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0022" flags="0x0">
     <title>Temp Ignition Retard multiplier by load</title>
-    <description>CSV definition. File offset 0x33152; 8 columns x 1 rows.
-8-point unsigned-byte curve. Code 0x248FA reads the curve using coordinate 0x8288. Axis data at 0x30B91, after the 3-byte descriptor. Axis input is calculated load F74D, NOT throttle/pedal position. Axis values are original internal units (raw), with factor 1 and offset 0. Multiplier = N*100/256 percent (128 = 50%, 255 = 99.609375%). Applied thermal correction = floor(thermal_lookup * multiplier_raw / 256), then 0.75 degrees per unit. One row with the 8 load points on X.
-X: Load (internal); ROM $30B91; X
-Y: -; no ROM axis in CSV; zero-based index labels</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30b91" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>Load (internal) (raw)</units>
@@ -1966,20 +1897,18 @@ Y: -; no ROM axis in CSV; zero-based index labels</description>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x33152" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
       <units>%</units>
-      <decimalpl>3</decimalpl>
+      <decimalpl>0</decimalpl>
       <min>0</min>
-      <max>99.609375</max>
+      <max>100</max>
       <outputtype>1</outputtype>
-      <MATH equation="X*0.390625">
+      <MATH equation="X*100/255">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0019" flags="0x0">
     <title>Temp Ignition Retard</title>
-    <description>CSV definition. File offset 0x3315A; 8 columns x 8 rows.
-X: IAT (internal); ROM $30CCD; X
-Y: Coolant (internal); ROM $30C81; X</description>
+    <description>Real temperature axes (degrees C), in table order: X / IAT = [-30, -14, 0, 15, 17, 30, 60, 101]. Y / coolant = [-29, -10, 15, 30, 50, 80, 101, 132]. The displayed ROM axes use internal raw units.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30ccd" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>IAT (internal) (raw)</units>
@@ -2022,9 +1951,7 @@ Y: Coolant (internal); ROM $30C81; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x001A" flags="0x0">
     <title>Spark advance at middle throttle</title>
-    <description>CSV definition. File offset 0x33666; 16 columns x 16 rows.
-X: RPM; ROM $30C49; X*25
-Y: Load (internal); ROM $30BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -2067,9 +1994,7 @@ Y: Load (internal); ROM $30BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x001B" flags="0x0">
     <title>Spark advance at middle throttle</title>
-    <description>CSV definition. File offset 0x33766; 16 columns x 16 rows.
-X: RPM; ROM $30C49; X*25
-Y: Load (internal); ROM $30BA9; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -2112,9 +2037,7 @@ Y: Load (internal); ROM $30BA9; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x001C" flags="0x0">
     <title>Spark advance at Wide Open Throttle</title>
-    <description>CSV definition. File offset 0x33866; 16 columns x 8 rows.
-X: RPM; ROM $30C49; X*25
-Y: Load (internal); ROM $30B9D; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
@@ -2157,9 +2080,7 @@ Y: Load (internal); ROM $30B9D; X</description>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x001D" flags="0x0">
     <title>Spark advance at Wide Open Throttle</title>
-    <description>CSV definition. File offset 0x338E6; 16 columns x 8 rows.
-X: RPM; ROM $30C49; X*25
-Y: Load (internal); ROM $30B9D; X</description>
+
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c49" mmedelementsizebits="8" mmedcolcount="16" mmedmajorstridebits="8" mmedminorstridebits="0" />
       <units>RPM</units>
