@@ -104,6 +104,14 @@ def grouped(reply: str) -> Sample:
     return from_pairs([frame[i:i+2] for i in range(2, len(frame), 2)])
 
 
+def duty_percent(injection_raw: int, rpm: int, tick_us: float = 8/3) -> float:
+    """Estimate duty assuming F746 is one pulse per 720 crank degrees."""
+    if injection_raw < 0 or rpm < 0 or tick_us <= 0:
+        raise ValueError('Valores inválidos para estimar el duty')
+    pulse_ms = injection_raw * tick_us / 1000
+    return pulse_ms * rpm / 1200
+
+
 class Journal:
     def __init__(self, root: Path, enabled: bool):
         self.stream = None
@@ -256,7 +264,7 @@ class Model:
         self.failed = False
         self.samples = 0
         self.times = deque(maxlen=40)
-        self.history = {k: deque(maxlen=90) for k in ('rpm', 'load', 'inj', 'retard')}
+        self.history = {k: deque(maxlen=90) for k in ('rpm', 'load', 'inj', 'duty', 'retard')}
         self.events = deque(maxlen=5)
 
     def notice(self, message):
@@ -270,7 +278,7 @@ class Model:
             self.previous = None
             self.status = message
 
-    def accept(self, sample):
+    def accept(self, sample, tick_us=8/3):
         with self.lock:
             old = self.previous
             # Initial/gapped samples establish a baseline; they are not events.
@@ -290,6 +298,7 @@ class Model:
             self.history['rpm'].append(sample.rpm)
             self.history['load'].append(sample.load)
             self.history['inj'].append(sample.injection)
+            self.history['duty'].append(duty_percent(sample.injection, sample.rpm, tick_us))
             self.history['retard'].append(max(sample.corrections))
             self.status = 'Recibiendo datos' if not raised else 'Aumento de corrección observado'
             return bool(raised)
@@ -314,7 +323,7 @@ def worker(args, model, stop, journal):
                 sample = Sample(rpm, int(1100 + load*18), load, corrections,
                                 (now-prev_at)*1000, now)
                 prev_at = now
-                event = model.accept(sample)
+                event = model.accept(sample, args.tick_us)
                 journal.write('sample', demo=True, rpm=rpm, F746_raw=sample.injection,
                               load_raw=load, correction_raw=corrections, observed_event=event,
                               observed_count=model.count, cycle_ms=sample.duration_ms)
@@ -329,7 +338,7 @@ def worker(args, model, stop, journal):
             model.notice('Configurando 7 entradas agrupadas · RAM de diagnóstico')
             try:
                 first = elm.define_group()
-                model.accept(first)
+                model.accept(first, args.tick_us)
             except LinkTimeout:
                 raise
             except DiagnosticError as exc:
@@ -341,13 +350,14 @@ def worker(args, model, stop, journal):
         while not stop.is_set():
             try:
                 sample = elm.acquire(mode)
-                event = model.accept(sample)
+                event = model.accept(sample, args.tick_us)
                 consecutive = 0
                 journal.write('sample', demo=False, mode=mode, rpm=sample.rpm,
                               F746_raw=sample.injection, load_raw=sample.load,
                               correction_raw=sample.corrections, cycle_ms=sample.duration_ms,
                               observed_event=event, observed_count=model.count,
                               injection_ms_est=sample.injection*args.tick_us/1000,
+                              injector_duty_est_pct=duty_percent(sample.injection, sample.rpm, args.tick_us),
                               correction_deg_nominal=[n*0.75 for n in sample.corrections])
             except LinkTimeout:
                 raise
@@ -380,10 +390,43 @@ def bar(value, ceiling, width=24):
     return '━'*fill + '─'*(width-fill)
 
 
-def spark(values, ceiling, width=48):
-    chars = '▁▂▃▄▅▆▇█'
-    tail = list(values)[-max(1,width):]
-    return ''.join(chars[min(7, max(0, int(x/ceiling*7)))] for x in tail) or '·'
+def spark(values, ceiling, width=48, height=7, color=None):
+    """Braille graph: two horizontal and four vertical pixels per terminal cell."""
+    tail = list(values)[-90:]
+    width = max(1, width)
+    pixels_w, pixels_h = width*2, max(1,height)*4
+    fill = set()
+    if tail and ceiling > 0:
+        for x in range(pixels_w):
+            position = x*(len(tail)-1)/(pixels_w-1) if pixels_w > 1 else len(tail)-1
+            left = int(position)
+            right = min(left+1,len(tail)-1)
+            fraction = position-left
+            value = tail[left]*(1-fraction)+tail[right]*fraction
+            y_from_bottom = min(pixels_h-1,max(0,round(value/ceiling*(pixels_h-1))))
+            curve_y = pixels_h-1-y_from_bottom
+            fill.update((x,y) for y in range(curve_y,pixels_h))
+    # Braille dot bit positions, indexed [row][column].
+    bit = ((0,3),(1,4),(2,5),(6,7))
+    lines=[]
+    styled = Text()
+    for cell_y in range(height):
+        line=[]
+        for cell_x in range(width):
+            mask=0
+            for dy in range(4):
+                for dx in range(2):
+                    pixel = (cell_x*2+dx,cell_y*4+dy)
+                    if pixel in fill:
+                        mask |= 1 << bit[dy][dx]
+            char = chr(0x2800+mask)
+            line.append(char)
+            if color:
+                styled.append(char, style=f'bold {color}')
+        lines.append(''.join(line))
+        if color and cell_y < height-1:
+            styled.append('\n')
+    return styled if color else '\n'.join(lines)
 
 
 def metric(title, value, unit, detail, color, fraction, trace, bg):
@@ -392,12 +435,12 @@ def metric(title, value, unit, detail, color, fraction, trace, bg):
     text.append(' '+unit, style=MUTED)
     content = Group('', text, '', Align.center(Text(bar(fraction,1), style=color)),
                     Align.center(Text(detail, style=MUTED)),
-                    Align.center(Text(trace, style=f'dim {color}')))
+                    Align.center(trace if isinstance(trace, Text) else Text(trace, style=color)))
     return Panel(content, title=Text(title, style=f'bold {color}'),
                  border_style=color, box=box.ROUNDED, style=f'on {bg}', padding=(0,1))
 
 
-def render(model, args, width=110, height=36, now=None):
+def render(model, args, width=110, height=44, now=None):
     now = time.monotonic() if now is None else now
     with model.lock:
         s = model.sample
@@ -407,53 +450,41 @@ def render(model, args, width=110, height=36, now=None):
         red = flashing and not args.no_flash and int(now*2)%2 == 0
         bg = '#811c31' if red else BG
         layout = Layout()
-        layout.split_column(Layout(name='head', size=4), Layout(name='metrics', size=10),
-                            Layout(name='knock', ratio=1, minimum_size=10),
+        layout.split_column(Layout(name='metrics', size=16),
+                            Layout(name='knock', ratio=1, minimum_size=18),
                             Layout(name='foot', size=4))
-        badge = ' DEMO · SIN COCHE ' if args.demo else ' LIVE · K-LINE '
-        status_color = AMBER if args.demo else GREEN
-        if stale and s:
-            badge, status_color = ' DATOS NO ACTUALES ', AMBER
-        if model.fatal:
-            badge, status_color = ' CONEXIÓN DETENIDA ', '#ff879a'
-        header = Table.grid(expand=True)
-        header.add_column(ratio=3)
-        header.add_column(justify='right', ratio=2)
-        header.add_row(Text('ME2.1  /  404', style=f'bold {CYAN}'), Text(badge, style=f'bold black on {status_color}'))
-        header.add_row(Text('230 KOMPRESSOR   ·   TELEMETRÍA', style=MUTED),
-                       Text('AGRUPADO' if model.mode=='grouped' else model.mode.upper(), style=MUTED))
-        layout['head'].update(Panel(header, box=box.ROUNDED, border_style='#334d6d', style=f'on {bg}'))
-        if width < 100 or height < 30:
-            return Panel(Text('Amplía la terminal a 100 columnas × 30 filas como mínimo.\n'+model.status, style=CYAN), style=f'on {bg}')
+        if width < 100 or height < 42:
+            return Panel(Text('Amplía la terminal a 100 columnas × 42 filas como mínimo.\n'+model.status, style=CYAN), style=f'on {bg}')
         shown = s is not None and not stale
         rpm, load, inj = (s.rpm,s.load,s.injection) if s else (0,0,0)
         trace_width = max(10, width//3-6)
         layout['metrics'].split_row(Layout(name='rpm'),Layout(name='load'),Layout(name='inj'))
         layout['rpm'].update(metric('RÉGIMEN', f'{rpm:,}'.replace(',',' ') if shown else '—', 'rpm',
-            'Escala visual 0–7 000 rpm', CYAN, rpm/7000,
-            spark(model.history['rpm'],7000,trace_width),bg))
+            'Escala visual 0–7.000 rpm', CYAN, rpm/7000,
+            spark(model.history['rpm'],7000,trace_width,color=CYAN),bg))
         layout['load'].update(metric('CARGA INTERNA', str(load) if shown else '—', 'raw',
-            'F74D · 0–255, no porcentaje', AMBER, load/255,
-            spark(model.history['load'],255,trace_width),bg))
+            '0–255, no porcentaje', AMBER, load/255,
+            spark(model.history['load'],255,trace_width,color=AMBER),bg))
         ms = inj*args.tick_us/1000
-        layout['inj'].update(metric('INYECCIÓN · F746', f'~{ms:.2f}' if shown else '—', 'ms',
-            f'{inj} raw · escala provisional' if s else 'Esperando palabra de 16 bits', GREEN, ms/25,
-            spark(model.history['inj'],25*1000/args.tick_us,trace_width),bg))
+        duty = duty_percent(inj, rpm, args.tick_us) if s else 0
+        layout['inj'].update(metric('INYECCIÓN / DUTY', f'~{duty:.1f}' if shown else '—', '%',
+            (f'~{ms:.2f} ms · {inj} raw\nEstimación · 1 pulso/720°' if shown else 'Sin lectura actual de F746'), GREEN, duty/100,
+            spark(model.history['duty'],100,trace_width,color=GREEN),bg))
         notice = 'AUMENTO OBSERVADO · AVISO 3 s' if flashing else 'SIN NUEVOS AUMENTOS OBSERVADOS'
         if not shown:
             notice = 'SIN DATOS ACTUALES · NO SE PUEDE EVALUAR'
         table = Table.grid(expand=True)
-        table.add_column(ratio=2)
-        table.add_column(ratio=3)
-        counter = Text(f'{model.count:04d}', style=f'bold {MAGENTA}')
-        counter.append('\nIncrementos observados en sesión', style=MUTED)
-        counter.append('\nNo es un contador ECU de detonaciones', style=f'italic {MUTED}')
+        table.add_column(ratio=1)
+        table.add_column(width=max(12,len(str(model.count))+4), justify='right')
+        counter = Text(f'{model.count:04d}', style='bold bright_red', justify='center')
         correction = max(s.corrections) if s else 0
         right = Text(notice, style=f'bold {"#ffffff" if flashing else AMBER}')
         right.append('\nRetardo solicitado máx.: ', style=MUTED)
         right.append(f'~{correction*0.75:.2f}°  ({correction} raw)' if shown else '—', style=f'bold {MAGENTA}')
         right.append('\nEscala nominal; antes de límites de encendido', style=f'italic {MUTED}')
-        table.add_row(counter, right)
+        counter_box = Panel(counter,
+                            border_style='bold bright_red', box=box.HEAVY, padding=(0,1))
+        table.add_row(right, counter_box)
         indices = Table.grid(expand=True, padding=(0,1))
         for _ in range(4):
             indices.add_column(ratio=1)
@@ -464,10 +495,10 @@ def render(model, args, width=110, height=36, now=None):
                 row.append(Text(f'I{i+1}  {n:3d} raw' if shown else f'I{i+1}   —',
                                 style=MAGENTA if n and shown else MUTED))
             indices.add_row(*row)
-        body = [table, Text(''), indices,
+        body = [table, indices,
                 Text('8 índices internos; correspondencia con cilindros pendiente.', style=f'italic {MUTED}')]
         if height >= 34:
-            body += [Text(''), Text(spark(model.history['retard'],20,max(30,width-8)), style=MAGENTA)]
+            body += [spark(model.history['retard'],20,max(20,width-6),color=MAGENTA)]
             if model.events:
                 at,message=model.events[0]
                 body.append(Text(f'Último aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
@@ -479,7 +510,8 @@ def render(model, args, width=110, height=36, now=None):
         if s:
             perf += f'  ·  edad {age:.1f} s'
         footer = Text(perf + f'  ·  errores {model.errors}  ·  Ctrl+C salir', style=MUTED)
-        footer.append('\n'+model.status, style=AMBER if stale else GREEN)
+        mode_label = 'DEMO · SIN COCHE' if args.demo else model.mode.upper()
+        footer.append('\n'+mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
         layout['foot'].update(Panel(footer, border_style='#334d6d', box=box.ROUNDED, style=f'on {bg}'))
         return layout
 

@@ -11,6 +11,35 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual((s.rpm,s.injection,s.load),(6400,6000,220))
         self.assertEqual(s.corrections,(4,3,2,1,0,0,0,0))
 
+    def test_duty_estimate(self):
+        # 6000 raw -> 16 ms at 8/3 us per raw unit; 6400 rpm, one pulse/720°.
+        self.assertAlmostEqual(d.duty_percent(6000,6400),85.3333333)
+        graph=d.spark([10,50,90],100,40)
+        self.assertEqual(len(graph.splitlines()),7)
+        self.assertTrue(all(len(line)==40 for line in graph.splitlines()))
+        self.assertTrue(any('\u2800' <= char <= '\u28ff' and char != '\u2800' for char in graph))
+        self.assertEqual(len(d.spark([50],100,40).splitlines()[0]),40)
+        self.assertEqual(d.spark([50],100,40).splitlines()[-1], '⣿'*40)
+        self.assertEqual(d.spark([50],100,40).splitlines()[0], '⠀'*40)
+
+    def test_full_width_knock_and_duty_history(self):
+        self.assertEqual(d.spark([0],100,40).splitlines()[-1], '⣀'*40)
+        self.assertEqual(d.spark([100],100,40).splitlines()[0], '⣿'*40)
+        m=d.Model()
+        m.accept(d.Sample(6400,6000,220,(0,)*8,at=10),tick_us=4)
+        self.assertAlmostEqual(m.history['duty'][-1],128)
+        m.events.append((10,'Aviso visible'))
+        args=d.parse_args(['--demo','--tick-us','4'])
+        c=Console(file=io.StringIO(),width=100,height=42,record=True)
+        c.print(d.render(m,args,100,42,now=10))
+        out=c.export_text()
+        self.assertIn('⣀'*94,out)  # Entire bottom row visible at minimum terminal size.
+        self.assertIn('Aviso visible',out)
+        self.assertIn('~128.0 %',out)  # Do not hide estimates above 100%.
+        c=Console(file=io.StringIO(),width=100,height=42,record=True)
+        c.print(d.render(m,args,100,42,now=13))
+        self.assertNotIn('~24.00 ms',c.export_text())
+
     def test_invalid_frames(self):
         for text in ('NO DATA','7F2A31','6A010019','6A0100197017DCFF040302010000000000',REPLY+REPLY):
             with self.subTest(text=text), self.assertRaises(d.DiagnosticError):
@@ -66,15 +95,18 @@ class DashboardTests(unittest.TestCase):
     def test_render_and_stale(self):
         args=d.parse_args(['--demo'])
         m=d.Model(); m.accept(d.grouped(REPLY)); m.mode='DEMO'
-        for width,height in ((110,36),(100,30)):
+        for width,height in ((110,44),(100,42)):
             c=Console(file=io.StringIO(),width=width,height=height,record=True)
             c.print(d.render(m,args,width,height,now=m.sample.at))
             text=c.export_text()
             self.assertIn('6 400',text)
-            self.assertIn('16.00',text)
+            self.assertIn('~85.3 %',text)
+            self.assertIn('~16.00 ms',text)
+            self.assertIn('INYECCIÓN / DUTY',text)
+            self.assertTrue(any('\u2800' <= char <= '\u28ff' and char != '\u2800' for char in text))
             self.assertIn('Ctrl+C',text)
-        c=Console(file=io.StringIO(),width=110,height=36,record=True)
-        c.print(d.render(m,args,110,36,now=m.sample.at+3))
+        c=Console(file=io.StringIO(),width=110,height=44,record=True)
+        c.print(d.render(m,args,110,44,now=m.sample.at+3))
         self.assertIn('NO SE PUEDE EVALUAR',c.export_text())
 
 if __name__=='__main__': unittest.main()
