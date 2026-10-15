@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from rich.console import Console
 import mercedes_dashboard as d
 
-REPLY='6A0100197017DCFF0403020100000000\r>'
+REPLY='6A0100197017DCFF040302010000000000800080008000808250\r>'
 
 class DashboardTests(unittest.TestCase):
     def test_decoding_width_and_endianness(self):
@@ -35,7 +35,7 @@ class DashboardTests(unittest.TestCase):
         c=Console(file=io.StringIO(),width=100,height=42,record=True)
         c.print(d.render(m,args,100,42,now=10))
         out=c.export_text()
-        self.assertIn('⣀'*94,out)  # Entire bottom row visible at minimum terminal size.
+        self.assertIn('⣀'*60,out)  # Entire bottom row visible at minimum terminal size.
         self.assertIn('Aviso visible',out)
         self.assertIn('~128.0 %',out)  # Do not hide estimates above 100%.
         c=Console(file=io.StringIO(),width=100,height=42,record=True)
@@ -65,7 +65,8 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(len(elm.calls),13)
         self.assertTrue(all(not fast for _,fast in elm.calls))
         self.assertEqual(elm.calls[6][0],'2C01D2071131')
-        self.assertEqual(elm.calls[7][0],'2C01D0081104')
+        self.assertEqual(elm.calls[7][0],'2C01D208111B')
+        self.assertEqual(elm.calls[11][0],'2C01D20C1101')
 
     def test_alarm_and_gaps(self):
         m=d.Model()
@@ -126,6 +127,34 @@ class DashboardTests(unittest.TestCase):
         with patch.object(d,'ELM') as factory:
             d.connect_adapter(args,Mock(),Mock(),Mock())
             self.assertEqual(factory.call_args.args[:2],('COM7',38400))
+
+    def test_csv_and_full_history(self):
+        import tempfile, csv
+        from pathlib import Path
+        sample=d.grouped(REPLY)
+        self.assertEqual(sample.temperatures,(130,80))
+        self.assertEqual(sample.trims,(32768,)*4)
+        self.assertEqual(d.trim_percent(32768),0)
+        self.assertEqual(d.trim_percent(40960),12.5)
+        with tempfile.TemporaryDirectory() as tmp:
+            args=d.parse_args(['--demo'])
+            m=d.Model()
+            journal=d.Journal(Path(tmp),True)
+            for i in range(150):
+                sample.at=i+1
+                m.accept(sample)
+            journal.sample(sample,args,m,False)
+            journal.close()
+            with journal.csv_path.open() as f:
+                rows=list(csv.DictReader(f))
+            self.assertEqual(len(rows),1)
+            self.assertEqual(rows[0]['coolant_C'],'90')
+            self.assertEqual(rows[0]['iat_C'],'40')
+            self.assertEqual(rows[0]['knock_1_raw'],'4')
+            self.assertEqual(rows[0]['ltft_a_pct'],'0.0')
+            self.assertEqual(len(m.history['retard']),150)
+        graph=d.spark([20]+[0]*999,20,40,full=True)
+        self.assertNotEqual(graph,d.spark([0]*1000,20,40,full=True))
 
     def test_render_and_stale(self):
         args=d.parse_args(['--demo'])

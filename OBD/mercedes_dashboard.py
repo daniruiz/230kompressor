@@ -8,6 +8,7 @@ validated ECU knock counter. Injection milliseconds use a provisional scale.
 """
 from __future__ import annotations
 import argparse
+import csv
 from collections import deque
 from dataclasses import dataclass, field
 import datetime as dt
@@ -34,7 +35,7 @@ except ImportError:
 
 # Each diagnostic identifier returns TWO consecutive bytes. Four requests cover
 # all eight internal correction slots, without claiming eight physical cylinders.
-IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x2F, 0x31)
+IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x2F, 0x31, 0x1B, 0x1C, 0x23, 0x24, 0x01)
 BG = '#0b1424'
 MUTED = '#9aaec8'
 CYAN = '#57d8ed'
@@ -89,6 +90,9 @@ class Sample:
     corrections: tuple[int, ...]
     duration_ms: float = 0.0
     at: float = field(default_factory=time.monotonic)
+    trims: tuple[int, ...] = (32768,)*4
+    temperatures: tuple[int, int] = (40,40)
+    pairs_raw: str = ""
 
 
 def from_pairs(pairs: list[bytes]) -> Sample:
@@ -96,7 +100,9 @@ def from_pairs(pairs: list[bytes]) -> Sample:
         raise DiagnosticError('Número de señales incorrecto')
     return Sample(int.from_bytes(pairs[0], 'little'),
                   int.from_bytes(pairs[1], 'little'), pairs[2][0],
-                  tuple(b for pair in pairs[3:] for b in pair))
+                  tuple(b for pair in pairs[3:7] for b in pair),
+                  trims=tuple(int.from_bytes(p, "little") for p in pairs[7:11]),
+                  temperatures=tuple(pairs[11]), pairs_raw=b"".join(pairs).hex())
 
 
 def grouped(reply: str) -> Sample:
@@ -112,8 +118,14 @@ def duty_percent(injection_raw: int, rpm: int, tick_us: float = 8/3) -> float:
     return pulse_ms * rpm / 1200
 
 
+def trim_percent(raw):
+    # Isolated multiplicative contribution in 15222–15276, neutral=0x8000.
+    return ((16384 + (raw >> 1))/32768 - 1)*100
+
+
 class Journal:
     def __init__(self, root: Path, enabled: bool):
+        self.csv_stream = None
         self.stream = None
         self.path = None
         self.last_flush = 0.0
@@ -121,17 +133,46 @@ class Journal:
             root.mkdir(parents=True, exist_ok=True)
             self.path = root / dt.datetime.now().strftime('me21_%Y%m%d_%H%M%S_%f.jsonl')
             self.stream = self.path.open('x', encoding='utf-8')
+            self.csv_path = self.path.with_suffix('.csv')
+            self.csv_stream = self.csv_path.open('x', encoding='utf-8', newline='')
+            self.csv_fields = ['utc','demo','rpm','load_raw','F746_raw','injection_ms_est',
+                'injector_duty_est_pct','cycle_ms','observed_count','observed_event',
+                'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw']
+            self.csv_fields += [f'knock_{i}_{unit}' for i in range(1,9) for unit in ('raw','deg')]
+            self.csv_fields += [f'{name}_{unit}' for name in ('stft_a','stft_b','ltft_a','ltft_b') for unit in ('raw','pct')]
+            self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
+            self.csv_writer.writeheader()
+
+    def sample(self, sample, args, model, event):
+        values = dict(demo=args.demo, rpm=sample.rpm, load_raw=sample.load,
+            F746_raw=sample.injection, injection_ms_est=sample.injection*args.tick_us/1000,
+            injector_duty_est_pct=duty_percent(sample.injection,sample.rpm,args.tick_us),
+            cycle_ms=sample.duration_ms, observed_count=model.count, observed_event=event,
+            coolant_C=sample.temperatures[0]-40, iat_C=sample.temperatures[1]-40,
+            coolant_raw=sample.temperatures[0], iat_raw=sample.temperatures[1], pairs_raw=sample.pairs_raw)
+        for i,n in enumerate(sample.corrections,1):
+            values[f'knock_{i}_raw']=n
+            values[f'knock_{i}_deg']=n*0.75
+        for name,n in zip(('stft_a','stft_b','ltft_a','ltft_b'),sample.trims):
+            values[name+'_raw']=n
+            values[name+'_pct']=trim_percent(n)
+        self.write('csv_sample', **values)
 
     def write(self, kind, **values):
         if self.stream:
             row = {'utc': dt.datetime.now(dt.timezone.utc).isoformat(), 'type': kind, **values}
             self.stream.write(json.dumps(row, ensure_ascii=False) + '\n')
+            if kind == 'csv_sample':
+                self.csv_writer.writerow({k:row.get(k,'') for k in self.csv_fields})
             now = time.monotonic()
             if now - self.last_flush >= 1:
                 self.stream.flush()
+                self.csv_stream.flush()
                 self.last_flush = now
 
     def close(self):
+        if self.csv_stream:
+            self.csv_stream.close()
         if self.stream:
             self.stream.close()
 
@@ -231,7 +272,7 @@ class ELM:
         positive(self.query('221104', optimized=False), 0x22, b'\x62\x11\x04', 5)
 
     def define_group(self):
-        # Define slots 1..7. Clear remaining slots so frame layout is exact,
+        # Define active slots. Clear remaining slots so frame layout is exact,
         # regardless of any diagnostic client previously connected.
         for slot in range(1, 13):
             clear = slot > len(IDS)
@@ -315,6 +356,7 @@ class Model:
         self.samples = 0
         self.times = deque(maxlen=40)
         self.history = {k: deque(maxlen=90) for k in ('rpm', 'load', 'inj', 'duty', 'retard')}
+        self.history['retard'] = []  # Entire session, never evict old peaks.
         self.events = deque(maxlen=5)
 
     def notice(self, message):
@@ -372,8 +414,11 @@ def worker(args, model, stop, journal):
                 corrections = (correction, max(0, correction-2), 0, 0, 0, 0, 0, 0)
                 sample = Sample(rpm, int(1100 + load*18), load, corrections,
                                 (now-prev_at)*1000, now)
+                sample.temperatures = (130, 78)
+                sample.trims = (int(32768+2500*math.sin(t)),32768,34000,33000)
                 prev_at = now
                 event = model.accept(sample, args.tick_us)
+                journal.sample(sample, args, model, event)
                 journal.write('sample', demo=True, rpm=rpm, F746_raw=sample.injection,
                               load_raw=load, correction_raw=corrections, observed_event=event,
                               observed_count=model.count, cycle_ms=sample.duration_ms)
@@ -384,10 +429,11 @@ def worker(args, model, stop, journal):
         elm.setup(model.notice, args.adaptive)
         mode = 'individual' if args.individual else 'grouped'
         if mode == 'grouped':
-            model.notice('Configurando 7 entradas agrupadas · RAM de diagnóstico')
+            model.notice('Configurando 12 entradas agrupadas · RAM de diagnóstico')
             try:
                 first = elm.define_group()
-                model.accept(first, args.tick_us)
+                event = model.accept(first, args.tick_us)
+                journal.sample(first, args, model, event)
             except LinkTimeout:
                 raise
             except DiagnosticError as exc:
@@ -400,6 +446,7 @@ def worker(args, model, stop, journal):
             try:
                 sample = elm.acquire(mode)
                 event = model.accept(sample, args.tick_us)
+                journal.sample(sample, args, model, event)
                 consecutive = 0
                 journal.write('sample', demo=False, mode=mode, rpm=sample.rpm,
                               F746_raw=sample.injection, load_raw=sample.load,
@@ -439,11 +486,14 @@ def bar(value, ceiling, width=24):
     return '━'*fill + '─'*(width-fill)
 
 
-def spark(values, ceiling, width=48, height=7, color=None):
+def spark(values, ceiling, width=48, height=7, color=None, full=False):
     """Braille graph: two horizontal and four vertical pixels per terminal cell."""
-    tail = list(values)[-90:]
+    tail = list(values) if full else list(values)[-90:]
     width = max(1, width)
     pixels_w, pixels_h = width*2, max(1,height)*4
+    if full and len(tail) > pixels_w:
+        tail = [max(tail[i*len(tail)//pixels_w:(i+1)*len(tail)//pixels_w])
+                for i in range(pixels_w)]
     fill = set()
     if tail and ceiling > 0:
         for x in range(pixels_w):
@@ -500,8 +550,9 @@ def render(model, args, width=110, height=44, now=None):
         bg = '#811c31' if red else BG
         layout = Layout()
         layout.split_column(Layout(name='metrics', size=16),
-                            Layout(name='knock', ratio=1, minimum_size=18),
+                            Layout(name='lower', ratio=1, minimum_size=18),
                             Layout(name='foot', size=4))
+        layout['lower'].split_row(Layout(name='knock', ratio=2), Layout(name='extras', ratio=1))
         if width < 100 or height < 42:
             return Panel(Text('Amplía la terminal a 100 columnas × 42 filas como mínimo.\n'+model.status, style=CYAN), style=f'on {bg}')
         shown = s is not None and not stale
@@ -509,8 +560,8 @@ def render(model, args, width=110, height=44, now=None):
         trace_width = max(10, width//3-6)
         layout['metrics'].split_row(Layout(name='rpm'),Layout(name='load'),Layout(name='inj'))
         layout['rpm'].update(metric('RÉGIMEN', f'{rpm:,}'.replace(',',' ') if shown else '—', 'rpm',
-            'Escala visual 0–7.000 rpm', CYAN, rpm/7000,
-            spark(model.history['rpm'],7000,trace_width,color=CYAN),bg))
+            'Escala visual 0–6.500 rpm', CYAN, rpm/6500,
+            spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
         layout['load'].update(metric('CARGA INTERNA', str(load) if shown else '—', 'raw',
             '0–255, no porcentaje', AMBER, load/255,
             spark(model.history['load'],255,trace_width,color=AMBER),bg))
@@ -545,15 +596,24 @@ def render(model, args, width=110, height=44, now=None):
                                 style=MAGENTA if n and shown else MUTED))
             indices.add_row(*row)
         body = [table, indices,
-                Text('8 índices internos; correspondencia con cilindros pendiente.', style=f'italic {MUTED}')]
+                Text('Histórico completo · picos conservados · índices internos.', style=f'italic {MUTED}')]
         if height >= 34:
-            body += [spark(model.history['retard'],20,max(20,width-6),color=MAGENTA)]
+            body += [spark(model.history['retard'],max(20,max(model.history['retard'],default=0)),max(20,width*2//3-6),color=MAGENTA,full=True)]
             if model.events:
                 at,message=model.events[0]
                 body.append(Text(f'Último aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
         layout['knock'].update(Panel(Group(*body), title=Text(' CONTROL DE PICADO · INDICADOR PROVISIONAL ', style=f'bold {MAGENTA}'),
             box=box.HEAVY if flashing else box.ROUNDED, border_style='#ff7b90' if flashing else MAGENTA,
             style=f'on {bg}', padding=(0,2)))
+        extra = Text()
+        for label,raw in zip(('STFT A','STFT B','LTFT A','LTFT B'),s.trims if s else (32768,)*4):
+            extra.append(label+'\n',style=MUTED)
+            extra.append((f'{trim_percent(raw):+.2f} %' if shown else '—')+'\n',style=f'bold {GREEN}')
+        for label,raw in zip(('ADMISIÓN','REFRIGERANTE'),reversed(s.temperatures if s else (40,40))):
+            extra.append(label+'\n',style=MUTED)
+            extra.append((f'{raw-40} °C' if shown else '—')+'\n',style=f'bold {AMBER}')
+        extra.append('\nLTFT: componente multiplicativo.\nA/B: canales internos.',style=f'italic {MUTED}')
+        layout['extras'].update(Panel(extra,title='MEZCLA / TEMPERATURAS',border_style=GREEN,style=f'on {bg}'))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
         perf = f'{hz:.1f} Hz  ·  {s.duration_ms:.0f} ms/ciclo' if s else 'Esperando primera muestra'
         if s:
@@ -590,7 +650,7 @@ def main(argv=None):
     stop=threading.Event()
     model=Model()
     try:
-        journal=Journal(args.log_dir, not args.no_log and not args.demo)
+        journal=Journal(args.log_dir, not args.no_log)
     except OSError as exc:
         console.print(Text('No se puede crear el registro: '+str(exc),style='red'))
         return 1
@@ -616,6 +676,7 @@ def main(argv=None):
     console.print(Text('Sesión finalizada · '+model.status,style='red' if model.fatal else 'cyan'))
     if journal.path:
         console.print(Text('Registro: '+str(journal.path.resolve())))
+        console.print(Text('CSV: '+str(journal.csv_path.resolve())))
     return 1 if model.fatal else 0
 
 
