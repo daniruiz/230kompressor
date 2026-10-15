@@ -646,15 +646,13 @@ def render(model, args, width=110, height=44, now=None):
         row=[]
         for i in range(4):
             n=s.corrections[i] if s and i < len(s.corrections) else 0
-            row.append(Text(f'CANAL {i+1} {n:3d}' if shown else f'CANAL {i+1}   —',
+            row.append(Text(f'\nCANAL {i+1} => {n:3d}' if shown else f'CANAL {i+1}   —',
                             style=MAGENTA if n and shown else MUTED))
         indices.add_row(*row)
-        retard_line = Text('Corrección máx. estimada: ', style=MUTED)
-        retard_line.append(f'~{correction*0.75:.2f}° ({correction} raw)' if shown else '—',
+        retard_line = Text('\nCorrección máx. estimada: ', style=MUTED)
+        retard_line.append(f'{correction*0.75:.2f}°' if shown else '—',
                            style=f'bold {MAGENTA}')
         body = [table, indices,
-                Text('4 canales internos activos; cilindro físico sin asignar. 839C–839F quedan en bruto.\n',
-                     style=f'italic {MUTED}'),
                 retard_line,
                 spark(model.history['retard'],max(20,max(model.history['retard'],default=0)),
                       max(20,width*2//3-6),color=MAGENTA,full=True)]
