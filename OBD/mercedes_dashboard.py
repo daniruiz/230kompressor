@@ -7,8 +7,10 @@ The red alert counts observed rises in candidate knock corrections, NOT a
 validated ECU knock counter. F746 milliseconds use a provisional timer scale.
 The 404 knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, live STFT/LTFT, temperatures,
-RPM, injection, load, coarse calculated MAF and ignition advance.
-Stored LTFT endpoints are read separately every 10 s via service 23.
+RPM, injection, load, coarse calculated MAF ignition advance, throttle and narrowband oxygen sensor.
+Stored LTFT endpoints are read every 30 s via service 23, one per fast cycle.
+This is a polling policy, not a verified ECU adaptation time.
+Oxygen sensor voltage follows the stock 404 PID 14 conversion, NOT wideband lambda/AFR.
 MAF is the ECU calculated airflow (also available in substitute operation),
 quantized to approximately 1.1108 g/s per F74C count; 255 is saturated.
 Ignition conversion matches the 404 OBD PID 0E path, positive = BTDC.
@@ -44,8 +46,12 @@ except ImportError:
 
 # ROM pointer table 0xDE48, service 22 at 0x3ABC0 and group at 0x3AF14.
 # 1107 -> F74C/F74D; 110B -> F759/F75A. Only the first byte is used.
-IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x07, 0x0B)
-LTFT_INTERVAL = 10.0
+IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x07, 0x0B, 0x0A, 0x1F)
+LTFT_INTERVAL = 30.0
+# 111F -> 81C0; comparator at 159F0 uses ROM 41A8 = 0x2456.
+O2_SWITCH_RAW = 0x2456
+# 110A -> F74F: byte used directly for OBD throttle position.
+# A narrowband signal cannot be converted to measured lambda or AFR.
 # 0x1108C: F74C=floor(F8C0/40), clamped 255.
 # 0x3A3CE: OBD MAF raw=floor(F8C0*2777/1000), OBD units 0.01 g/s.
 MAF_GS_PER_RAW = 40 * 2777 / 100000
@@ -160,6 +166,8 @@ class Sample:
     pairs_raw: str = ""
     maf_raw: int | None = None
     advance_raw: int | None = None
+    throttle_raw: int | None = None
+    oxygen_raw: int | None = None
 
 
 def from_pairs(pairs: list[bytes]) -> Sample:
@@ -170,7 +178,8 @@ def from_pairs(pairs: list[bytes]) -> Sample:
                   tuple(b for pair in pairs[3:5] for b in pair),
                   trims=tuple(int.from_bytes(p, "little") for p in pairs[5:7]),
                   temperatures=tuple(pairs[7]), pairs_raw=b"".join(pairs).hex(),
-                  maf_raw=pairs[8][0], advance_raw=pairs[9][0])
+                  maf_raw=pairs[8][0], advance_raw=pairs[9][0], throttle_raw=pairs[10][0],
+                  oxygen_raw=int.from_bytes(pairs[11], "little"))
 
 
 def grouped(reply: str) -> Sample:
@@ -194,6 +203,24 @@ def advance_degrees(raw):
     # 0x3A378..0x3A3A0 converts F759 to PID 0E as floor(3*N/2)-4,
     # clamped 0..255, then OBD decodes A/2-64. Keep native 0.75° precision.
     return raw * 0.75 - 66
+
+
+def oxygen_voltage(raw):
+    """404: 81C0 -> 3B7E4..3B7FA -> 8CFE -> PID 14 at 3A474.
+
+    DPP3=3; ROM E104 contains 0x0DB8 (3512). Subtract with a
+    zero floor, clamp to 0x3FBE, shift left 2 and take high byte.
+    PID 14 voltage is that byte / 200. No additional diagnostic request.
+    """
+    if raw is None:
+        return None
+    return (min(0x3FBE, max(0, raw - 3512)) >> 6) / 200
+
+
+def oxygen_state(raw):
+    if raw is None:
+        return "sin datos"
+    return "rico" if raw > O2_SWITCH_RAW else "pobre"
 
 
 def trim_percent(raw):
@@ -221,6 +248,7 @@ class Journal:
             self.csv_fields = ['utc','demo','rpm','load_raw','F746_raw','injection_ms_est',
                 'injector_duty_est_pct','cycle_ms','observed_count','observed_event',
                 'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw',
+                'throttle_raw','throttle_pct','oxygen_raw','oxygen_voltage_V','oxygen_state',
                 'maf_raw','maf_g_s_est','maf_saturated','advance_raw','advance_deg',
                 'ltft_low_raw','ltft_low_pct','ltft_high_raw','ltft_high_pct',
                 'ltft_stored_age_s','ltft_stored_status']
@@ -242,7 +270,12 @@ class Journal:
         for name,n in zip(('stft_a','ltft_a'),sample.trims):
             values[name+'_raw']=n
             values[name+'_pct']=trim_percent(n)
-        values.update(maf_raw=sample.maf_raw,
+        values.update(throttle_raw=sample.throttle_raw,
+                      throttle_pct=sample.throttle_raw*100/255 if sample.throttle_raw is not None else None,
+                      oxygen_raw=sample.oxygen_raw,
+                      oxygen_voltage_V=oxygen_voltage(sample.oxygen_raw),
+                      oxygen_state=oxygen_state(sample.oxygen_raw),
+                      maf_raw=sample.maf_raw,
                       maf_g_s_est=sample.maf_raw*MAF_GS_PER_RAW if sample.maf_raw is not None else None,
                       maf_saturated=sample.maf_raw == 255,
                       advance_raw=sample.advance_raw,
@@ -412,17 +445,14 @@ class ELM:
         sample.duration_ms = (sample.at-start)*1000
         return sample
 
-    def read_stored_trims(self):
-        # Custom 404 service at 0x3AC30: request 23 00 addr_hi addr_lo;
-        # response 63 00 addr_hi addr_lo data_lo data_hi. No length byte.
-        # These addresses are outside the two masked regions in this handler.
-        values = []
-        for address in (0x900C, 0x9014):
-            suffix = bytes([0, address >> 8, address & 255])
-            reply = self.query('23' + suffix.hex().upper())
-            frame = positive(reply, 0x23, b'\x63' + suffix, 6)
-            values.append(int.from_bytes(frame[4:6], 'little'))
-        return tuple(values)
+    def read_stored_trim(self, address):
+        # Custom 404 service 23 returns one word. No length byte.
+        if address not in (0x900C, 0x9014):
+            raise ValueError('Dirección LTFT inválida')
+        suffix = bytes([0, address >> 8, address & 255])
+        reply = self.query('23' + suffix.hex().upper())
+        frame = positive(reply, 0x23, b'\x63' + suffix, 6)
+        return int.from_bytes(frame[4:6], 'little')
 
     def close(self):
         self.serial.close()
@@ -477,6 +507,7 @@ class Model:
         self.ltft_status = 'pendiente'
         self.ltft_disabled = False
         self.next_ltft = 0.0
+        self.ltft_pending = None
         self.previous = None
         self.count = 0
         self.alert_until = 0.0
@@ -538,25 +569,31 @@ class Model:
 
 
 def poll_stored_trims(elm, model, journal, now=None):
-    """Single serial owner; optional reads never invalidate a good fast sample."""
+    """One optional request per fast cycle; publish a complete cached pair."""
     now = time.monotonic() if now is None else now
     if model.ltft_disabled or now < model.next_ltft:
         return
     try:
-        low, high = elm.read_stored_trims()
-        model.stored_trims(low, high)
+        if model.ltft_pending is None:
+            low = elm.read_stored_trim(0x900C)
+            model.ltft_pending = (low, time.monotonic())
+            return  # Next worker iteration reads the fast group before high.
+        low, low_at = model.ltft_pending
+        high = elm.read_stored_trim(0x9014)
+        model.stored_trims(low, high, low_at)
         journal.write('ltft_stored', low_raw=low, high_raw=high,
-                      low_pct=trim_percent(low), high_pct=trim_percent(high))
+                      low_pct=trim_percent(low), high_pct=trim_percent(high),
+                      pair_span_s=time.monotonic()-low_at)
     except LinkTimeout:
-        raise  # Without a prompt, serial framing is no longer reliable.
+        raise
     except DiagnosticError as exc:
         disabled = isinstance(exc, NegativeResponse) and exc.code in (0x11, 0x12, 0x31, 0x33)
         with model.lock:
             model.ltft_disabled = disabled
             model.ltft_status = 'no disponible' if disabled else 'error de lectura'
         journal.write('ltft_stored_error', error=str(exc), disabled=disabled)
-    finally:
-        model.next_ltft = time.monotonic() + LTFT_INTERVAL
+    model.ltft_pending = None
+    model.next_ltft = time.monotonic() + LTFT_INTERVAL
 
 
 def worker(args, model, stop, journal):
@@ -577,6 +614,8 @@ def worker(args, model, stop, journal):
                 corrections = (correction, max(0, correction-2), 0, 0)
                 sample = Sample(rpm, int(1100 + load*18), load, corrections,
                                 (now-prev_at)*1000, now)
+                sample.throttle_raw = round(255*(0.5+0.5*math.sin(t/3)))
+                sample.oxygen_raw = round(O2_SWITCH_RAW*(1+0.7*math.sin(t*4)))
                 sample.maf_raw = min(255, int(load*rpm/100000))
                 sample.advance_raw = round((10 + 15*math.sin(t/4) + 66)/0.75)
                 if now >= model.next_ltft:
@@ -733,7 +772,7 @@ def render(model, args, width=110, height=44, now=None):
             '0–6.500 rpm', CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
         layout['load'].update(metric('CARGA INTERNA', str(load) if shown else '—', 'raw',
-            '0–255, no porcentaje', AMBER, load/255,
+            (f'Mariposa: {s.throttle_raw*100/255:.1f} %' if shown and s.throttle_raw is not None else 'Mariposa: —'), AMBER, load/255,
             spark(model.history['load'],255,trace_width,color=AMBER),bg))
         ms = inj*args.tick_us/1000
         duty = duty_percent(inj, rpm, args.tick_us) if s else 0
@@ -782,11 +821,13 @@ def render(model, args, width=110, height=44, now=None):
                                         style=f'bold {GREEN}'))
         stored_age = now-model.ltft_at if model.ltft_at is not None else math.inf
         for label,raw in (('LTFT low',model.ltft_low), ('LTFT high',model.ltft_high)):
-            valid = raw is not None and stored_age <= 15 and model.ltft_status == 'ok'
+            valid = raw is not None and stored_age <= LTFT_INTERVAL + 5 and model.ltft_status == 'ok'
             value = f'{trim_percent(raw):+.2f} %' if valid else '—'
             mixture.add_row(label, Text(value, style=f'bold {GREEN if valid else MUTED}'))
         maf = f'{"≥" if s.maf_raw == 255 else "~"}{s.maf_raw*MAF_GS_PER_RAW:.1f} g/s' if shown and s.maf_raw is not None else '—'
         mixture.add_row('Caudal ECU', Text(maf, style=f'bold {CYAN}'))
+        oxygen = f'{oxygen_voltage(s.oxygen_raw):.3f} V · {oxygen_state(s.oxygen_raw)}' if shown and s.oxygen_raw is not None else '—'
+        mixture.add_row('Sonda λ', Text(oxygen, style=f'bold {AMBER}'))
         temperatures = Table.grid(expand=True, padding=(0,1))
         temperatures.add_column(style=MUTED)
         temperatures.add_column(justify='right')
