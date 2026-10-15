@@ -397,7 +397,7 @@ class ELM:
     def setup(self, notice, adaptive):
         self.adaptive = adaptive if self.fast else '0'
         self.at('ATE0')
-        notice('USB listo · ' + self.command('ATI').strip())
+        notice('Adaptador listo · ' + self.command('ATI').strip())
         self.at('ATPC')
         notice('Cerrando sesión anterior · 6 s')
         if self.stop.wait(6):
@@ -457,44 +457,77 @@ class ELM:
     def close(self):
         self.serial.close()
 
+def adapter_ports():
+    """Enumerate serial USB and Bluetooth SPP ports, including Linux rfcomm."""
+    from serial.tools import list_ports
+    found = {}
+    for p in list_ports.comports():
+        # Bluetooth virtual COM ports normally have no USB VID/PID.
+        found.setdefault(p.device, (p.description or '', p.hwid or ''))
+    if os.name == 'posix':
+        # pyserial's Linux enumeration may omit bound RFCOMM serial devices.
+        for p in sorted(Path('/dev').glob('rfcomm*')):
+            found.setdefault(str(p), ('Bluetooth RFCOMM', ''))
+    def priority(item):
+        device, metadata = item
+        info = ' '.join((device, *metadata)).upper()
+        known = any(tag in info for tag in ('OBDLINK', 'ELM', 'STN', 'OBD'))
+        # Natural ordering: COM2 before COM10, deterministic within each group.
+        natural = tuple((1, int(x)) if x.isdigit() else (0, x.lower())
+                        for x in re.split(r'(\d+)', device))
+        return (not known, natural)
+    return [device for device, _ in sorted(found.items(), key=priority)]
+
+
 def connect_adapter(args, journal, stop, notice):
-    """Probe USB serial adapters with local AT commands before accessing the ECU."""
+    """Select the first responding ELM-compatible serial USB/Bluetooth adapter.
+
+    Bluetooth must already be paired and expose a serial port (Windows COM or
+    Linux /dev/rfcommN). BLE-only devices do not expose this serial interface.
+    Discovery uses adapter AT commands only, without initializing the ECU.
+    """
     if args.port:
         return ELM(args.port, args.baud, journal, stop,
                    fast=not args.conservative, repeat=False)
-    from serial.tools import list_ports
-    ports = [p for p in list_ports.comports() if p.vid is not None]
-    ports.sort(key=lambda p: (not any(s in (p.description or '').upper()
-                                     for s in ('OBDLINK', 'ELM', 'OBD')), p.device))
+    try:
+        ports = adapter_ports()
+    except ImportError as exc:
+        raise DiagnosticError('Instala pyserial: python3 -m pip install pyserial') from exc
     errors = []
     for port in ports:
-        for baud in dict.fromkeys((args.baud, 38400, 9600, 57600, 19200)):
+        for baud in dict.fromkeys((args.baud, 115200, 38400, 9600, 57600, 19200)):
+            if stop.is_set():
+                raise InterruptedError
             elm = None
             try:
-                notice(f'Buscando adaptador · {port.device} · {baud} baud')
-                elm = ELM(port.device, baud, journal, stop,
+                notice(f'Buscando adaptador · {port} · {baud} baud')
+                elm = ELM(port, baud, journal, stop,
                           fast=not args.conservative, repeat=False)
-                reply = elm.command('ATE0', timeout=1.2)
+                reply = elm.command('ATE0', timeout=1.5)
                 if 'OK' not in reply.upper().split():
                     raise DiagnosticError('ATE0 sin OK')
-                identity = elm.command('ATI', timeout=1.2).strip()
+                identity = elm.command('ATI', timeout=1.5).strip()
                 if not re.search(r'ELM|OBDLINK|STN|OBDII|OBD-II', identity, re.I):
                     raise DiagnosticError('Identidad no reconocida: ' + identity)
-                args.port, args.baud = port.device, baud
-                journal.write('adapter', port=args.port, baud=baud, identity=identity)
+                args.port, args.baud = port, baud
+                journal.write('adapter', port=port, baud=baud, identity=identity)
                 return elm
             except InterruptedError:
                 if elm:
                     elm.close()
                 raise
             except Exception as exc:
-                errors.append(f'{port.device}@{baud}: {exc}')
+                errors.append(f'{port}@{baud}: {exc}')
                 if elm:
                     elm.close()
+                else:
+                    # An unavailable/busy port cannot be fixed by changing baud.
+                    break
     journal.write('discovery_failed', attempts=errors)
-    raise DiagnosticError('No se encontró un adaptador USB ELM/OBDLink. '
-                          'Comprueba alimentación y permisos, cierra otros programas '
-                          'o indica el puerto manualmente (COM3 / /dev/ttyUSB0).')
+    raise DiagnosticError('No se encontró un adaptador serie ELM/OBDLink USB o Bluetooth. '
+                          'Comprueba alimentación y permisos, cierra otros programas; '
+                          'para Bluetooth, empareja y habilita un puerto serie COM o rfcomm. '
+                          'También puedes indicar COM3, /dev/ttyUSB0 o /dev/rfcomm0.')
 
 
 class Model:
@@ -862,7 +895,7 @@ def render(model, args, width=110, height=44, now=None):
 
 def parse_args(argv=None):
     p=argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('port', nargs='?', help='Opcional: autodetección USB; o /dev/ttyUSB0, COM5, socket://IP:PUERTO')
+    p.add_argument('port', nargs='?', help='Opcional: autodetección USB/Bluetooth; o /dev/ttyUSB0, /dev/rfcomm0, COM5, socket://IP:PUERTO')
     p.add_argument('--demo', action='store_true', help='Datos simulados, sin abrir puerto ni importar pyserial')
     p.add_argument('--baud', type=int, default=115200)
     p.add_argument('--seconds', type=float, default=0, help='Duración; 0 hasta Ctrl+C')
