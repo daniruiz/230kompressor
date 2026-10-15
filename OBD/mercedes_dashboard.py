@@ -4,7 +4,10 @@ Demo: python3 mercedes_dashboard.py --demo
 Car:  python3 mercedes_dashboard.py /dev/ttyUSB0
 
 The red alert counts observed rises in candidate knock corrections, NOT a
-validated ECU knock counter. Injection milliseconds use a provisional scale.
+validated ECU knock counter. F746 milliseconds use a provisional timer scale.
+The 404 knock correction loop rotates four internal channels (8398..839B).
+The diagnostic group exposes eight bytes (8398..839F); the last four are kept
+as raw data but are not treated as active knock channels by this dashboard.
 """
 from __future__ import annotations
 import argparse
@@ -16,6 +19,7 @@ import json
 import math
 import os
 from pathlib import Path
+import queue
 import re
 import sys
 import threading
@@ -33,8 +37,8 @@ try:
 except ImportError:
     raise SystemExit('Instala la interfaz: python3 -m pip install rich')
 
-# Each diagnostic identifier returns TWO consecutive bytes. Four requests cover
-# all eight internal correction slots, without claiming eight physical cylinders.
+# Each identifier returns two bytes. 2B/2D/2F/31 expose bytes 8398..839F.
+# The 404 control routine rotates an index 0..3 and accesses 8398..839B.
 IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x2F, 0x31, 0x1B, 0x23, 0x01)
 BG = '#0b1424'
 MUTED = '#9aaec8'
@@ -51,6 +55,51 @@ class DiagnosticError(RuntimeError):
 
 class LinkTimeout(DiagnosticError):
     pass
+
+
+class KnockSound:
+    """Play six quick tones away from the acquisition and rendering threads."""
+    def __init__(self):
+        self.pending = queue.Queue()
+        self.stopped = threading.Event()
+        self.thread = threading.Thread(target=self._run, name='knock-sound', daemon=True)
+        self.thread.start()
+
+    def notify(self):
+        self.pending.put_nowait(True)
+
+    def _tone(self):
+        if sys.platform == 'win32':
+            import winsound
+            winsound.Beep(1800, 70)
+        else:
+            # Audible if the user's terminal has its bell enabled.
+            sys.stdout.write('\a')
+            sys.stdout.flush()
+            self.stopped.wait(0.07)
+
+    def _burst(self):
+        for i in range(6):
+            if self.stopped.is_set():
+                return
+            try:
+                self._tone()
+            except (OSError, RuntimeError):
+                pass  # Audio support must never interrupt ECU acquisition.
+            if i < 5 and self.stopped.wait(0.04):
+                return
+
+    def _run(self):
+        while not self.stopped.is_set():
+            item = self.pending.get()
+            if item is None:
+                return
+            self._burst()
+
+    def close(self):
+        self.stopped.set()
+        self.pending.put_nowait(None)
+        self.thread.join(timeout=0.5)
 
 
 def hex_frames(reply: str) -> list[bytes]:
@@ -101,7 +150,7 @@ def from_pairs(pairs: list[bytes]) -> Sample:
         raise DiagnosticError('Número de señales incorrecto')
     return Sample(int.from_bytes(pairs[0], 'little'),
                   int.from_bytes(pairs[1], 'little'), pairs[2][0],
-                  tuple(b for pair in pairs[3:7] for b in pair),
+                  tuple(b for pair in pairs[3:5] for b in pair),
                   trims=tuple(int.from_bytes(p, "little") for p in pairs[7:9]),
                   temperatures=tuple(pairs[9]), pairs_raw=b"".join(pairs).hex())
 
@@ -112,7 +161,11 @@ def grouped(reply: str) -> Sample:
 
 
 def duty_percent(injection_raw: int, rpm: int, tick_us: float = 8/3) -> float:
-    """Estimate duty assuming F746 is one pulse per 720 crank degrees."""
+    """Estimate commanded duty; F746 is a timer count after dead-time compensation.
+
+    tick_us and one pulse per 720 crank degrees remain assumptions to validate.
+    This is commanded electrical time, not the injector's effective flow-open time.
+    """
     if injection_raw < 0 or rpm < 0 or tick_us <= 0:
         raise ValueError('Valores inválidos para estimar el duty')
     pulse_ms = injection_raw * tick_us / 1000
@@ -139,7 +192,7 @@ class Journal:
             self.csv_fields = ['utc','demo','rpm','load_raw','F746_raw','injection_ms_est',
                 'injector_duty_est_pct','cycle_ms','observed_count','observed_event',
                 'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw']
-            self.csv_fields += [f'knock_{i}_{unit}' for i in range(1,9) for unit in ('raw','deg')]
+            self.csv_fields += [f'knock_channel_{i}_{unit}' for i in range(1,5) for unit in ('raw','deg_est')]
             self.csv_fields += [f'{name}_{unit}' for name in ('stft_a','ltft_a') for unit in ('raw','pct')]
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
@@ -152,8 +205,8 @@ class Journal:
             coolant_C=sample.temperatures[0]-40, iat_C=sample.temperatures[1]-40,
             coolant_raw=sample.temperatures[0], iat_raw=sample.temperatures[1], pairs_raw=sample.pairs_raw)
         for i,n in enumerate(sample.corrections,1):
-            values[f'knock_{i}_raw']=n
-            values[f'knock_{i}_deg']=n*0.75
+            values[f'knock_channel_{i}_raw']=n
+            values[f'knock_channel_{i}_deg_est']=n*0.75
         for name,n in zip(('stft_a','ltft_a'),sample.trims):
             values[name+'_raw']=n
             values[name+'_pct']=trim_percent(n)
@@ -343,7 +396,8 @@ def connect_adapter(args, journal, stop, notice):
 
 
 class Model:
-    def __init__(self):
+    def __init__(self, sound=None):
+        self.sound = sound
         self.lock = threading.RLock()
         self.sample = None
         self.previous = None
@@ -378,12 +432,15 @@ class Model:
             continuous = old is not None and 0 < sample.at-old.at <= 2.0
             raised = []
             if continuous and sample.rpm >= 400 and old.rpm >= 400:
-                raised = [i for i,(a,b) in enumerate(zip(old.corrections, sample.corrections)) if b > a]
+                # The 404 ignition routine indexes four active channel bytes.
+                raised = [i for i,(a,b) in enumerate(zip(old.corrections[:4], sample.corrections[:4])) if b > a]
             if raised:
                 self.count += 1  # one observed update, NOT number of combustion knocks
+                if self.sound is not None:
+                    self.sound.notify()
                 self.alert_until = sample.at + 3.0
                 slots = ','.join(str(i+1) for i in raised)
-                self.events.appendleft((sample.at, f'Aumento en índice(s) {slots}'))
+                self.events.appendleft((sample.at, f'Aumento en canal(es) interno(s) {slots}'))
             self.previous = self.sample = sample
             self.failed = False
             self.samples += 1
@@ -412,7 +469,7 @@ def worker(args, model, stop, journal):
                 load = int(60 + 175 * (0.5 + 0.5*math.sin(t/2.2)))
                 rpm = int(900 + 5200*(0.5 + 0.5*math.sin(t/3-1.5)))
                 correction = max(0, 8-int((phase-2)*2)) if phase >= 2 else 0
-                corrections = (correction, max(0, correction-2), 0, 0, 0, 0, 0, 0)
+                corrections = (correction, max(0, correction-2), 0, 0)
                 sample = Sample(rpm, int(1100 + load*18), load, corrections,
                                 (now-prev_at)*1000, now)
                 sample.temperatures = (130, 78)
@@ -569,7 +626,7 @@ def render(model, args, width=110, height=44, now=None):
         ms = inj*args.tick_us/1000
         duty = duty_percent(inj, rpm, args.tick_us) if s else 0
         layout['inj'].update(metric('INYECCIÓN / DUTY', f'~{duty:.1f}' if shown else '—', '%',
-            (f'~{ms:.2f} ms · {inj} raw' if shown else 'Sin lectura actual de F746'), GREEN, duty/100,
+            (f'~{ms:.2f} ms estimados · {inj} raw' if shown else 'Sin lectura actual de F746'), GREEN, duty/100,
             spark(model.history['duty'],100,trace_width,color=GREEN),bg))
         notice = 'AUMENTO OBSERVADO · AVISO 3 s' if flashing else 'SIN NUEVOS AUMENTOS OBSERVADOS'
         if not shown:
@@ -580,37 +637,49 @@ def render(model, args, width=110, height=44, now=None):
         counter = Text(f'{model.count:04d}', style='bold bright_red', justify='center')
         correction = max(s.corrections) if s else 0
         right = Text(notice, style=f'bold {RED if flashing else AMBER}')
-        right.append('\nRetardo de encendido: ', style=MUTED)
-        right.append(f'{correction*0.75:.2f}°' if shown else '—', style=f'bold {MAGENTA}')
         counter_box = Panel(counter,
                             border_style='bold bright_red', box=box.HEAVY, padding=(0,1))
         table.add_row(right, counter_box)
         indices = Table.grid(expand=True, padding=(0,1))
         for _ in range(4):
             indices.add_column(ratio=1)
-        for start in (0,4):
-            row=[]
-            for i in range(start,start+4):
-                n=s.corrections[i] if s else 0
-                row.append(Text(f'I{i+1}  {n:3d} raw' if shown else f'I{i+1}   —',
-                                style=MAGENTA if n and shown else MUTED))
-            indices.add_row(*row)
-        body = [table, indices]
-        body += [spark(model.history['retard'],max(20,max(model.history['retard'],default=0)),max(20,width*2//3-6),color=MAGENTA,full=True)]
+        row=[]
+        for i in range(4):
+            n=s.corrections[i] if s and i < len(s.corrections) else 0
+            row.append(Text(f'CANAL {i+1} {n:3d}' if shown else f'CANAL {i+1}   —',
+                            style=MAGENTA if n and shown else MUTED))
+        indices.add_row(*row)
+        retard_line = Text('Corrección máx. estimada: ', style=MUTED)
+        retard_line.append(f'~{correction*0.75:.2f}° ({correction} raw)' if shown else '—',
+                           style=f'bold {MAGENTA}')
+        body = [table, indices,
+                Text('4 canales internos activos; cilindro físico sin asignar. 839C–839F quedan en bruto.\n',
+                     style=f'italic {MUTED}'),
+                retard_line,
+                spark(model.history['retard'],max(20,max(model.history['retard'],default=0)),
+                      max(20,width*2//3-6),color=MAGENTA,full=True)]
         if model.events:
             at,message=model.events[0]
             body.append(Text(f'Último aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
         layout['knock'].update(Panel(Group(*body), title=Text(' CONTROL DE PICADO ', style=f'bold {MAGENTA}'),
             box=box.HEAVY if flashing else box.ROUNDED, border_style=RED if flashing else MAGENTA,
             style=f'on {bg}', padding=(0,2)))
-        extra = Text()
+        mixture = Table.grid(expand=True, padding=(0,1))
+        mixture.add_column(style=MUTED)
+        mixture.add_column(justify='right')
         for label,raw in zip(('STFT','LTFT'),s.trims if s else (32768,)*2):
-            extra.append(label+'\n',style=MUTED)
-            extra.append((f'{trim_percent(raw):+.2f} %' if shown else '—')+'\n',style=f'bold {GREEN}')
+            mixture.add_row(label, Text(f'{trim_percent(raw):+.2f} %' if shown else '—',
+                                        style=f'bold {GREEN}'))
+        temperatures = Table.grid(expand=True, padding=(0,1))
+        temperatures.add_column(style=MUTED)
+        temperatures.add_column(justify='right')
         for label,raw in zip(('ADMISIÓN','REFRIGERANTE'),reversed(s.temperatures if s else (40,40))):
-            extra.append(label+'\n',style=MUTED)
-            extra.append((f'{raw-40} °C' if shown else '—')+'\n',style=f'bold {AMBER}')
-        layout['extras'].update(Panel(extra,title='MEZCLA / TEMPERATURAS',border_style=GREEN,style=f'on {bg}'))
+            temperatures.add_row(label, Text(f'{raw-40} °C' if shown else '—', style=f'bold {AMBER}'))
+        layout['extras'].split_column(Layout(name='mixture'), Layout(name='temps'))
+        layout['mixture'].update(Panel(mixture, title='MEZCLA', border_style=GREEN,
+                                       box=box.ROUNDED, style=f'on {bg}'))
+        layout['temps'].update(Panel(temperatures, title='TEMPERATURAS', border_style=AMBER,
+                                     box=box.ROUNDED, style=f'on {bg}'))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
         perf = f'{hz:.1f} Hz  ·  {s.duration_ms:.0f} ms/ciclo' if s else 'Esperando primera muestra'
         if s:
@@ -631,7 +700,7 @@ def parse_args(argv=None):
     p.add_argument('--adaptive', choices=['0','1','2'], default='2')
     p.add_argument('--individual', action='store_true', help='Usar 22 en vez de intentar la agrupación')
     p.add_argument('--conservative', action='store_true', help='Sin sufijo de una respuesta ni repetición por CR')
-    p.add_argument('--tick-us', type=float, default=8/3, help='Escala provisional de F746; defecto 2.6666667 us/raw')
+    p.add_argument('--tick-us', type=float, default=8/3, help='Escala no verificada de F746; provisional 2.6666667 us/raw')
     p.add_argument('--no-flash', action='store_true', help='Mantener aviso sin parpadeo de fondo')
     p.add_argument('--log-dir', type=Path, default=Path('logs'))
     p.add_argument('--no-log', action='store_true')
@@ -645,10 +714,12 @@ def main(argv=None):
     args=parse_args(argv)
     console=Console()
     stop=threading.Event()
-    model=Model()
+    sound = KnockSound()
+    model=Model(sound=sound)
     try:
         journal=Journal(args.log_dir, not args.no_log)
     except OSError as exc:
+        sound.close()
         console.print(Text('No se puede crear el registro: '+str(exc),style='red'))
         return 1
     journal.write('session', demo=args.demo, port=args.port, baud=args.baud,
@@ -669,6 +740,7 @@ def main(argv=None):
         pass
     finally:
         stop.set()
+        sound.close()
         thread.join(timeout=3)
     console.print(Text('Sesión finalizada · '+model.status,style='red' if model.fatal else 'cyan'))
     if journal.path:
