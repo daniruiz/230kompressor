@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from rich.console import Console
 import mercedes_dashboard as d
 
-REPLY='6A0100197017DCFF040302010000000000800080008000808250\r>'
+REPLY='6A0100197017DCFF0403020100000000008000808250\r>'
 
 class DashboardTests(unittest.TestCase):
     def test_decoding_width_and_endianness(self):
@@ -66,7 +66,12 @@ class DashboardTests(unittest.TestCase):
         self.assertTrue(all(not fast for _,fast in elm.calls))
         self.assertEqual(elm.calls[6][0],'2C01D2071131')
         self.assertEqual(elm.calls[7][0],'2C01D208111B')
-        self.assertEqual(elm.calls[11][0],'2C01D20C1101')
+        self.assertEqual(elm.calls[8][0],'2C01D2091123')
+        self.assertEqual(elm.calls[9][0],'2C01D20A1101')
+        self.assertEqual(elm.calls[10][0],'2C01D00B1104')
+        self.assertEqual(elm.calls[11][0],'2C01D00C1104')
+        self.assertNotIn(0x1C,d.IDS)
+        self.assertNotIn(0x24,d.IDS)
 
     def test_alarm_and_gaps(self):
         m=d.Model()
@@ -133,7 +138,7 @@ class DashboardTests(unittest.TestCase):
         from pathlib import Path
         sample=d.grouped(REPLY)
         self.assertEqual(sample.temperatures,(130,80))
-        self.assertEqual(sample.trims,(32768,)*4)
+        self.assertEqual(sample.trims,(32768,)*2)
         self.assertEqual(d.trim_percent(32768),0)
         self.assertEqual(d.trim_percent(40960),12.5)
         with tempfile.TemporaryDirectory() as tmp:
@@ -152,6 +157,8 @@ class DashboardTests(unittest.TestCase):
             self.assertEqual(rows[0]['iat_C'],'40')
             self.assertEqual(rows[0]['knock_1_raw'],'4')
             self.assertEqual(rows[0]['ltft_a_pct'],'0.0')
+            self.assertNotIn('ltft_b_pct',rows[0])
+            self.assertNotIn('stft_b_raw',rows[0])
             self.assertEqual(len(m.history['retard']),150)
         graph=d.spark([20]+[0]*999,20,40,full=True)
         self.assertNotEqual(graph,d.spark([0]*1000,20,40,full=True))

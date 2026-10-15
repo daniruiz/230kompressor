@@ -35,7 +35,7 @@ except ImportError:
 
 # Each diagnostic identifier returns TWO consecutive bytes. Four requests cover
 # all eight internal correction slots, without claiming eight physical cylinders.
-IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x2F, 0x31, 0x1B, 0x1C, 0x23, 0x24, 0x01)
+IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x2F, 0x31, 0x1B, 0x23, 0x01)
 BG = '#0b1424'
 MUTED = '#9aaec8'
 CYAN = '#57d8ed'
@@ -90,7 +90,7 @@ class Sample:
     corrections: tuple[int, ...]
     duration_ms: float = 0.0
     at: float = field(default_factory=time.monotonic)
-    trims: tuple[int, ...] = (32768,)*4
+    trims: tuple[int, ...] = (32768,)*2
     temperatures: tuple[int, int] = (40,40)
     pairs_raw: str = ""
 
@@ -101,8 +101,8 @@ def from_pairs(pairs: list[bytes]) -> Sample:
     return Sample(int.from_bytes(pairs[0], 'little'),
                   int.from_bytes(pairs[1], 'little'), pairs[2][0],
                   tuple(b for pair in pairs[3:7] for b in pair),
-                  trims=tuple(int.from_bytes(p, "little") for p in pairs[7:11]),
-                  temperatures=tuple(pairs[11]), pairs_raw=b"".join(pairs).hex())
+                  trims=tuple(int.from_bytes(p, "little") for p in pairs[7:9]),
+                  temperatures=tuple(pairs[9]), pairs_raw=b"".join(pairs).hex())
 
 
 def grouped(reply: str) -> Sample:
@@ -139,7 +139,7 @@ class Journal:
                 'injector_duty_est_pct','cycle_ms','observed_count','observed_event',
                 'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw']
             self.csv_fields += [f'knock_{i}_{unit}' for i in range(1,9) for unit in ('raw','deg')]
-            self.csv_fields += [f'{name}_{unit}' for name in ('stft_a','stft_b','ltft_a','ltft_b') for unit in ('raw','pct')]
+            self.csv_fields += [f'{name}_{unit}' for name in ('stft_a','ltft_a') for unit in ('raw','pct')]
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
@@ -153,7 +153,7 @@ class Journal:
         for i,n in enumerate(sample.corrections,1):
             values[f'knock_{i}_raw']=n
             values[f'knock_{i}_deg']=n*0.75
-        for name,n in zip(('stft_a','stft_b','ltft_a','ltft_b'),sample.trims):
+        for name,n in zip(('stft_a','ltft_a'),sample.trims):
             values[name+'_raw']=n
             values[name+'_pct']=trim_percent(n)
         self.write('csv_sample', **values)
@@ -415,7 +415,7 @@ def worker(args, model, stop, journal):
                 sample = Sample(rpm, int(1100 + load*18), load, corrections,
                                 (now-prev_at)*1000, now)
                 sample.temperatures = (130, 78)
-                sample.trims = (int(32768+2500*math.sin(t)),32768,34000,33000)
+                sample.trims = (int(32768+2500*math.sin(t)),34000)
                 prev_at = now
                 event = model.accept(sample, args.tick_us)
                 journal.sample(sample, args, model, event)
@@ -429,7 +429,7 @@ def worker(args, model, stop, journal):
         elm.setup(model.notice, args.adaptive)
         mode = 'individual' if args.individual else 'grouped'
         if mode == 'grouped':
-            model.notice('Configurando 12 entradas agrupadas · RAM de diagnóstico')
+            model.notice('Configurando 10 entradas agrupadas · RAM de diagnóstico')
             try:
                 first = elm.define_group()
                 event = model.accept(first, args.tick_us)
@@ -606,13 +606,13 @@ def render(model, args, width=110, height=44, now=None):
             box=box.HEAVY if flashing else box.ROUNDED, border_style='#ff7b90' if flashing else MAGENTA,
             style=f'on {bg}', padding=(0,2)))
         extra = Text()
-        for label,raw in zip(('STFT A','STFT B','LTFT A','LTFT B'),s.trims if s else (32768,)*4):
+        for label,raw in zip(('STFT 1','LTFT 1 MULT.'),s.trims if s else (32768,)*2):
             extra.append(label+'\n',style=MUTED)
             extra.append((f'{trim_percent(raw):+.2f} %' if shown else '—')+'\n',style=f'bold {GREEN}')
         for label,raw in zip(('ADMISIÓN','REFRIGERANTE'),reversed(s.temperatures if s else (40,40))):
             extra.append(label+'\n',style=MUTED)
             extra.append((f'{raw-40} °C' if shown else '—')+'\n',style=f'bold {AMBER}')
-        extra.append('\nLTFT: componente multiplicativo.\nA/B: canales internos.',style=f'italic {MUTED}')
+        extra.append('\nLTFT: componente multiplicativo.\nCanal 1 activo.',style=f'italic {MUTED}')
         layout['extras'].update(Panel(extra,title='MEZCLA / TEMPERATURAS',border_style=GREEN,style=f'on {bg}'))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
         perf = f'{hz:.1f} Hz  ·  {s.duration_ms:.0f} ms/ciclo' if s else 'Esperando primera muestra'
