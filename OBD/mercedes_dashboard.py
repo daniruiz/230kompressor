@@ -6,8 +6,13 @@ Car:  python3 mercedes_dashboard.py /dev/ttyUSB0
 The red alert counts observed rises in candidate knock corrections, NOT a
 validated ECU knock counter. F746 milliseconds use a provisional timer scale.
 The 404 knock correction loop rotates four internal channels (8398..839B).
-The diagnostic group exposes eight bytes (8398..839F); the last four are kept
-as raw data but are not treated as active knock channels by this dashboard.
+The fast group reads four correction bytes, live STFT/LTFT, temperatures,
+RPM, injection, load, coarse calculated MAF and ignition advance.
+Stored LTFT endpoints are read separately every 10 s via service 23.
+MAF is the ECU calculated airflow (also available in substitute operation),
+quantized to approximately 1.1108 g/s per F74C count; 255 is saturated.
+Ignition conversion matches the 404 OBD PID 0E path, positive = BTDC.
+Memory service framing is derived from 404 code, pending on-car validation.
 """
 from __future__ import annotations
 import argparse
@@ -37,9 +42,13 @@ try:
 except ImportError:
     raise SystemExit('Instala la interfaz: python3 -m pip install rich')
 
-# Each identifier returns two bytes. 2B/2D/2F/31 expose bytes 8398..839F.
-# The 404 control routine rotates an index 0..3 and accesses 8398..839B.
-IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x2F, 0x31, 0x1B, 0x23, 0x01)
+# ROM pointer table 0xDE48, service 22 at 0x3ABC0 and group at 0x3AF14.
+# 1107 -> F74C/F74D; 110B -> F759/F75A. Only the first byte is used.
+IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x07, 0x0B)
+LTFT_INTERVAL = 10.0
+# 0x1108C: F74C=floor(F8C0/40), clamped 255.
+# 0x3A3CE: OBD MAF raw=floor(F8C0*2777/1000), OBD units 0.01 g/s.
+MAF_GS_PER_RAW = 40 * 2777 / 100000
 BG = '#0b1424'
 MUTED = '#9aaec8'
 CYAN = '#57d8ed'
@@ -51,6 +60,12 @@ MAGENTA = '#cfafff'
 
 class DiagnosticError(RuntimeError):
     pass
+
+
+class NegativeResponse(DiagnosticError):
+    def __init__(self, service, code):
+        self.service, self.code = service, code
+        super().__init__(f'ECU: 7F {service:02X} {code:02X}')
 
 
 class LinkTimeout(DiagnosticError):
@@ -120,7 +135,7 @@ def positive(reply: str, service: int, prefix: bytes, length: int) -> bytes:
         raise DiagnosticError('Respuestas múltiples; no se elige una arbitrariamente')
     negative = [f for f in frames if len(f) == 3 and f[:2] == bytes([0x7f, service])]
     if negative:
-        raise DiagnosticError('ECU: ' + ' / '.join(f.hex(' ').upper() for f in negative))
+        raise NegativeResponse(service, negative[0][2])
     raise DiagnosticError('Respuesta inválida o incompleta: ' + repr(reply[:160]))
 
 
@@ -143,6 +158,8 @@ class Sample:
     trims: tuple[int, ...] = (32768,)*2
     temperatures: tuple[int, int] = (40,40)
     pairs_raw: str = ""
+    maf_raw: int | None = None
+    advance_raw: int | None = None
 
 
 def from_pairs(pairs: list[bytes]) -> Sample:
@@ -151,8 +168,9 @@ def from_pairs(pairs: list[bytes]) -> Sample:
     return Sample(int.from_bytes(pairs[0], 'little'),
                   int.from_bytes(pairs[1], 'little'), pairs[2][0],
                   tuple(b for pair in pairs[3:5] for b in pair),
-                  trims=tuple(int.from_bytes(p, "little") for p in pairs[7:9]),
-                  temperatures=tuple(pairs[9]), pairs_raw=b"".join(pairs).hex())
+                  trims=tuple(int.from_bytes(p, "little") for p in pairs[5:7]),
+                  temperatures=tuple(pairs[7]), pairs_raw=b"".join(pairs).hex(),
+                  maf_raw=pairs[8][0], advance_raw=pairs[9][0])
 
 
 def grouped(reply: str) -> Sample:
@@ -172,6 +190,12 @@ def duty_percent(injection_raw: int, rpm: int, tick_us: float = 8/3) -> float:
     return pulse_ms * rpm / 1200
 
 
+def advance_degrees(raw):
+    # 0x3A378..0x3A3A0 converts F759 to PID 0E as floor(3*N/2)-4,
+    # clamped 0..255, then OBD decodes A/2-64. Keep native 0.75° precision.
+    return raw * 0.75 - 66
+
+
 def trim_percent(raw):
     # Isolated multiplicative contribution in 15222–15276, neutral=0x8000.
     return ((16384 + (raw >> 1))/32768 - 1)*100
@@ -182,16 +206,24 @@ class Journal:
         self.csv_stream = None
         self.stream = None
         self.path = None
+        self.csv_path = None
         self.last_flush = 0.0
         if enabled:
             root.mkdir(parents=True, exist_ok=True)
             self.path = root / dt.datetime.now().strftime('me21_%Y%m%d_%H%M%S_%f.jsonl')
             self.stream = self.path.open('x', encoding='utf-8')
             self.csv_path = self.path.with_suffix('.csv')
-            self.csv_stream = self.csv_path.open('x', encoding='utf-8', newline='')
+            try:
+                self.csv_stream = self.csv_path.open('x', encoding='utf-8', newline='')
+            except OSError:
+                self.stream.close()
+                raise
             self.csv_fields = ['utc','demo','rpm','load_raw','F746_raw','injection_ms_est',
                 'injector_duty_est_pct','cycle_ms','observed_count','observed_event',
-                'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw']
+                'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw',
+                'maf_raw','maf_g_s_est','maf_saturated','advance_raw','advance_deg',
+                'ltft_low_raw','ltft_low_pct','ltft_high_raw','ltft_high_pct',
+                'ltft_stored_age_s','ltft_stored_status']
             self.csv_fields += [f'knock_channel_{i}_{unit}' for i in range(1,5) for unit in ('raw','deg_est')]
             self.csv_fields += [f'{name}_{unit}' for name in ('stft_a','ltft_a') for unit in ('raw','pct')]
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
@@ -210,6 +242,17 @@ class Journal:
         for name,n in zip(('stft_a','ltft_a'),sample.trims):
             values[name+'_raw']=n
             values[name+'_pct']=trim_percent(n)
+        values.update(maf_raw=sample.maf_raw,
+                      maf_g_s_est=sample.maf_raw*MAF_GS_PER_RAW if sample.maf_raw is not None else None,
+                      maf_saturated=sample.maf_raw == 255,
+                      advance_raw=sample.advance_raw,
+                      advance_deg=advance_degrees(sample.advance_raw) if sample.advance_raw is not None else None)
+        with model.lock:
+            for label, raw in (('low', model.ltft_low), ('high', model.ltft_high)):
+                values[f'ltft_{label}_raw'] = raw
+                values[f'ltft_{label}_pct'] = trim_percent(raw) if raw is not None else None
+            values['ltft_stored_age_s'] = max(0, sample.at-model.ltft_at) if model.ltft_at is not None else None
+            values['ltft_stored_status'] = model.ltft_status
         self.write('csv_sample', **values)
 
     def write(self, kind, **values):
@@ -352,6 +395,18 @@ class ELM:
         sample.duration_ms = (sample.at-start)*1000
         return sample
 
+    def read_stored_trims(self):
+        # Custom 404 service at 0x3AC30: request 23 00 addr_hi addr_lo;
+        # response 63 00 addr_hi addr_lo data_lo data_hi. No length byte.
+        # These addresses are outside the two masked regions in this handler.
+        values = []
+        for address in (0x900C, 0x9014):
+            suffix = bytes([0, address >> 8, address & 255])
+            reply = self.query('23' + suffix.hex().upper(), optimized=False)
+            frame = positive(reply, 0x23, b'\x63' + suffix, 6)
+            values.append(int.from_bytes(frame[4:6], 'little'))
+        return tuple(values)
+
     def close(self):
         self.serial.close()
 
@@ -400,6 +455,11 @@ class Model:
         self.sound = sound
         self.lock = threading.RLock()
         self.sample = None
+        self.ltft_low = self.ltft_high = None
+        self.ltft_at = None
+        self.ltft_status = 'pendiente'
+        self.ltft_disabled = False
+        self.next_ltft = 0.0
         self.previous = None
         self.count = 0
         self.alert_until = 0.0
@@ -413,6 +473,12 @@ class Model:
         self.history = {k: deque(maxlen=90) for k in ('rpm', 'load', 'inj', 'duty', 'retard')}
         self.history['retard'] = []  # Entire session, never evict old peaks.
         self.events = deque(maxlen=5)
+
+    def stored_trims(self, low, high, at=None):
+        with self.lock:
+            self.ltft_low, self.ltft_high = low, high
+            self.ltft_at = time.monotonic() if at is None else at
+            self.ltft_status = 'ok'
 
     def notice(self, message):
         with self.lock:
@@ -454,6 +520,28 @@ class Model:
             return bool(raised)
 
 
+def poll_stored_trims(elm, model, journal, now=None):
+    """Single serial owner; optional reads never invalidate a good fast sample."""
+    now = time.monotonic() if now is None else now
+    if model.ltft_disabled or now < model.next_ltft:
+        return
+    try:
+        low, high = elm.read_stored_trims()
+        model.stored_trims(low, high)
+        journal.write('ltft_stored', low_raw=low, high_raw=high,
+                      low_pct=trim_percent(low), high_pct=trim_percent(high))
+    except LinkTimeout:
+        raise  # Without a prompt, serial framing is no longer reliable.
+    except DiagnosticError as exc:
+        disabled = isinstance(exc, NegativeResponse) and exc.code in (0x11, 0x12, 0x31, 0x33)
+        with model.lock:
+            model.ltft_disabled = disabled
+            model.ltft_status = 'no disponible' if disabled else 'error de lectura'
+        journal.write('ltft_stored_error', error=str(exc), disabled=disabled)
+    finally:
+        model.next_ltft = time.monotonic() + LTFT_INTERVAL
+
+
 def worker(args, model, stop, journal):
     elm = None
     try:
@@ -472,6 +560,12 @@ def worker(args, model, stop, journal):
                 corrections = (correction, max(0, correction-2), 0, 0)
                 sample = Sample(rpm, int(1100 + load*18), load, corrections,
                                 (now-prev_at)*1000, now)
+                sample.maf_raw = min(255, int(load*rpm/100000))
+                sample.advance_raw = round((22 + 15*math.sin(t/4) + 66)/0.75)
+                if now >= model.next_ltft:
+                    model.stored_trims(int(32768+1000*math.sin(t/12)),
+                                       int(32768+2400*math.cos(t/17)), now)
+                    model.next_ltft = now + LTFT_INTERVAL
                 sample.temperatures = (130, 78)
                 sample.trims = (int(32768+2500*math.sin(t)),34000)
                 prev_at = now
@@ -487,7 +581,7 @@ def worker(args, model, stop, journal):
         elm.setup(model.notice, args.adaptive)
         mode = 'individual' if args.individual else 'grouped'
         if mode == 'grouped':
-            model.notice('Configurando 10 entradas agrupadas · RAM de diagnóstico')
+            model.notice(f'Configurando {len(IDS)} entradas agrupadas · RAM de diagnóstico')
             try:
                 first = elm.define_group()
                 event = model.accept(first, args.tick_us)
@@ -513,6 +607,7 @@ def worker(args, model, stop, journal):
                               injection_ms_est=sample.injection*args.tick_us/1000,
                               injector_duty_est_pct=duty_percent(sample.injection, sample.rpm, args.tick_us),
                               correction_deg_nominal=[n*0.75 for n in sample.corrections])
+                poll_stored_trims(elm, model, journal)
             except LinkTimeout:
                 raise
             except DiagnosticError as exc:
@@ -608,7 +703,7 @@ def render(model, args, width=110, height=44, now=None):
         bg = '#811c31' if red else BG
         layout = Layout()
         layout.split_column(Layout(name='metrics', size=16),
-                            Layout(name='lower', ratio=1, minimum_size=18),
+                            Layout(name='lower', ratio=1, minimum_size=22),
                             Layout(name='foot', size=4))
         layout['lower'].split_row(Layout(name='knock', ratio=2), Layout(name='extras', ratio=1))
         if width < 100 or height < 42:
@@ -617,7 +712,7 @@ def render(model, args, width=110, height=44, now=None):
         rpm, load, inj = (s.rpm,s.load,s.injection) if s else (0,0,0)
         trace_width = max(10, width//3-6)
         layout['metrics'].split_row(Layout(name='rpm'),Layout(name='load'),Layout(name='inj'))
-        layout['rpm'].update(metric('RÉGIMEN', f'{rpm:,}'.replace(',',' ') if shown else '—', 'rpm',
+        layout['rpm'].update(metric('RÉGIMEN', f'{rpm:,}'.replace(',','.') if shown else '—', 'rpm',
             '0–6.500 rpm', CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
         layout['load'].update(metric('CARGA INTERNA', str(load) if shown else '—', 'raw',
@@ -655,7 +750,7 @@ def render(model, args, width=110, height=44, now=None):
         body = [table, indices,
                 retard_line,
                 spark(model.history['retard'],max(20,max(model.history['retard'],default=0)),
-                      max(20,width*2//3-6),color=MAGENTA,full=True)]
+                      max(20,width*2//3-6),height=max(7,height-33),color=MAGENTA,full=True)]
         if model.events:
             at,message=model.events[0]
             body.append(Text(f'Último aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
@@ -668,18 +763,36 @@ def render(model, args, width=110, height=44, now=None):
         for label,raw in zip(('STFT','LTFT'),s.trims if s else (32768,)*2):
             mixture.add_row(label, Text(f'{trim_percent(raw):+.2f} %' if shown else '—',
                                         style=f'bold {GREEN}'))
+        stored_age = now-model.ltft_at if model.ltft_at is not None else math.inf
+        for label,raw in (('LTFT low',model.ltft_low), ('LTFT high',model.ltft_high)):
+            valid = raw is not None and stored_age <= 15 and model.ltft_status == 'ok'
+            value = f'{trim_percent(raw):+.2f} %' if valid else '—'
+            mixture.add_row(label, Text(value, style=f'bold {GREEN if valid else MUTED}'))
+        maf = f'{"≥" if s.maf_raw == 255 else "~"}{s.maf_raw*MAF_GS_PER_RAW:.1f} g/s' if shown and s.maf_raw is not None else '—'
+        mixture.add_row('Caudal ECU', Text(maf, style=f'bold {CYAN}'))
         temperatures = Table.grid(expand=True, padding=(0,1))
         temperatures.add_column(style=MUTED)
         temperatures.add_column(justify='right')
         for label,raw in zip(('ADMISIÓN','REFRIGERANTE'),reversed(s.temperatures if s else (40,40))):
             temperatures.add_row(label, Text(f'{raw-40} °C' if shown else '—', style=f'bold {AMBER}'))
-        layout['extras'].split_column(Layout(name='mixture'), Layout(name='temps'))
+        layout['extras'].split_column(Layout(name='mixture',size=9), Layout(name='temps',size=4), Layout(name='advance',minimum_size=9))
         layout['mixture'].update(Panel(mixture, title='MEZCLA', border_style=GREEN,
                                        box=box.ROUNDED, style=f'on {bg}'))
         layout['temps'].update(Panel(temperatures, title='TEMPERATURAS', border_style=AMBER,
                                      box=box.ROUNDED, style=f'on {bg}'))
+        adv = advance_degrees(s.advance_raw) if shown and s.advance_raw is not None else None
+        advance_text = Text(f'{adv:+.1f}°' if adv is not None else '—',
+                            style=f'bold {CYAN}', justify='center')
+        advance_bar = Text(bar(abs(adv), 60) if adv is not None else '─'*24,
+                           style=CYAN)
+        direction = ('antes del PMS' if adv > 0 else 'después del PMS' if adv < 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
+        layout['advance'].update(Panel(Group('', Align.center(advance_text), '',
+            Align.center(advance_bar), Align.center(Text(direction, style=MUTED)),
+            Align.center(Text('Barra: magnitud 0–60°', style=MUTED))),
+            title=Text('AVANCE DE ENCENDIDO', style=f'bold {CYAN}'), border_style=CYAN,
+            box=box.ROUNDED, style=f'on {bg}', padding=(0,1)))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
-        perf = f'{hz:.1f} Hz  ·  {s.duration_ms:.0f} ms/ciclo' if s else 'Esperando primera muestra'
+        perf = f'{hz:.1f} Hz  ·  {s.duration_ms:.0f} ms/grupo rápido' if s else 'Esperando primera muestra'
         if s:
             perf += f'  ·  edad {age:.1f} s'
         footer = Text(perf + f'  ·  errores {model.errors}  ·  Ctrl+C salir', style=MUTED)
