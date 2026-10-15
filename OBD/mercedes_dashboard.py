@@ -39,6 +39,7 @@ IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x2F, 0x31, 0x1B, 0x23, 0x01)
 BG = '#0b1424'
 MUTED = '#9aaec8'
 CYAN = '#57d8ed'
+RED = '#ff2222'
 GREEN = '#65e2ab'
 AMBER = '#ffd27a'
 MAGENTA = '#cfafff'
@@ -560,7 +561,7 @@ def render(model, args, width=110, height=44, now=None):
         trace_width = max(10, width//3-6)
         layout['metrics'].split_row(Layout(name='rpm'),Layout(name='load'),Layout(name='inj'))
         layout['rpm'].update(metric('RÉGIMEN', f'{rpm:,}'.replace(',',' ') if shown else '—', 'rpm',
-            'Escala visual 0–6.500 rpm', CYAN, rpm/6500,
+            '0–6.500 rpm', CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
         layout['load'].update(metric('CARGA INTERNA', str(load) if shown else '—', 'raw',
             '0–255, no porcentaje', AMBER, load/255,
@@ -568,7 +569,7 @@ def render(model, args, width=110, height=44, now=None):
         ms = inj*args.tick_us/1000
         duty = duty_percent(inj, rpm, args.tick_us) if s else 0
         layout['inj'].update(metric('INYECCIÓN / DUTY', f'~{duty:.1f}' if shown else '—', '%',
-            (f'~{ms:.2f} ms · {inj} raw\nEstimación · 1 pulso/720°' if shown else 'Sin lectura actual de F746'), GREEN, duty/100,
+            (f'~{ms:.2f} ms · {inj} raw' if shown else 'Sin lectura actual de F746'), GREEN, duty/100,
             spark(model.history['duty'],100,trace_width,color=GREEN),bg))
         notice = 'AUMENTO OBSERVADO · AVISO 3 s' if flashing else 'SIN NUEVOS AUMENTOS OBSERVADOS'
         if not shown:
@@ -578,10 +579,9 @@ def render(model, args, width=110, height=44, now=None):
         table.add_column(width=max(12,len(str(model.count))+4), justify='right')
         counter = Text(f'{model.count:04d}', style='bold bright_red', justify='center')
         correction = max(s.corrections) if s else 0
-        right = Text(notice, style=f'bold {"#ffffff" if flashing else AMBER}')
-        right.append('\nRetardo solicitado máx.: ', style=MUTED)
-        right.append(f'~{correction*0.75:.2f}°  ({correction} raw)' if shown else '—', style=f'bold {MAGENTA}')
-        right.append('\nEscala nominal; antes de límites de encendido', style=f'italic {MUTED}')
+        right = Text(notice, style=f'bold {RED if flashing else AMBER}')
+        right.append('\nRetardo de encendido: ', style=MUTED)
+        right.append(f'{correction*0.75:.2f}°' if shown else '—', style=f'bold {MAGENTA}')
         counter_box = Panel(counter,
                             border_style='bold bright_red', box=box.HEAVY, padding=(0,1))
         table.add_row(right, counter_box)
@@ -595,24 +595,21 @@ def render(model, args, width=110, height=44, now=None):
                 row.append(Text(f'I{i+1}  {n:3d} raw' if shown else f'I{i+1}   —',
                                 style=MAGENTA if n and shown else MUTED))
             indices.add_row(*row)
-        body = [table, indices,
-                Text('Histórico completo · picos conservados · índices internos.', style=f'italic {MUTED}')]
-        if height >= 34:
-            body += [spark(model.history['retard'],max(20,max(model.history['retard'],default=0)),max(20,width*2//3-6),color=MAGENTA,full=True)]
-            if model.events:
-                at,message=model.events[0]
-                body.append(Text(f'Último aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
-        layout['knock'].update(Panel(Group(*body), title=Text(' CONTROL DE PICADO · INDICADOR PROVISIONAL ', style=f'bold {MAGENTA}'),
-            box=box.HEAVY if flashing else box.ROUNDED, border_style='#ff7b90' if flashing else MAGENTA,
+        body = [table, indices]
+        body += [spark(model.history['retard'],max(20,max(model.history['retard'],default=0)),max(20,width*2//3-6),color=MAGENTA,full=True)]
+        if model.events:
+            at,message=model.events[0]
+            body.append(Text(f'Último aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
+        layout['knock'].update(Panel(Group(*body), title=Text(' CONTROL DE PICADO ', style=f'bold {MAGENTA}'),
+            box=box.HEAVY if flashing else box.ROUNDED, border_style=RED if flashing else MAGENTA,
             style=f'on {bg}', padding=(0,2)))
         extra = Text()
-        for label,raw in zip(('STFT 1','LTFT 1 MULT.'),s.trims if s else (32768,)*2):
+        for label,raw in zip(('STFT','LTFT'),s.trims if s else (32768,)*2):
             extra.append(label+'\n',style=MUTED)
             extra.append((f'{trim_percent(raw):+.2f} %' if shown else '—')+'\n',style=f'bold {GREEN}')
         for label,raw in zip(('ADMISIÓN','REFRIGERANTE'),reversed(s.temperatures if s else (40,40))):
             extra.append(label+'\n',style=MUTED)
             extra.append((f'{raw-40} °C' if shown else '—')+'\n',style=f'bold {AMBER}')
-        extra.append('\nLTFT: componente multiplicativo.\nCanal 1 activo.',style=f'italic {MUTED}')
         layout['extras'].update(Panel(extra,title='MEZCLA / TEMPERATURAS',border_style=GREEN,style=f'on {bg}'))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
         perf = f'{hz:.1f} Hz  ·  {s.duration_ms:.0f} ms/ciclo' if s else 'Esperando primera muestra'
