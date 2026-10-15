@@ -1,5 +1,7 @@
 import io
 import unittest
+from unittest.mock import Mock, patch
+from types import SimpleNamespace
 from rich.console import Console
 import mercedes_dashboard as d
 
@@ -91,6 +93,39 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(d.ELM.query(elm,'2A0101'),REPLY)
         self.assertFalse(elm.fast)
         self.assertEqual(elm.calls,['2A0101 1','2A0101'])
+
+    def test_no_data_recovery_is_bounded_and_read_only(self):
+        elm=SimpleNamespace(fast=True, repeat=True, last_command=None,
+                            journal=Mock(), stop=Mock(), at=Mock())
+        elm.stop.wait.return_value=False
+        elm.command=Mock(side_effect=['NO DATA\r\r', REPLY])
+        self.assertEqual(d.ELM.query(elm,'2A0101'),REPLY)
+        self.assertFalse(elm.fast)
+        self.assertFalse(elm.repeat)
+        self.assertEqual(elm.command.call_count,2)
+        self.assertEqual(elm.command.call_args.args,('2A0101',))
+        self.assertEqual([c.args[0] for c in elm.at.call_args_list],['ATAT0','ATSTFF'])
+        elm.command=Mock(return_value='NO DATA')
+        self.assertEqual(d.ELM.query(elm,'221104'),'NO DATA')
+        self.assertEqual(elm.command.call_count,2)
+        elm.command.reset_mock()
+        d.ELM.query(elm,'2C01D2011104',optimized=False)
+        self.assertEqual(elm.command.call_count,1)
+
+    def test_auto_discovery_and_manual_port(self):
+        args=d.parse_args([])
+        self.assertIsNone(args.port)
+        port=SimpleNamespace(device='COM7',vid=0x403,description='OBDLink SX')
+        failed=Mock(); failed.command.return_value='?'
+        good=Mock(); good.command.side_effect=['OK','OBDLink SX']
+        with patch('serial.tools.list_ports.comports',return_value=[port]), \
+             patch.object(d,'ELM',side_effect=[failed,good]):
+            self.assertIs(d.connect_adapter(args,Mock(),Mock(),Mock()),good)
+        failed.close.assert_called_once()
+        self.assertEqual((args.port,args.baud),('COM7',38400))
+        with patch.object(d,'ELM') as factory:
+            d.connect_adapter(args,Mock(),Mock(),Mock())
+            self.assertEqual(factory.call_args.args[:2],('COM7',38400))
 
     def test_render_and_stale(self):
         args=d.parse_args(['--demo'])

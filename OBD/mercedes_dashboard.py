@@ -194,6 +194,17 @@ class ELM:
             # An older clone may not accept the response-count suffix.
             self.fast = False
             reply = self.command(payload)
+        # Retry only read services, never replay group definitions or writes.
+        if 'NO DATA' in reply.upper() and payload.startswith(('22', '2A')):
+            self.journal.write('recovery', reason='NO DATA', payload=payload,
+                               action='disable shortcuts and adaptive timing; retry once')
+            self.fast = self.repeat = False
+            self.last_command = None
+            self.at('ATAT0')
+            self.at('ATSTFF')
+            if self.stop.wait(0.06):
+                raise InterruptedError
+            reply = self.command(payload, allow_repeat=False)
         return reply
 
     def setup(self, notice, adaptive):
@@ -205,7 +216,7 @@ class ELM:
             raise InterruptedError
         for cmd in ('ATD', 'ATE0', 'ATL0', 'ATS0', 'ATH0', 'ATM0', 'ATSP4',
                     'ATIIA01', 'ATSH8101F1', 'ATKW0', 'ATSW00',
-                    'ATAT'+adaptive, 'ATSTFF'):
+                    'ATAT'+('0' if not self.fast else adaptive), 'ATSTFF'):
             self.at(cmd)
         # Group packets exceed the 7-byte limit of some ELM implementations.
         self.at('ATAL', optional=True)
@@ -248,6 +259,45 @@ class ELM:
 
     def close(self):
         self.serial.close()
+
+def connect_adapter(args, journal, stop, notice):
+    """Probe USB serial adapters with local AT commands before accessing the ECU."""
+    if args.port:
+        return ELM(args.port, args.baud, journal, stop,
+                   fast=not args.conservative, repeat=not args.conservative)
+    from serial.tools import list_ports
+    ports = [p for p in list_ports.comports() if p.vid is not None]
+    ports.sort(key=lambda p: (not any(s in (p.description or '').upper()
+                                     for s in ('OBDLINK', 'ELM', 'OBD')), p.device))
+    errors = []
+    for port in ports:
+        for baud in dict.fromkeys((args.baud, 38400, 9600, 57600, 19200)):
+            elm = None
+            try:
+                notice(f'Buscando adaptador · {port.device} · {baud} baud')
+                elm = ELM(port.device, baud, journal, stop,
+                          fast=not args.conservative, repeat=not args.conservative)
+                reply = elm.command('ATE0', timeout=1.2)
+                if 'OK' not in reply.upper().split():
+                    raise DiagnosticError('ATE0 sin OK')
+                identity = elm.command('ATI', timeout=1.2).strip()
+                if not re.search(r'ELM|OBDLINK|STN|OBDII|OBD-II', identity, re.I):
+                    raise DiagnosticError('Identidad no reconocida: ' + identity)
+                args.port, args.baud = port.device, baud
+                journal.write('adapter', port=args.port, baud=baud, identity=identity)
+                return elm
+            except InterruptedError:
+                if elm:
+                    elm.close()
+                raise
+            except Exception as exc:
+                errors.append(f'{port.device}@{baud}: {exc}')
+                if elm:
+                    elm.close()
+    journal.write('discovery_failed', attempts=errors)
+    raise DiagnosticError('No se encontró un adaptador USB ELM/OBDLink. '
+                          'Comprueba alimentación y permisos, cierra otros programas '
+                          'o indica el puerto manualmente (COM3 / /dev/ttyUSB0).')
 
 
 class Model:
@@ -330,8 +380,7 @@ def worker(args, model, stop, journal):
                 if stop.wait(0.125):
                     break
             return
-        elm = ELM(args.port, args.baud, journal, stop,
-                  fast=not args.conservative, repeat=not args.conservative)
+        elm = connect_adapter(args, journal, stop, model.notice)
         elm.setup(model.notice, args.adaptive)
         mode = 'individual' if args.individual else 'grouped'
         if mode == 'grouped':
@@ -518,11 +567,11 @@ def render(model, args, width=110, height=44, now=None):
 
 def parse_args(argv=None):
     p=argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('port', nargs='?', help='/dev/ttyUSB0, COM5 o socket://IP:PUERTO')
+    p.add_argument('port', nargs='?', help='Opcional: autodetección USB; o /dev/ttyUSB0, COM5, socket://IP:PUERTO')
     p.add_argument('--demo', action='store_true', help='Datos simulados, sin abrir puerto ni importar pyserial')
     p.add_argument('--baud', type=int, default=115200)
     p.add_argument('--seconds', type=float, default=0, help='Duración; 0 hasta Ctrl+C')
-    p.add_argument('--adaptive', choices=['1','2'], default='2')
+    p.add_argument('--adaptive', choices=['0','1','2'], default='2')
     p.add_argument('--individual', action='store_true', help='Usar 22 en vez de intentar la agrupación')
     p.add_argument('--conservative', action='store_true', help='Sin sufijo de una respuesta ni repetición por CR')
     p.add_argument('--tick-us', type=float, default=8/3, help='Escala provisional de F746; defecto 2.6666667 us/raw')
@@ -530,8 +579,6 @@ def parse_args(argv=None):
     p.add_argument('--log-dir', type=Path, default=Path('logs'))
     p.add_argument('--no-log', action='store_true')
     a=p.parse_args(argv)
-    if not a.demo and not a.port:
-        p.error('Indica un puerto o utiliza --demo')
     if a.baud <= 0 or not math.isfinite(a.seconds) or a.seconds < 0 or not math.isfinite(a.tick_us) or a.tick_us <= 0:
         p.error('baud y tick-us positivos; seconds >= 0')
     return a
