@@ -275,7 +275,7 @@ class Journal:
 
 
 class ELM:
-    def __init__(self, port, baud, journal, stop, fast=True, repeat=True):
+    def __init__(self, port, baud, journal, stop, fast=True, repeat=False):
         try:
             import serial
         except ImportError as exc:
@@ -283,12 +283,21 @@ class ELM:
         self.serial = serial.serial_for_url(port, baudrate=baud, timeout=0.02, write_timeout=2)
         self.journal, self.stop = journal, stop
         self.fast, self.repeat = fast, repeat
+        self.adaptive = '0'
+        self.response_timeout = '80'  # 128 * 4 ms = 512 ms; suffix 1 returns early.
+        self.request_gap = 0.060
+        self.last_bus_reply = None
         self.last_command = None
         self.serial.reset_input_buffer()
 
     def command(self, command: str, timeout=6, allow_repeat=False):
         if self.stop.is_set():
             raise InterruptedError
+        is_bus_request = not command.upper().startswith('AT')
+        if is_bus_request and self.last_bus_reply is not None:
+            remaining = self.request_gap - (time.monotonic() - self.last_bus_reply)
+            if remaining > 0 and self.stop.wait(remaining):
+                raise InterruptedError
         repeated = allow_repeat and self.repeat and command == self.last_command
         wire = '' if repeated else command
         start = time.monotonic()
@@ -307,6 +316,8 @@ class ELM:
                 if trailing.strip():
                     raise LinkTimeout('Datos inesperados después del prompt; se detiene la sesión')
                 self.last_command = command
+                if is_bus_request:
+                    self.last_bus_reply = time.monotonic()
                 return reply
             if len(data) > 65536:
                 break
@@ -335,17 +346,23 @@ class ELM:
         # Retry only read services, never replay group definitions or writes.
         if 'NO DATA' in reply.upper() and payload.startswith(('22', '2A')):
             self.journal.write('recovery', reason='NO DATA', payload=payload,
-                               action='disable shortcuts and adaptive timing; retry once')
-            self.fast = self.repeat = False
+                               action='fixed timeout, explicit command, single-response retry',
+                               fast=self.fast, adaptive=self.adaptive)
+            self.repeat = False
             self.last_command = None
-            self.at('ATAT0')
-            self.at('ATSTFF')
-            if self.stop.wait(0.06):
-                raise InterruptedError
-            reply = self.command(payload, allow_repeat=False)
+            # Do not return to a timing mode that just failed. Keep the suffix:
+            # disabling it caused the 1.4 s successful retries seen in logs.
+            if self.adaptive != '0':
+                self.at('ATAT0')
+                self.adaptive = '0'
+            retry_command = payload + ' 1' if self.fast and optimized else payload
+            reply = self.command(retry_command, allow_repeat=False)
+            self.journal.write('recovery_complete', fast=self.fast,
+                               adaptive=self.adaptive, repeat=self.repeat)
         return reply
 
     def setup(self, notice, adaptive):
+        self.adaptive = adaptive if self.fast else '0'
         self.at('ATE0')
         notice('USB listo · ' + self.command('ATI').strip())
         self.at('ATPC')
@@ -354,7 +371,7 @@ class ELM:
             raise InterruptedError
         for cmd in ('ATD', 'ATE0', 'ATL0', 'ATS0', 'ATH0', 'ATM0', 'ATSP4',
                     'ATIIA01', 'ATSH8101F1', 'ATKW0', 'ATSW00',
-                    'ATAT'+('0' if not self.fast else adaptive), 'ATSTFF'):
+                    'ATAT'+self.adaptive, 'ATST'+self.response_timeout):
             self.at(cmd)
         # Group packets exceed the 7-byte limit of some ELM implementations.
         self.at('ATAL', optional=True)
@@ -402,7 +419,7 @@ class ELM:
         values = []
         for address in (0x900C, 0x9014):
             suffix = bytes([0, address >> 8, address & 255])
-            reply = self.query('23' + suffix.hex().upper(), optimized=False)
+            reply = self.query('23' + suffix.hex().upper())
             frame = positive(reply, 0x23, b'\x63' + suffix, 6)
             values.append(int.from_bytes(frame[4:6], 'little'))
         return tuple(values)
@@ -414,7 +431,7 @@ def connect_adapter(args, journal, stop, notice):
     """Probe USB serial adapters with local AT commands before accessing the ECU."""
     if args.port:
         return ELM(args.port, args.baud, journal, stop,
-                   fast=not args.conservative, repeat=not args.conservative)
+                   fast=not args.conservative, repeat=False)
     from serial.tools import list_ports
     ports = [p for p in list_ports.comports() if p.vid is not None]
     ports.sort(key=lambda p: (not any(s in (p.description or '').upper()
@@ -426,7 +443,7 @@ def connect_adapter(args, journal, stop, notice):
             try:
                 notice(f'Buscando adaptador · {port.device} · {baud} baud')
                 elm = ELM(port.device, baud, journal, stop,
-                          fast=not args.conservative, repeat=not args.conservative)
+                          fast=not args.conservative, repeat=False)
                 reply = elm.command('ATE0', timeout=1.2)
                 if 'OK' not in reply.upper().split():
                     raise DiagnosticError('ATE0 sin OK')
@@ -561,7 +578,7 @@ def worker(args, model, stop, journal):
                 sample = Sample(rpm, int(1100 + load*18), load, corrections,
                                 (now-prev_at)*1000, now)
                 sample.maf_raw = min(255, int(load*rpm/100000))
-                sample.advance_raw = round((22 + 15*math.sin(t/4) + 66)/0.75)
+                sample.advance_raw = round((10 + 15*math.sin(t/4) + 66)/0.75)
                 if now >= model.next_ltft:
                     model.stored_trims(int(32768+1000*math.sin(t/12)),
                                        int(32768+2400*math.cos(t/17)), now)
@@ -753,7 +770,7 @@ def render(model, args, width=110, height=44, now=None):
                       max(20,width*2//3-6),height=max(7,height-33),color=MAGENTA,full=True)]
         if model.events:
             at,message=model.events[0]
-            body.append(Text(f'Último aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
+            body.append(Text(f'\nÚltimo aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
         layout['knock'].update(Panel(Group(*body), title=Text(' CONTROL DE PICADO ', style=f'bold {MAGENTA}'),
             box=box.HEAVY if flashing else box.ROUNDED, border_style=RED if flashing else MAGENTA,
             style=f'on {bg}', padding=(0,2)))
@@ -783,12 +800,12 @@ def render(model, args, width=110, height=44, now=None):
         adv = advance_degrees(s.advance_raw) if shown and s.advance_raw is not None else None
         advance_text = Text(f'{adv:+.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
-        advance_bar = Text(bar(abs(adv), 60) if adv is not None else '─'*24,
+        advance_bar = Text(bar(abs(adv), 40) if adv is not None else '─'*24,
                            style=CYAN)
         direction = ('antes del PMS' if adv > 0 else 'después del PMS' if adv < 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
         layout['advance'].update(Panel(Group('', Align.center(advance_text), '',
             Align.center(advance_bar), Align.center(Text(direction, style=MUTED)),
-            Align.center(Text('Barra: magnitud 0–60°', style=MUTED))),
+            Align.center(Text('Barra: magnitud 0–40°', style=MUTED))),
             title=Text('AVANCE DE ENCENDIDO', style=f'bold {CYAN}'), border_style=CYAN,
             box=box.ROUNDED, style=f'on {bg}', padding=(0,1)))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
@@ -808,7 +825,8 @@ def parse_args(argv=None):
     p.add_argument('--demo', action='store_true', help='Datos simulados, sin abrir puerto ni importar pyserial')
     p.add_argument('--baud', type=int, default=115200)
     p.add_argument('--seconds', type=float, default=0, help='Duración; 0 hasta Ctrl+C')
-    p.add_argument('--adaptive', choices=['0','1','2'], default='2')
+    p.add_argument('--adaptive', choices=['0','1','2'], default='0',
+                   help='Ajuste ELM: 0 fijo (por defecto, más estable); 1/2 adaptativo')
     p.add_argument('--individual', action='store_true', help='Usar 22 en vez de intentar la agrupación')
     p.add_argument('--conservative', action='store_true', help='Sin sufijo de una respuesta ni repetición por CR')
     p.add_argument('--tick-us', type=float, default=8/3, help='Escala no verificada de F746; provisional 2.6666667 us/raw')
@@ -835,6 +853,8 @@ def main(argv=None):
         return 1
     journal.write('session', demo=args.demo, port=args.port, baud=args.baud,
                   tick_us_assumed=args.tick_us, correction_deg_per_raw_nominal=0.75,
+                  adaptive=args.adaptive, response_timeout_ms=512, request_gap_ms=60,
+                  transport_revision='fixed_timeout_early_response_v2',
                   detector='observed_correction_increase_NOT_ECU_knock_counter')
     thread=threading.Thread(target=worker,args=(args,model,stop,journal),daemon=True)
     thread.start()
