@@ -809,9 +809,10 @@ def render(model, args, width=110, height=44, now=None):
             spark(model.history['load'],255,trace_width,color=AMBER),bg))
         ms = inj*args.tick_us/1000
         duty = duty_percent(inj, rpm, args.tick_us) if s else 0
+        duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
         layout['inj'].update(metric('INYECCIÓN / DUTY', f'~{duty:.1f}' if shown else '—', '%',
-            (f'~{ms:.2f} ms estimados · {inj} raw' if shown else 'Sin lectura actual de F746'), GREEN, duty/100,
-            spark(model.history['duty'],100,trace_width,color=GREEN),bg))
+            (f'~{ms:.2f} ms · {inj} raw' if shown else 'Sin lectura actual de F746'), duty_color, duty/100,
+            spark(model.history['duty'],max(100,max(model.history['duty'],default=100)),trace_width,color=duty_color),bg))
         notice = 'AUMENTO OBSERVADO · AVISO 3 s' if flashing else 'SIN NUEVOS AUMENTOS OBSERVADOS'
         if not shown:
             notice = 'SIN DATOS ACTUALES · NO SE PUEDE EVALUAR'
@@ -878,8 +879,7 @@ def render(model, args, width=110, height=44, now=None):
                            style=CYAN)
         direction = ('antes del PMS' if adv < 0 else 'después del PMS' if adv > 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
         layout['advance'].update(Panel(Group('', Align.center(advance_text), '',
-            Align.center(advance_bar), Align.center(Text(direction, style=MUTED)),
-            Align.center(Text('Barra: magnitud 0–40°', style=MUTED))),
+            Align.center(advance_bar), Align.center(Text(direction, style=MUTED))),
             title=Text('AVANCE DE ENCENDIDO', style=f'bold {CYAN}'), border_style=CYAN,
             box=box.ROUNDED, style=f'on {bg}', padding=(0,1)))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
