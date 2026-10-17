@@ -650,7 +650,7 @@ def worker(args, model, stop, journal):
                 sample.throttle_raw = round(255*(0.5+0.5*math.sin(t/3)))
                 sample.oxygen_raw = round(O2_SWITCH_RAW*(1+0.7*math.sin(t*4)))
                 sample.maf_raw = min(255, int(load*rpm/100000))
-                sample.advance_raw = round((10 + 15*math.sin(t/4) + 66)/0.75)
+                sample.advance_raw = round((-15 + 20*math.sin(t/4) + 66)/0.75)
                 if now >= model.next_ltft:
                     model.stored_trims(int(32768+1000*math.sin(t/12)),
                                        int(32768+2400*math.cos(t/17)), now)
@@ -876,7 +876,7 @@ def render(model, args, width=110, height=44, now=None):
                             style=f'bold {CYAN}', justify='center')
         advance_bar = Text(bar(abs(adv), 40) if adv is not None else '─'*24,
                            style=CYAN)
-        direction = ('antes del PMS' if adv > 0 else 'después del PMS' if adv < 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
+        direction = ('antes del PMS' if adv < 0 else 'después del PMS' if adv > 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
         layout['advance'].update(Panel(Group('', Align.center(advance_text), '',
             Align.center(advance_bar), Align.center(Text(direction, style=MUTED)),
             Align.center(Text('Barra: magnitud 0–40°', style=MUTED))),
