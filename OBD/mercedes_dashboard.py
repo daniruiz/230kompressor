@@ -397,7 +397,14 @@ class ELM:
     def setup(self, notice, adaptive):
         self.adaptive = adaptive if self.fast else '0'
         self.at('ATE0')
-        notice('Adaptador listo · ' + self.command('ATI').strip())
+        identity = self.command('ATI').strip()
+        notice('Adaptador listo · ' + identity)
+        # Identify STN firmware once; no changes to proven bus timings.
+        firmware = self.command('STI', timeout=2).strip()
+        hardware = self.command('STDI', timeout=2).strip() if re.search(r'STN|OBDLINK', firmware, re.I) else None
+        self.journal.write('adapter_details', identity=identity, firmware=firmware, hardware=hardware,
+                           group_ids=[f'11{x:02X}' for x in IDS],
+                           decoder_revision='11_ids_real_interval_v1')
         self.at('ATPC')
         notice('Cerrando sesión anterior · 6 s')
         if self.stop.wait(6):
