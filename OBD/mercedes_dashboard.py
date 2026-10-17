@@ -165,6 +165,7 @@ class Sample:
     temperatures: tuple[int, int] = (40,40)
     pairs_raw: str = ""
     maf_raw: int | None = None
+    interval_ms: float | None = None
     advance_raw: int | None = None
     throttle_raw: int | None = None
     oxygen_raw: int | None = None
@@ -246,7 +247,7 @@ class Journal:
                 self.stream.close()
                 raise
             self.csv_fields = ['utc','demo','rpm','load_raw','F746_raw','injection_ms_est',
-                'injector_duty_est_pct','cycle_ms','observed_count','observed_event',
+                'injector_duty_est_pct','duty_over_100_est','acquisition_ms','cycle_ms','observed_count','observed_event',
                 'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw',
                 'throttle_raw','throttle_pct','oxygen_raw','oxygen_voltage_V','oxygen_state',
                 'maf_raw','maf_g_s_est','maf_saturated','advance_raw','advance_deg',
@@ -261,7 +262,8 @@ class Journal:
         values = dict(demo=args.demo, rpm=sample.rpm, load_raw=sample.load,
             F746_raw=sample.injection, injection_ms_est=sample.injection*args.tick_us/1000,
             injector_duty_est_pct=duty_percent(sample.injection,sample.rpm,args.tick_us),
-            cycle_ms=sample.duration_ms, observed_count=model.count, observed_event=event,
+            duty_over_100_est=duty_percent(sample.injection,sample.rpm,args.tick_us)>100,
+            cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms, observed_count=model.count, observed_event=event,
             coolant_C=sample.temperatures[0]-40, iat_C=sample.temperatures[1]-40,
             coolant_raw=sample.temperatures[0], iat_raw=sample.temperatures[1], pairs_raw=sample.pairs_raw)
         for i,n in enumerate(sample.corrections,1):
@@ -581,6 +583,8 @@ class Model:
 
     def accept(self, sample, tick_us=8/3):
         with self.lock:
+            if self.sample is not None:
+                sample.interval_ms = (sample.at-self.sample.at)*1000
             old = self.previous
             # Initial/gapped samples establish a baseline; they are not events.
             continuous = old is not None and 0 < sample.at-old.at <= 2.0
@@ -669,7 +673,7 @@ def worker(args, model, stop, journal):
                 journal.sample(sample, args, model, event)
                 journal.write('sample', demo=True, rpm=rpm, F746_raw=sample.injection,
                               load_raw=load, correction_raw=corrections, observed_event=event,
-                              observed_count=model.count, cycle_ms=sample.duration_ms)
+                              observed_count=model.count, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms)
                 if stop.wait(0.125):
                     break
             return
@@ -698,7 +702,7 @@ def worker(args, model, stop, journal):
                 consecutive = 0
                 journal.write('sample', demo=False, mode=mode, rpm=sample.rpm,
                               F746_raw=sample.injection, load_raw=sample.load,
-                              correction_raw=sample.corrections, cycle_ms=sample.duration_ms,
+                              correction_raw=sample.corrections, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms,
                               observed_event=event, observed_count=model.count,
                               injection_ms_est=sample.injection*args.tick_us/1000,
                               injector_duty_est_pct=duty_percent(sample.injection, sample.rpm, args.tick_us),
@@ -890,7 +894,8 @@ def render(model, args, width=110, height=44, now=None):
             title=Text('AVANCE DE ENCENDIDO', style=f'bold {CYAN}'), border_style=CYAN,
             box=box.ROUNDED, style=f'on {bg}', padding=(0,1)))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
-        perf = f'{hz:.1f} Hz  ·  {s.duration_ms:.0f} ms/grupo rápido' if s else 'Esperando primera muestra'
+        interval = f'{s.interval_ms:.0f} ms/ciclo' if s and s.interval_ms is not None else 'primer ciclo'
+        perf = f'{hz:.1f} Hz · {interval} · adquisición {s.duration_ms:.0f} ms' if s else 'Esperando primera muestra'
         if s:
             perf += f'  ·  edad {age:.1f} s'
         footer = Text(perf + f'  ·  errores {model.errors}  ·  Ctrl+C salir', style=MUTED)
