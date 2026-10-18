@@ -61,7 +61,7 @@ CYAN = '#57d8ed'
 RED = '#ff2222'
 GREEN = '#65e2ab'
 AMBER = '#ffd27a'
-MAGENTA = '#cfafff'
+MAGENTA = '#8738fc'
 
 
 class DiagnosticError(RuntimeError):
@@ -842,10 +842,10 @@ def render(model, args, width=110, height=44, now=None):
         row=[]
         for i in range(4):
             n=s.corrections[i] if s and i < len(s.corrections) else 0
-            row.append(Text(f'\nCANAL {i+1} => {n:3d}' if shown else f'CANAL {i+1}   —',
-                            style=MAGENTA if n and shown else MUTED))
+            row.append(Text(f'\nCANAL {i+1}: {n}' if shown else f'CANAL {i+1}   —',
+                            style=f'italic bold {MAGENTA}' if n and shown else MUTED))
         indices.add_row(*row)
-        retard_line = Text('\nCorrección máx. estimada: ', style=MUTED)
+        retard_line = Text('\nRetardo de encendido: ', style=MUTED)
         retard_line.append(f'{correction*0.75:.2f}°' if shown else '—',
                            style=f'bold {MAGENTA}')
         body = [table, indices,
