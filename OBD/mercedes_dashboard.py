@@ -39,6 +39,7 @@ try:
     from rich import box
     from rich.align import Align
     from rich.console import Console, Group
+    from rich.color import Color
     from rich.layout import Layout
     from rich.live import Live
     from rich.panel import Panel
@@ -64,13 +65,21 @@ O2_SWITCH_RAW = 0x2456
 # 0x1108C: F74C=floor(F8C0/40), clamped 255.
 # 0x3A3CE: OBD MAF raw=floor(F8C0*2777/1000), OBD units 0.01 g/s.
 MAF_GS_PER_RAW = 40 * 2777 / 100000
-BG = '#0b1424'
+BG = '#000000'
 MUTED = '#9aaec8'
 CYAN = '#57d8ed'
 RED = '#ff2222'
-GREEN = '#65e2ab'
+GREEN = '#45edcb'
 AMBER = '#ffd27a'
 MAGENTA = '#8738fc'
+
+PEAK_COLORS = {
+    CYAN: '#3487ff',
+    AMBER: '#ff7b24',
+    MAGENTA: RED,
+    GREEN: '#02d7fa',
+    RED: '#ff7540',
+}
 
 
 class DiagnosticError(RuntimeError):
@@ -671,7 +680,7 @@ class Model:
         self.samples = 0
         self.times = deque(maxlen=40)
         self.history = {k: deque(maxlen=90) for k in ('rpm', 'load', 'inj', 'duty', 'retard')}
-        self.history['retard'] = []  # Entire session, never evict old peaks.
+        self.history['retard'] = []  # Start at first positive correction, then retain every sample.
         self.events = deque(maxlen=5)
 
     def stored_trims(self, low, high, at=None):
@@ -717,7 +726,9 @@ class Model:
             self.history['load'].append(sample.load)
             self.history['inj'].append(sample.injection)
             self.history['duty'].append(duty_percent(sample.injection, sample.rpm, tick_us))
-            self.history['retard'].append(max(sample.corrections))
+            retard = max(sample.corrections, default=0)
+            if self.history['retard'] or retard > 0:
+                self.history['retard'].append(retard)
             self.status = 'Recibiendo datos' if not raised else 'Aumento de corrección observado'
             return bool(raised)
 
@@ -774,6 +785,7 @@ def worker(args, model, stop, journal):
                 sample.voltage_raw = round((14.0 + 0.2*math.sin(t/5))/args.voltage_scale)
                 sample.voltage_raw = min(255, max(0, sample.voltage_raw))
                 sample.maf_raw = min(255, int(load*rpm/100000))
+                sample.injection = round(7500*(0.5+0.5*math.sin(t/3-1)))
                 sample.advance_raw = round((-15 + 20*math.sin(t/4) + 66)/0.75)
                 if now >= model.next_ltft:
                     model.stored_trims(int(32768+1000*math.sin(t/12)),
@@ -858,9 +870,27 @@ def worker(args, model, stop, journal):
         journal.close()
 
 
-def bar(value, ceiling, width=24):
-    fill = round(width*max(0, min(1, value/ceiling)))
-    return '━'*fill + '─'*(width-fill)
+def gradient_color(color, level):
+    """Exact original color at zero; accent hue at full scale."""
+    start = Color.parse(color).get_truecolor()
+    end = Color.parse(PEAK_COLORS.get(color, color)).get_truecolor()
+    amount = max(0.0, min(1.0, level)) ** 1.5
+    return '#'+''.join(f'{round(a+(b-a)*amount):02x}' for a,b in zip(start,end))
+
+
+def bar(value, ceiling, width=24, color=None):
+    width = max(1, width)
+    fill = round(width*max(0, min(1, value/ceiling))) if ceiling > 0 else 0
+    if color is None:
+        return '━'*fill + '─'*(width-fill)
+    result = Text()
+    for x in range(width):
+        # Color follows the full scale, not the current filled length:
+        # low readings stay near the original color, high readings reach accent.
+        result.append('━' if x < fill else '─',
+                      style=f'bold {gradient_color(color, x/max(1,width-1))}'
+                      if x < fill else MUTED)
+    return result
 
 
 def spark(values, ceiling, width=48, height=7, color=None, full=False):
@@ -887,6 +917,10 @@ def spark(values, ceiling, width=48, height=7, color=None, full=False):
     lines=[]
     styled = Text()
     for cell_y in range(height):
+        if color:
+            # Outline and fill share the same row color and bold styling.
+            level = 1-cell_y/(height-1) if height > 1 else 0
+            row_color = gradient_color(color, level)
         line=[]
         for cell_x in range(width):
             mask=0
@@ -898,7 +932,7 @@ def spark(values, ceiling, width=48, height=7, color=None, full=False):
             char = chr(0x2800+mask)
             line.append(char)
             if color:
-                styled.append(char, style=f'bold {color}')
+                styled.append(char, style=f'bold {row_color}')
         lines.append(''.join(line))
         if color and cell_y < height-1:
             styled.append('\n')
@@ -909,7 +943,7 @@ def metric(title, value, unit, detail, color, fraction, trace, bg):
     text = Text(justify='center')
     text.append(value, style=f'bold {color}')
     text.append(' '+unit, style=MUTED)
-    content = Group('', text, '', Align.center(Text(bar(fraction,1), style=color)),
+    content = Group('', text, '', Align.center(bar(fraction,1,color=color)),
                     Align.center(Text(detail, style=MUTED)),
                     Align.center(trace if isinstance(trace, Text) else Text(trace, style=color)))
     return Panel(content, title=Text(title, style=f'bold {color}'),
@@ -1011,8 +1045,7 @@ def render(model, args, width=110, height=44, now=None):
         adv = advance_degrees(s.advance_raw) if shown and s.advance_raw is not None else None
         advance_text = Text(f'{adv:+.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
-        advance_bar = Text(bar(abs(adv), 40) if adv is not None else '─'*24,
-                           style=CYAN)
+        advance_bar = bar(abs(adv), 40, color=CYAN) if adv is not None else Text('─'*24, style=MUTED)
         direction = ('antes del PMS' if adv < 0 else 'después del PMS' if adv > 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
         layout['advance'].update(Panel(Group('', Align.center(advance_text), '',
             Align.center(advance_bar), Align.center(Text(direction, style=MUTED))),
