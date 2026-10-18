@@ -7,7 +7,9 @@ The red alert counts observed rises in candidate knock corrections, NOT a
 validated ECU knock counter. F746 milliseconds use a provisional timer scale.
 The 404 knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, live STFT/LTFT, temperatures,
-RPM, injection, load, coarse calculated MAF ignition advance, throttle and narrowband oxygen sensor.
+RPM, injection, load, coarse calculated MAF, ignition advance, throttle, narrowband oxygen sensor and supply voltage.
+STN/OBDLink: adapter-managed P3 and measured P4 trial with automatic rollback.
+Use --no-adapter-tuning to keep previous timings. Supply voltage scale remains provisional.
 Stored LTFT endpoints are read every 30 s via service 23, one per fast cycle.
 This is a polling policy, not a verified ECU adaptation time.
 Oxygen sensor voltage follows the stock 404 PID 14 conversion, NOT wideband lambda/AFR.
@@ -28,6 +30,7 @@ import os
 from pathlib import Path
 import queue
 import re
+import statistics
 import sys
 import threading
 import time
@@ -338,6 +341,11 @@ class ELM:
         self.journal, self.stop = journal, stop
         self.fast, self.repeat = fast, repeat
         self.adaptive = '0'
+        self.is_stn = False
+        self.adapter_profile = 'ELM compatible'
+        self.adapter_p3 = False
+        self.p4_fast = False
+        self.timing_fallbacks = 0
         self.response_timeout = '80'  # 128 * 4 ms = 512 ms; suffix 1 returns early.
         self.request_gap = 0.060
         self.last_bus_reply = None
@@ -347,7 +355,7 @@ class ELM:
     def command(self, command: str, timeout=6, allow_repeat=False):
         if self.stop.is_set():
             raise InterruptedError
-        is_bus_request = not command.upper().startswith('AT')
+        is_bus_request = not command.upper().startswith(('AT', 'ST'))
         if is_bus_request and self.last_bus_reply is not None:
             remaining = self.request_gap - (time.monotonic() - self.last_bus_reply)
             if remaining > 0 and self.stop.wait(remaining):
@@ -402,6 +410,7 @@ class ELM:
             self.journal.write('recovery', reason='NO DATA', payload=payload,
                                action='fixed timeout, explicit command, single-response retry',
                                fast=self.fast, adaptive=self.adaptive)
+            self.restore_transport('NO DATA')
             self.repeat = False
             self.last_command = None
             # Do not return to a timing mode that just failed. Keep the suffix:
@@ -420,8 +429,9 @@ class ELM:
         self.at('ATE0')
         identity = self.command('ATI').strip()
         notice('Adaptador listo · ' + identity)
-        # Identify STN firmware once; no changes to proven bus timings.
+        # Detect actual ST command support, not merely the serial port name.
         firmware = self.command('STI', timeout=2).strip()
+        self.is_stn = bool(re.search(r'\bSTN\d+\b|OBDLINK', firmware, re.I))
         hardware = self.command('STDI', timeout=2).strip() if re.search(r'STN|OBDLINK', firmware, re.I) else None
         self.journal.write('adapter_details', identity=identity, firmware=firmware, hardware=hardware,
                            group_ids=[f'11{x:02X}' for x in IDS],
@@ -445,6 +455,86 @@ class ELM:
         notice('Sesión lista · palabras clave ' + kw)
         # Read one known identifier with the conservative response wait first.
         positive(self.query('221104', optimized=False), 0x22, b'\x62\x11\x04', 5)
+
+    def restore_transport(self, reason):
+        """Rollback once; never repeatedly retest a timing that failed this session."""
+        if not (self.adapter_p3 or self.p4_fast):
+            return False
+        # These are volatile adapter settings, not ECU calibration writes.
+        if self.p4_fast:
+            self.at('STIP4 5')
+            self.p4_fast = False
+        self.request_gap = 0.060
+        self.adapter_p3 = False
+        self.repeat = False
+        self.timing_fallbacks += 1
+        self.adapter_profile = 'STN compatible'
+        self.journal.write('transport_fallback', reason=reason,
+                           host_gap_ms=60, p4_ms=5)
+        return True
+
+    def optimize_transport(self, mode, notice, publish):
+        """Use documented STN timing controls; trial P4=0 on validated reads only.
+
+        Reference: https://www.obdlink.com/frpm, STPTRQ and STIP4.
+        Keep the established 60 ms P3 floor. Benchmark P4=5 versus P4=0,
+        retain zero only with six valid responses and >=3% measured improvement.
+        This short startup test is not proof of long-term link reliability.
+        """
+        if not self.is_stn or not self.fast:
+            return
+        self.adapter_profile = 'STN compatible'
+        # Configure after ATD/ATSP/ATSI, which can reset protocol settings.
+        if self.at('STPTRQ 60', optional=True):
+            self.adapter_p3 = True
+            self.request_gap = 0.0
+            self.adapter_profile = 'STN P3 adaptador'
+        self.journal.write('transport_profile', profile=self.adapter_profile,
+                           host_gap_ms=self.request_gap*1000, p3_ms=60,
+                           response_timeout_hex=self.response_timeout)
+        # Avoid dozens of individual requests just to benchmark startup.
+        if mode != 'grouped':
+            return
+        notice('OBDLink/STN · comprobando tiempos de lectura')
+        try:
+            baseline = []
+            for _ in range(4):
+                sample = self.acquire(mode)
+                publish(sample)
+                baseline.append(sample.duration_ms)
+                if self.timing_fallbacks or not self.fast:
+                    return
+            if not self.at('STIP4 0', optional=True):
+                return
+            self.p4_fast = True
+            trial = []
+            for _ in range(6):
+                sample = self.acquire(mode)
+                publish(sample)
+                trial.append(sample.duration_ms)
+                if self.timing_fallbacks or not self.fast:
+                    self.restore_transport('Atajo de respuesta rechazado durante prueba')
+                    return
+            # Exclude first request after a local AT/ST command from each set.
+            base_ms = statistics.median(baseline[1:])
+            trial_ms = statistics.median(trial[1:])
+            accepted = trial_ms < base_ms * 0.97
+            if accepted:
+                self.adapter_profile = 'STN rápido P4=0'
+            else:
+                self.at('STIP4 5')
+                self.p4_fast = False
+            self.journal.write('transport_benchmark', baseline_ms=baseline,
+                               trial_ms=trial, baseline_median_ms=base_ms,
+                               trial_median_ms=trial_ms, p4_zero_accepted=accepted,
+                               profile=self.adapter_profile)
+        except LinkTimeout:
+            # No prompt: do not send more commands into an unsynchronised stream.
+            raise
+        except DiagnosticError as exc:
+            self.restore_transport(str(exc))
+            self.journal.write('transport_benchmark_error', error=str(exc))
+        notice(self.adapter_profile + ' · lectura preparada')
 
     def define_group(self):
         # Define active slots. Clear remaining slots so frame layout is exact,
@@ -573,6 +663,7 @@ class Model:
         self.count = 0
         self.alert_until = 0.0
         self.mode = 'iniciando'
+        self.adapter_profile = ''
         self.status = 'Preparando conexión'
         self.fatal = False
         self.errors = 0
@@ -650,6 +741,7 @@ def poll_stored_trims(elm, model, journal, now=None):
     except LinkTimeout:
         raise
     except DiagnosticError as exc:
+        elm.restore_transport('Lectura LTFT: ' + str(exc))
         disabled = isinstance(exc, NegativeResponse) and exc.code in (0x11, 0x12, 0x31, 0x33)
         with model.lock:
             model.ltft_disabled = disabled
@@ -713,11 +805,18 @@ def worker(args, model, stop, journal):
                 journal.write('fallback', reason=str(exc))
                 model.reject('Grupo rechazado; paso a lecturas individuales')
                 mode = 'individual'
+        def publish_probe(sample):
+            event = model.accept(sample, args.tick_us)
+            journal.sample(sample, args, model, event)
+        if not args.no_adapter_tuning:
+            elm.optimize_transport(mode, model.notice, publish_probe)
         model.mode = mode
+        model.adapter_profile = elm.adapter_profile
         consecutive = 0
         while not stop.is_set():
             try:
                 sample = elm.acquire(mode)
+                model.adapter_profile = elm.adapter_profile
                 event = model.accept(sample, args.tick_us)
                 journal.sample(sample, args, model, event)
                 consecutive = 0
@@ -734,6 +833,10 @@ def worker(args, model, stop, journal):
             except DiagnosticError as exc:
                 consecutive += 1
                 model.reject(str(exc))
+                if elm.restore_transport(str(exc)):
+                    model.adapter_profile = elm.adapter_profile
+                    model.notice('Tiempos compatibles restaurados · reintentando lectura')
+                    continue
                 if mode == 'grouped' and consecutive >= 3:
                     mode = model.mode = 'individual'
                     journal.write('fallback', reason='3 respuestas de grupo inválidas')
@@ -921,7 +1024,7 @@ def render(model, args, width=110, height=44, now=None):
         if s:
             perf += f'  ·  edad {age:.1f} s'
         footer = Text(perf + f'  ·  errores {model.errors}  ·  Ctrl+C salir', style=MUTED)
-        mode_label = 'DEMO · SIN COCHE' if args.demo else model.mode.upper()
+        mode_label = 'DEMO · SIN COCHE' if args.demo else model.mode.upper() + (' · '+model.adapter_profile if model.adapter_profile else '')
         voltage = ecu_voltage_est(s.voltage_raw, args.voltage_scale) if shown else None
         footer.append('\nECU ' + (f'~{voltage:.2f} V' if voltage is not None else '— V'), style=f'bold {CYAN}')
         footer.append(' · '+mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
@@ -938,6 +1041,8 @@ def parse_args(argv=None):
     p.add_argument('--adaptive', choices=['0','1','2'], default='0',
                    help='Ajuste ELM: 0 fijo (por defecto, más estable); 1/2 adaptativo')
     p.add_argument('--individual', action='store_true', help='Usar 22 en vez de intentar la agrupación')
+    p.add_argument('--no-adapter-tuning', action='store_true',
+                   help='Desactivar ajustes y prueba de tiempos específicos de OBDLink/STN')
     p.add_argument('--conservative', action='store_true', help='Sin sufijo de una respuesta ni repetición por CR')
     p.add_argument('--tick-us', type=float, default=8/3, help='Escala no verificada de F746; provisional 2.6666667 us/raw')
     p.add_argument('--voltage-scale', type=float, default=VOLTAGE_V_PER_RAW_EST,
@@ -970,7 +1075,8 @@ def main(argv=None):
                   voltage_scale_V_per_raw_assumed=args.voltage_scale, voltage_conversion_verified=False,
                   tick_us_assumed=args.tick_us, correction_deg_per_raw_nominal=0.75,
                   adaptive=args.adaptive, response_timeout_ms=512, request_gap_ms=60,
-                  transport_revision='fixed_timeout_early_response_v2',
+                  transport_revision='stn_measured_p4_with_rollback_v3',
+                  adapter_tuning=not args.no_adapter_tuning and not args.conservative,
                   detector='observed_correction_increase_NOT_ECU_knock_counter')
     thread=threading.Thread(target=worker,args=(args,model,stop,journal),daemon=True)
     thread.start()
