@@ -789,7 +789,7 @@ def metric(title, value, unit, detail, color, fraction, trace, bg):
                     Align.center(Text(detail, style=MUTED)),
                     Align.center(trace if isinstance(trace, Text) else Text(trace, style=color)))
     return Panel(content, title=Text(title, style=f'bold {color}'),
-                 border_style=color, box=box.ROUNDED, style=f'on {bg}', padding=(0,1))
+                 border_style=color, box=box.ROUNDED, style=f'on {bg}', padding=(0,0))
 
 
 def render(model, args, width=110, height=44, now=None):
@@ -802,15 +802,15 @@ def render(model, args, width=110, height=44, now=None):
         red = flashing and not args.no_flash and int(now*2)%2 == 0
         bg = '#811c31' if red else BG
         layout = Layout()
-        layout.split_column(Layout(name='metrics', size=16),
-                            Layout(name='lower', ratio=1, minimum_size=22),
+        layout.split_column(Layout(name='metrics', size=14),
+                            Layout(name='lower', ratio=1, minimum_size=20),
                             Layout(name='foot', size=4))
         layout['lower'].split_row(Layout(name='knock', ratio=2), Layout(name='extras', ratio=1))
-        if width < 100 or height < 42:
-            return Panel(Text('Amplía la terminal a 100 columnas × 42 filas como mínimo.\n'+model.status, style=CYAN), style=f'on {bg}')
+        if width < 82 or height < 34:
+            return Panel(Text('Amplía la terminal a 82 columnas × 34 filas como mínimo.\n'+model.status, style=CYAN), style=f'on {bg}')
         shown = s is not None and not stale
         rpm, load, inj = (s.rpm,s.load,s.injection) if s else (0,0,0)
-        trace_width = max(10, width//3-6)
+        trace_width = width//3-2
         layout['metrics'].split_row(Layout(name='rpm'),Layout(name='load'),Layout(name='inj'))
         layout['rpm'].update(metric('RÉGIMEN', f'{rpm:,}'.replace(',','.') if shown else '—', 'rpm',
             '0–6.500 rpm', CYAN, rpm/6500,
@@ -849,8 +849,9 @@ def render(model, args, width=110, height=44, now=None):
         retard_line.append(f'{correction*0.75:.2f}°' if shown else '—',
                            style=f'bold {MAGENTA}')
         body = [table, indices,
-                retard_line,
-                spark(model.history['retard'],max(20,max(model.history['retard'],default=0)),
+                Align.center(retard_line),
+                '',
+                spark(model.history['retard'],max(4,max(model.history['retard'],default=0)),
                       max(20,width*2//3-6),height=max(7,height-33),color=MAGENTA,full=True)]
         if model.events:
             at,message=model.events[0]
@@ -878,7 +879,7 @@ def render(model, args, width=110, height=44, now=None):
         temperatures.add_column(justify='right')
         for label,raw in zip(('ADMISIÓN','REFRIGERANTE'),reversed(s.temperatures if s else (40,40))):
             temperatures.add_row(label, Text(f'{raw-40} °C' if shown else '—', style=f'bold {AMBER}'))
-        layout['extras'].split_column(Layout(name='mixture',size=9), Layout(name='temps',size=4), Layout(name='advance',minimum_size=9))
+        layout['extras'].split_column(Layout(name='mixture',size=8), Layout(name='temps',size=4), Layout(name='advance',minimum_size=8))
         layout['mixture'].update(Panel(mixture, title='MEZCLA', border_style=GREEN,
                                        box=box.ROUNDED, style=f'on {bg}'))
         layout['temps'].update(Panel(temperatures, title='TEMPERATURAS', border_style=AMBER,
