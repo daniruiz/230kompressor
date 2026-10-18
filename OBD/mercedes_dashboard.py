@@ -45,8 +45,14 @@ except ImportError:
     raise SystemExit('Instala la interfaz: python3 -m pip install rich')
 
 # ROM pointer table 0xDE48, service 22 at 0x3ABC0 and group at 0x3AF14.
-# 1107 -> F74C/F74D; 110B -> F759/F75A. Only the first byte is used.
-IDS = (0x04, 0x0D, 0x06, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x07, 0x0B, 0x0A, 0x1F)
+# 1107 -> F74C/F74D: MAF and load; replaces redundant 1106.
+# 1110 -> F734/F735: voltage is ONLY the first byte; F735 is unrelated.
+IDS = (0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x07, 0x0B, 0x0A, 0x1F, 0x10)
+# Eleven existing IDs plus voltage, still one group of twelve.
+# Provisional physical scale, NOT established by the disassembly.
+# F734 is an ADC-derived byte; ROM 42A2 substitutes 149 below threshold 47.
+# 149 * 3/32 = 13.97 V is plausible, but is not proof of the divider ratio.
+VOLTAGE_V_PER_RAW_EST = 3 / 32
 LTFT_INTERVAL = 30.0
 # 111F -> 81C0; comparator at 159F0 uses ROM 41A8 = 0x2456.
 O2_SWITCH_RAW = 0x2456
@@ -169,18 +175,27 @@ class Sample:
     advance_raw: int | None = None
     throttle_raw: int | None = None
     oxygen_raw: int | None = None
+    voltage_raw: int | None = None
 
 
 def from_pairs(pairs: list[bytes]) -> Sample:
     if len(pairs) != len(IDS) or any(len(p) != 2 for p in pairs):
         raise DiagnosticError('Número de señales incorrecto')
-    return Sample(int.from_bytes(pairs[0], 'little'),
-                  int.from_bytes(pairs[1], 'little'), pairs[2][0],
-                  tuple(b for pair in pairs[3:5] for b in pair),
-                  trims=tuple(int.from_bytes(p, "little") for p in pairs[5:7]),
-                  temperatures=tuple(pairs[7]), pairs_raw=b"".join(pairs).hex(),
-                  maf_raw=pairs[8][0], advance_raw=pairs[9][0], throttle_raw=pairs[10][0],
-                  oxygen_raw=int.from_bytes(pairs[11], "little"))
+    signals = dict(zip(IDS, pairs))
+    return Sample(int.from_bytes(signals[0x04], 'little'),
+                  int.from_bytes(signals[0x0D], 'little'), signals[0x07][1],
+                  tuple(signals[0x2B] + signals[0x2D]),
+                  trims=tuple(int.from_bytes(signals[i], 'little') for i in (0x1B, 0x23)),
+                  temperatures=tuple(signals[0x01]), pairs_raw=b''.join(pairs).hex(),
+                  maf_raw=signals[0x07][0], advance_raw=signals[0x0B][0],
+                  throttle_raw=signals[0x0A][0], oxygen_raw=int.from_bytes(signals[0x1F], 'little'),
+                  voltage_raw=signals[0x10][0])
+
+
+def ecu_voltage_est(raw: int | None, scale: float = VOLTAGE_V_PER_RAW_EST) -> float | None:
+    """Processed ECU supply estimate, possibly substituted; not adapter ATRV."""
+    return None if raw is None else raw * scale
+
 
 
 def grouped(reply: str) -> Sample:
@@ -251,6 +266,7 @@ class Journal:
                 'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw',
                 'throttle_raw','throttle_pct','oxygen_raw','oxygen_voltage_V','oxygen_state',
                 'maf_raw','maf_g_s_est','maf_saturated','advance_raw','advance_deg',
+                'ecu_voltage_raw','ecu_voltage_V_est','ecu_voltage_scale_V_per_raw',
                 'ltft_low_raw','ltft_low_pct','ltft_high_raw','ltft_high_pct',
                 'ltft_stored_age_s','ltft_stored_status']
             self.csv_fields += [f'knock_channel_{i}_{unit}' for i in range(1,5) for unit in ('raw','deg_est')]
@@ -272,7 +288,10 @@ class Journal:
         for name,n in zip(('stft_a','ltft_a'),sample.trims):
             values[name+'_raw']=n
             values[name+'_pct']=trim_percent(n)
-        values.update(throttle_raw=sample.throttle_raw,
+        values.update(ecu_voltage_raw=sample.voltage_raw,
+                      ecu_voltage_V_est=ecu_voltage_est(sample.voltage_raw, args.voltage_scale),
+                      ecu_voltage_scale_V_per_raw=args.voltage_scale,
+                      throttle_raw=sample.throttle_raw,
                       throttle_pct=sample.throttle_raw*100/255 if sample.throttle_raw is not None else None,
                       oxygen_raw=sample.oxygen_raw,
                       oxygen_voltage_V=oxygen_voltage(sample.oxygen_raw),
@@ -406,7 +425,7 @@ class ELM:
         hardware = self.command('STDI', timeout=2).strip() if re.search(r'STN|OBDLINK', firmware, re.I) else None
         self.journal.write('adapter_details', identity=identity, firmware=firmware, hardware=hardware,
                            group_ids=[f'11{x:02X}' for x in IDS],
-                           decoder_revision='11_ids_real_interval_v1')
+                           decoder_revision='12_ids_load_from_1107_voltage_1110_v2')
         self.at('ATPC')
         notice('Cerrando sesión anterior · 6 s')
         if self.stop.wait(6):
@@ -660,6 +679,8 @@ def worker(args, model, stop, journal):
                                 (now-prev_at)*1000, now)
                 sample.throttle_raw = round(255*(0.5+0.5*math.sin(t/3)))
                 sample.oxygen_raw = round(O2_SWITCH_RAW*(1+0.7*math.sin(t*4)))
+                sample.voltage_raw = round((14.0 + 0.2*math.sin(t/5))/args.voltage_scale)
+                sample.voltage_raw = min(255, max(0, sample.voltage_raw))
                 sample.maf_raw = min(255, int(load*rpm/100000))
                 sample.advance_raw = round((-15 + 20*math.sin(t/4) + 66)/0.75)
                 if now >= model.next_ltft:
@@ -901,7 +922,9 @@ def render(model, args, width=110, height=44, now=None):
             perf += f'  ·  edad {age:.1f} s'
         footer = Text(perf + f'  ·  errores {model.errors}  ·  Ctrl+C salir', style=MUTED)
         mode_label = 'DEMO · SIN COCHE' if args.demo else model.mode.upper()
-        footer.append('\n'+mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
+        voltage = ecu_voltage_est(s.voltage_raw, args.voltage_scale) if shown else None
+        footer.append('\nECU ' + (f'~{voltage:.2f} V' if voltage is not None else '— V'), style=f'bold {CYAN}')
+        footer.append(' · '+mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
         layout['foot'].update(Panel(footer, border_style='#334d6d', box=box.ROUNDED, style=f'on {bg}'))
         return layout
 
@@ -917,12 +940,16 @@ def parse_args(argv=None):
     p.add_argument('--individual', action='store_true', help='Usar 22 en vez de intentar la agrupación')
     p.add_argument('--conservative', action='store_true', help='Sin sufijo de una respuesta ni repetición por CR')
     p.add_argument('--tick-us', type=float, default=8/3, help='Escala no verificada de F746; provisional 2.6666667 us/raw')
+    p.add_argument('--voltage-scale', type=float, default=VOLTAGE_V_PER_RAW_EST,
+                   help='Escala provisional F734 en V/raw, por defecto 0.09375; pendiente de validar')
     p.add_argument('--no-flash', action='store_true', help='Mantener aviso sin parpadeo de fondo')
     p.add_argument('--log-dir', type=Path, default=Path('logs'))
     p.add_argument('--no-log', action='store_true')
     a=p.parse_args(argv)
     if a.baud <= 0 or not math.isfinite(a.seconds) or a.seconds < 0 or not math.isfinite(a.tick_us) or a.tick_us <= 0:
         p.error('baud y tick-us positivos; seconds >= 0')
+    if not math.isfinite(a.voltage_scale) or a.voltage_scale <= 0:
+        p.error('voltage-scale debe ser finito y positivo')
     return a
 
 
@@ -939,6 +966,8 @@ def main(argv=None):
         console.print(Text('No se puede crear el registro: '+str(exc),style='red'))
         return 1
     journal.write('session', demo=args.demo, port=args.port, baud=args.baud,
+                  diagnostic_ids=[f'11{i:02X}' for i in IDS],
+                  voltage_scale_V_per_raw_assumed=args.voltage_scale, voltage_conversion_verified=False,
                   tick_us_assumed=args.tick_us, correction_deg_per_raw_nominal=0.75,
                   adaptive=args.adaptive, response_timeout_ms=512, request_gap_ms=60,
                   transport_revision='fixed_timeout_early_response_v2',
