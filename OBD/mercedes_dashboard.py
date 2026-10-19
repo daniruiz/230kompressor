@@ -1000,7 +1000,7 @@ def render(model, args, width=110, height=44, now=None):
         row=[]
         for i in range(4):
             n=s.corrections[i] if s and i < len(s.corrections) else 0
-            row.append(Text(f'\nCANAL {i+1}: {n}' if shown else f'CANAL {i+1}   —',
+            row.append(Text(f'\nCANAL {i+1}: {n*0.75:.2f}º' if shown else f'CANAL {i+1}   —',
                             style=f'italic bold {MAGENTA}' if n and shown else MUTED))
         indices.add_row(*row)
         retard_line = Text('\nRetardo de encendido: ', style=MUTED)
