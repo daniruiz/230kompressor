@@ -1028,7 +1028,7 @@ def render(model, args, width=110, height=44, now=None):
             valid = raw is not None and stored_age <= LTFT_INTERVAL + 5 and model.ltft_status == 'ok'
             value = f'{trim_percent(raw):+.2f} %' if valid else '—'
             mixture.add_row(label, Text(value, style=f'bold {GREEN if valid else MUTED}'))
-        maf = f'{"≥" if s.maf_raw == 255 else "~"}{s.maf_raw*MAF_GS_PER_RAW:.1f} g/s' if shown and s.maf_raw is not None else '—'
+        maf = f'{s.maf_raw*MAF_GS_PER_RAW:.1f} g/s' if shown and s.maf_raw is not None else '—'
         mixture.add_row('Caudal ECU', Text(maf, style=f'bold {CYAN}'))
         oxygen = f'{oxygen_voltage(s.oxygen_raw):.3f} V · {oxygen_state(s.oxygen_raw)}' if shown and s.oxygen_raw is not None else '—'
         mixture.add_row('Sonda λ', Text(oxygen, style=f'bold {AMBER}'))
