@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
+    <application android:theme="@style/AppTheme" android:label="ME2.1 Dashboard" android:icon="@drawable/ic_launcher" android:allowBackup="false" android:supportsRtl="true">
+        <activity android:name=".MainActivity" android:screenOrientation="sensorLandscape" android:configChanges="orientation|screenSize|keyboardHidden" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
