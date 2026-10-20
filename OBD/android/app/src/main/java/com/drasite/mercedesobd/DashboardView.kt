@@ -8,13 +8,52 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import java.util.Locale
 import kotlin.math.abs
 
 /** Native Canvas dashboard: vector graphics, no terminal or web/runtime layer. */
 class DashboardView(context: Context, private val model: Model) : View(context) {
     var flashEnabled = true
+    private var temperaturesPage = false
+    private var touchStartX = 0f
+    private var touchStartY = 0f
+    private val swipeDistance = maxOf(
+        48 * resources.displayMetrics.density,
+        ViewConfiguration.get(context).scaledTouchSlop * 3f,
+    )
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                touchStartX = event.x
+                touchStartY = event.y
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                val dx = event.x - touchStartX
+                val dy = event.y - touchStartY
+                if (abs(dx) >= swipeDistance && abs(dx) > abs(dy) * 1.5f) {
+                    temperaturesPage = dx > 0
+                    contentDescription = if (temperaturesPage)
+                        "MercedesOBD: temperaturas de motor y admisión, control de picado"
+                    else "MercedesOBD: RPM, carga, inyección, correcciones y mezcla"
+                    invalidate()
+                } else performClick()
+                return true
+            }
+            MotionEvent.ACTION_CANCEL -> return true
+        }
+        return true
+    }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val cyan = Color.rgb(87, 216, 237)
     private val amber = Color.rgb(255, 210, 122)
@@ -256,10 +295,14 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
 
         canvas.save()
         canvas.scale(canvasScaleX, canvasScaleY)
-        drawMetrics(canvas, display, sample, valid)
-        drawKnock(canvas, display, sample, valid, now)
-        drawMixture(canvas, display, sample, valid, now)
-        drawTemperaturesAndAdvance(canvas, sample, valid)
+        if (temperaturesPage) {
+            drawTemperaturePage(canvas, display, sample, valid, now)
+        } else {
+            drawMetrics(canvas, display, sample, valid)
+            drawKnock(canvas, display, sample, valid, now)
+            drawMixture(canvas, display, sample, valid, now)
+            drawTemperaturesAndAdvance(canvas, sample, valid)
+        }
         canvas.restore()
 
         canvas.save()
@@ -313,22 +356,78 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         )
     }
 
-    private fun drawKnock(
+    private fun drawTemperaturePage(
         canvas: Canvas,
         display: Display,
         sample: Sample?,
         valid: Boolean,
         now: Long,
     ) {
+        drawTemperatureGauge(canvas, RectF(8f, 8f, 596f, 405f), "TEMPERATURA MOTOR",
+            if (valid) sample!!.coolant - 40 else null, TemperatureAlerts.MOTOR_LIMIT, 140, amber, now)
+        drawTemperatureGauge(canvas, RectF(604f, 8f, 1192f, 405f), "TEMPERATURA ADMISIÓN",
+            if (valid) sample!!.iat - 40 else null, TemperatureAlerts.INTAKE_LIMIT, 100, cyan, now)
+        drawKnock(canvas, display, sample, valid, now, compact = true)
+    }
+
+    private fun drawTemperatureGauge(
+        canvas: Canvas,
+        bounds: RectF,
+        title: String,
+        temperature: Int?,
+        limit: Int,
+        maximum: Int,
+        color: Int,
+        now: Long,
+    ) {
+        val hot = temperature != null && temperature > limit
+        val flash = hot && flashEnabled && (now / 250) % 2 == 0L
+        val gaugeColor = if (hot) red else color
+        drawCard(canvas, bounds, title, gaugeColor, flash)
+        val cx = bounds.centerX()
+        val dial = RectF(cx - 148f, bounds.top + 60f, cx + 148f, bounds.top + 356f)
+        paint.shader = null
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 16f
+        paint.color = Color.rgb(36, 49, 65)
+        canvas.drawArc(dial, 135f, 270f, false, paint)
+        paint.color = red
+        paint.strokeWidth = 5f
+        val limitAngle = 270f * limit / maximum
+        canvas.drawArc(dial, 135f + limitAngle, 270f - limitAngle, false, paint)
+        if (temperature != null) {
+            paint.strokeWidth = 16f
+            paint.color = gaugeColor
+            canvas.drawArc(dial, 135f, 270f * (temperature.toFloat() / maximum).coerceIn(0f, 1f), false, paint)
+        }
+        drawText(canvas, temperature?.let { "$it °C" } ?: "—", cx, bounds.top + 230f,
+            76f, gaugeColor, true, bounds.width() - 40f, Paint.Align.CENTER)
+        drawText(canvas, "0", cx - 116f, bounds.top + 342f, 16f, muted, width = 65f, align = Paint.Align.CENTER)
+        drawText(canvas, "$maximum °C", cx + 116f, bounds.top + 342f, 16f, muted, width = 90f, align = Paint.Align.CENTER)
+        drawText(canvas, if (temperature == null) "Sin datos actuales" else if (hot) "TEMPERATURA ALTA · > $limit °C" else "Aviso por encima de $limit °C",
+            cx, bounds.bottom - 16f, 16f, gaugeColor, hot, bounds.width() - 32f, Paint.Align.CENTER)
+    }
+
+    private fun drawKnock(
+        canvas: Canvas,
+        display: Display,
+        sample: Sample?,
+        valid: Boolean,
+        now: Long,
+        compact: Boolean = false,
+    ) {
         val flash = flashEnabled && now < display.alertUntil && (now / 250) % 2 == 0L
-        val kr = RectF(8f, 272f, 795f, 621f)
+        val kr = if (compact) RectF(8f, 417f, 1192f, 621f) else RectF(8f, 272f, 795f, 621f)
+        val center = kr.centerX()
+        val valueY = if (compact) 470f else 339f
+        val channelY = if (compact) 497f else 377f
         drawCard(canvas, kr, "CONTROL DE PICADO", purple, flash)
         drawText(
             canvas,
             if (valid) formatValue("Retardo %.2f°", sample!!.retard) else "Retardo —",
-            340f,
-            339f,
-            27f,
+            if (compact) center else 340f,
+            valueY,
+            if (compact) 23f else 27f,
             purple,
             true,
             560f,
@@ -339,12 +438,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 2f
             paint.color = red
-            canvas.drawRoundRect(RectF(673f, 308f, 782f, 353f), 4f, 4f, paint)
+            canvas.drawRoundRect(RectF(kr.right - 122f, valueY - 32f, kr.right - 13f, valueY + 13f), 4f, 4f, paint)
             drawText(
                 canvas,
                 "%04d".format(display.count),
-                728f,
-                340f,
+                kr.right - 67f,
+                valueY,
                 29f,
                 red,
                 true,
@@ -359,10 +458,10 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                     .mapIndexed { i, v -> formatValue("C%d  %.2f°", i + 1, v * .75) }
                     .joinToString("       ")
             else "C1 —       C2 —       C3 —       C4 —"
-        drawText(canvas, channels, 401f, 377f, 15f, muted, false, 740f, Paint.Align.CENTER)
+        drawText(canvas, channels, center, channelY, 15f, muted, false, kr.width() - 40f, Paint.Align.CENTER)
         drawChart(
             canvas,
-            RectF(20f, 392f, 783f, 586f),
+            RectF(20f, if (compact) 510f else 392f, kr.right - 12f, 586f),
             display.knock,
             maxOf(3.0, display.knock.maxOrNull() ?: 3.0),
             purple,
@@ -375,13 +474,13 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                     maxOf(0L, now - display.lastAlertAt) / 1000.0,
                     display.lastAlertChannels.joinToString(","),
                 )
-            else ""
-            401f,
+            else "",
+            center,
             607f,
             12f,
             muted,
             false,
-            740f,
+            kr.width() - 40f,
             Paint.Align.CENTER,
         )
     }
@@ -519,7 +618,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         )
         drawText(
             canvas,
-            display.status.replace('\r', ' ').replace('\n', ' ').take(180),
+            (if (temperaturesPage) "← Panel principal · " else "Temperaturas → · ") +
+                display.status.replace('\r', ' ').replace('\n', ' ').take(180),
             footerCenter,
             49f,
             13f,

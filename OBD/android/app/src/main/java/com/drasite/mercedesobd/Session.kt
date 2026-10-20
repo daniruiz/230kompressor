@@ -23,7 +23,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
         model.clear()
         stopped = false
         thread =
-            Thread({ run(demo, address, tuning, conservative) }, "ME21 acquisition").also {
+            Thread({ run(demo, address, tuning, conservative) }, "MercedesOBD acquisition").also {
                 it.start()
             }
         return true
@@ -44,10 +44,12 @@ class Session(private val root: File, val model: Model, private val alert: () ->
         try {
             val j = Journal(root, demo)
             journal = j
+            val temperatureAlerts = TemperatureAlerts()
             fun publish(s: Sample) {
                 val (sample, raised) = model.accept(s)
                 j.sample(sample, model.snapshot(0), raised)
-                if (raised) alert()
+                val temperatureRaised = temperatureAlerts.accept(sample)
+                if (raised || temperatureRaised) alert()
             }
             if (demo) {
                 model.mode("DEMO · SIN COCHE")
@@ -77,6 +79,8 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                             intArrayOf(c, maxOf(0, c - 2), 0, 0),
                             stft = (32768 + 2500 * sin(t)).toInt(),
                             ltft = 34000,
+                            coolant = (140 + 18 * sin(t / 4 - 1.5)).toInt(),
+                            iat = (98 + 20 * sin(t / 4 - 2.5)).toInt(),
                             maf = minOf(255, load * rpm / 100000),
                             advance = ((-15 + 20 * sin(t / 4) + 66) / .75).toInt(),
                             throttle = (255 * (.5 + .5 * sin(t / 3))).toInt(),
