@@ -7,6 +7,8 @@ data class Display(
     val previous: Sample?,
     val count: Int,
     val alertUntil: Long,
+    val lastAlertAt: Long?,
+    val lastAlertChannels: List<Int>,
     val status: String,
     val mode: String,
     val profile: String,
@@ -28,6 +30,8 @@ class Model {
     private var previous: Sample? = null
     private var count = 0
     private var alertUntil = 0L
+    private var lastAlertAt: Long? = null
+    private var lastAlertChannels = emptyList<Int>()
     private var status = "Selecciona Demo o un adaptador emparejado"
     private var mode = "PARADO"
     private var profile = ""
@@ -49,6 +53,8 @@ class Model {
         previous = null
         count = 0
         alertUntil = 0
+        lastAlertAt = null
+        lastAlertChannels = emptyList()
         status = "Preparando sesión"
         mode = "INICIANDO"
         profile = ""
@@ -109,15 +115,18 @@ class Model {
     fun accept(input: Sample): Pair<Sample, Boolean> {
         val s = input.copy(cycleMs = sample?.let { input.at - it.at })
         val old = previous
-        val raised =
-            old != null &&
-                s.at - old.at in 1..2000 &&
-                old.rpm >= 400 &&
-                s.rpm >= 400 &&
-                s.corrections.indices.any { s.corrections[it] > old.corrections[it] }
+        val raisedChannels =
+            if (old != null && s.at - old.at in 1..2000 && old.rpm >= 400 && s.rpm >= 400)
+                s.corrections.take(4).mapIndexedNotNull { i, value ->
+                    if (i < old.corrections.size && value > old.corrections[i]) i + 1 else null
+                }
+            else emptyList()
+        val raised = raisedChannels.isNotEmpty()
         if (raised) {
             count++
             alertUntil = s.at + 3000
+            lastAlertAt = s.at
+            lastAlertChannels = raisedChannels
         }
         previous = s
         sample = s
@@ -154,6 +163,8 @@ class Model {
             previous,
             count,
             alertUntil,
+            lastAlertAt,
+            lastAlertChannels,
             status,
             mode,
             profile,

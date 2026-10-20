@@ -26,6 +26,10 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class MainActivity : Activity() {
+    private companion object {
+        const val EXPORT_LOGS_REQUEST = 1001
+    }
+
     private val model = Model()
     private lateinit var session: Session
     private lateinit var dashboard: DashboardView
@@ -257,7 +261,7 @@ class MainActivity : Activity() {
         val keys = arrayOf("sound", "flash", "tuning", "conservative")
         val values = BooleanArray(4) { prefs.getBoolean(keys[it], it != 3) }
         AlertDialog.Builder(this)
-            .setTitle("Ajustes · ME2.1 SW404")
+            .setTitle("Ajustes · MercedesOBD")
             .setMultiChoiceItems(names, values) { _, i, value -> values[i] = value }
             .setPositiveButton("Guardar") { _, _ ->
                 val edit = prefs.edit()
@@ -313,7 +317,7 @@ class MainActivity : Activity() {
                                 .setType("application/zip")
                                 .putExtra(Intent.EXTRA_TITLE, "me21_logs.zip")
                         try {
-                            startActivityForResult(intent, 404)
+                            startActivityForResult(intent, EXPORT_LOGS_REQUEST)
                         } catch (e: Exception) {
                             exporting = false
                             model.notice("No se pudo abrir el selector: ${e.message}")
@@ -332,7 +336,7 @@ class MainActivity : Activity() {
     @Deprecated("Platform activity result used to avoid extra dependencies")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != 404) return
+        if (requestCode != EXPORT_LOGS_REQUEST) return
         val uri = data?.data
         if (resultCode != RESULT_OK || uri == null) {
             exporting = false

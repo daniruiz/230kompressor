@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Bosch ME2.1 SW404 dashboard. Python 3.10+, rich; pyserial for a real ECU.
+"""MercedesOBD dashboard. Python 3.10+, rich; pyserial for a real ECU.
 Demo: python3 mercedes_dashboard.py --demo
 Car:  python3 mercedes_dashboard.py /dev/ttyUSB0
 
 The red alert counts observed rises in candidate knock corrections, NOT a
 validated ECU knock counter. F746 milliseconds use a provisional timer scale.
-The 404 knock correction loop rotates four internal channels (8398..839B).
+The ECU knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, live STFT/LTFT, temperatures,
 RPM, injection, load, coarse calculated MAF, ignition advance, throttle, narrowband oxygen sensor and supply voltage.
 STN/OBDLink: adapter-managed P3 and measured P4 trial with automatic rollback.
 Use --no-adapter-tuning to keep previous timings. Supply voltage scale remains provisional.
 Stored LTFT endpoints are read every 30 s via service 23, one per fast cycle.
 This is a polling policy, not a verified ECU adaptation time.
-Oxygen sensor voltage follows the stock 404 PID 14 conversion, NOT wideband lambda/AFR.
+Oxygen sensor voltage follows the stock PID 14 conversion, NOT wideband lambda/AFR.
 MAF is the ECU calculated airflow (also available in substitute operation),
 quantized to approximately 1.1108 g/s per F74C count; 255 is saturated.
-Ignition conversion matches the 404 OBD PID 0E path, positive = BTDC.
-Memory service framing is derived from 404 code, pending on-car validation.
+Ignition conversion matches the OBD PID 0E path, positive = BTDC.
+Memory service framing is derived from ECU code, pending on-car validation.
 """
 from __future__ import annotations
 import argparse
@@ -234,7 +234,7 @@ def advance_degrees(raw):
 
 
 def oxygen_voltage(raw):
-    """404: 81C0 -> 3B7E4..3B7FA -> 8CFE -> PID 14 at 3A474.
+    """81C0 -> 3B7E4..3B7FA -> 8CFE -> PID 14 at 3A474.
 
     DPP3=3; ROM E104 contains 0x0DB8 (3512). Subtract with a
     zero floor, clamp to 0x3FBE, shift left 2 and take high byte.
@@ -573,7 +573,7 @@ class ELM:
         return sample
 
     def read_stored_trim(self, address):
-        # Custom 404 service 23 returns one word. No length byte.
+        # Custom ECU service 23 returns one word. No length byte.
         if address not in (0x900C, 0x9014):
             raise ValueError('Dirección LTFT inválida')
         suffix = bytes([0, address >> 8, address & 255])
@@ -709,7 +709,7 @@ class Model:
             continuous = old is not None and 0 < sample.at-old.at <= 2.0
             raised = []
             if continuous and sample.rpm >= 400 and old.rpm >= 400:
-                # The 404 ignition routine indexes four active channel bytes.
+                # The ECU ignition routine indexes four active channel bytes.
                 raised = [i for i,(a,b) in enumerate(zip(old.corrections[:4], sample.corrections[:4])) if b > a]
             if raised:
                 self.count += 1  # one observed update, NOT number of combustion knocks
@@ -717,7 +717,7 @@ class Model:
                     self.sound.notify()
                 self.alert_until = sample.at + 3.0
                 slots = ','.join(str(i+1) for i in raised)
-                self.events.appendleft((sample.at, f'Aumento en canal(es) interno(s) {slots}'))
+                self.events.appendleft((sample.at, f'Aumento en canal(es): {slots}'))
             self.previous = self.sample = sample
             self.failed = False
             self.samples += 1
@@ -982,31 +982,30 @@ def render(model, args, width=110, height=44, now=None):
         layout['inj'].update(metric('INYECCIÓN / DUTY', f'~{duty:.1f}' if shown else '—', '%',
             (f'~{ms:.2f} ms · {inj} raw' if shown else 'Sin lectura actual de F746'), duty_color, duty/100,
             spark(model.history['duty'],max(100,max(model.history['duty'],default=100)),trace_width,color=duty_color),bg))
-        notice = 'AUMENTO OBSERVADO · AVISO 3 s' if flashing else 'SIN NUEVOS AUMENTOS OBSERVADOS'
-        if not shown:
-            notice = 'SIN DATOS ACTUALES · NO SE PUEDE EVALUAR'
-        table = Table.grid(expand=True)
+        table = Table.grid(expand=True, padding=(0,2))
         table.add_column(ratio=1)
-        table.add_column(width=max(12,len(str(model.count))+4), justify='right')
-        counter = Text(f'{model.count:04d}', style='bold bright_red', justify='center')
         correction = max(s.corrections) if s else 0
-        right = Text(notice, style=f'bold {RED if flashing else AMBER}')
-        counter_box = Panel(counter,
-                            border_style='bold bright_red', box=box.HEAVY, padding=(0,1))
-        table.add_row(right, counter_box)
-        indices = Table.grid(expand=True, padding=(0,1))
+        indices = Table.grid(expand=True, padding=(0,2))
         for _ in range(4):
             indices.add_column(ratio=1)
         row=[]
         for i in range(4):
             n=s.corrections[i] if s and i < len(s.corrections) else 0
-            row.append(Text(f'\nCANAL {i+1}: {n*0.75:.2f}º' if shown else f'CANAL {i+1}   —',
+            row.append(Text(f'\nC{i+1}: {n*0.75:.2f}°' if shown else f'CANAL {i+1}   —',
                             style=f'italic bold {MAGENTA}' if n and shown else MUTED))
         indices.add_row(*row)
+        if model.count > 0:
+            table.add_column(width=max(12,len(str(model.count))+4), justify='right')
+            counter = Text(f'{model.count:04d}', style='bold bright_red', justify='center')
+            counter_box = Panel(counter, border_style='bold bright_red',
+                                box=box.HEAVY, padding=(0,1))
+            table.add_row(indices, counter_box)
+        else:
+            table.add_row(indices)
         retard_line = Text('\nRetardo de encendido: ', style=MUTED)
         retard_line.append(f'{correction*0.75:.2f}°' if shown else '—',
                            style=f'bold {MAGENTA}')
-        body = [table, indices,
+        body = [table,
                 Align.center(retard_line),
                 '',
                 spark(model.history['retard'],max(4,max(model.history['retard'],default=0)),

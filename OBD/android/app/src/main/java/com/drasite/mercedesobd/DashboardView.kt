@@ -33,7 +33,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
 
     init {
         contentDescription =
-            "Dashboard de diagnosis ME2.1: RPM, carga, inyección, correcciones y mezcla"
+            "MercedesOBD: RPM, carga, inyección, correcciones y mezcla"
         isFocusable = true
     }
 
@@ -322,7 +322,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     ) {
         val flash = flashEnabled && now < display.alertUntil && (now / 250) % 2 == 0L
         val kr = RectF(8f, 272f, 795f, 621f)
-        drawCard(canvas, kr, "CONTROL DE PICADO · AUMENTOS OBSERVADOS", purple, flash)
+        drawCard(canvas, kr, "CONTROL DE PICADO", purple, flash)
         drawText(
             canvas,
             if (valid) formatValue("Retardo %.2f°", sample!!.retard) else "Retardo —",
@@ -334,22 +334,24 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             560f,
             Paint.Align.CENTER,
         )
-        paint.shader = null
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 2f
-        paint.color = red
-        canvas.drawRoundRect(RectF(673f, 308f, 782f, 353f), 4f, 4f, paint)
-        drawText(
-            canvas,
-            "%04d".format(display.count),
-            728f,
-            340f,
-            29f,
-            red,
-            true,
-            95f,
-            Paint.Align.CENTER,
-        )
+        if (display.count > 0) {
+            paint.shader = null
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 2f
+            paint.color = red
+            canvas.drawRoundRect(RectF(673f, 308f, 782f, 353f), 4f, 4f, paint)
+            drawText(
+                canvas,
+                "%04d".format(display.count),
+                728f,
+                340f,
+                29f,
+                red,
+                true,
+                95f,
+                Paint.Align.CENTER,
+            )
+        }
         val channels =
             if (valid)
                 sample!!
@@ -367,8 +369,13 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         )
         drawText(
             canvas,
-            if (valid) "Historial desde la primera corrección"
-            else "Sin datos actuales · no se puede evaluar",
+            if (display.lastAlertAt != null)
+                formatValue(
+                    "Último aviso hace %.1f s · Aumento en canal(es): %s",
+                    maxOf(0L, now - display.lastAlertAt) / 1000.0,
+                    display.lastAlertChannels.joinToString(","),
+                )
+            else ""
             401f,
             607f,
             12f,
@@ -418,7 +425,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             350f,
         )
         row(
-            "Caudal ECU",
+            "Caudalímetro",
             if (valid)
                 formatValue(
                     "%s%.1f g/s",
@@ -447,8 +454,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawCard(canvas, RectF(803f, 443f, 1192f, 514f), "TEMPERATURAS", amber)
         drawText(
             canvas,
-            if (valid) "Admisión ${sample!!.iat-40} °C     Agua ${sample.coolant-40} °C"
-            else "Admisión —     Agua —",
+            if (valid) "Admisión ${sample!!.iat-40} °C     Refrigerante ${sample.coolant-40} °C"
+            else "Admisión —     Refrigerante —",
             997f,
             496f,
             16f,
