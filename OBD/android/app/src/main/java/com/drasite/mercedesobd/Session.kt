@@ -18,12 +18,12 @@ class Session(private val root: File, val model: Model, private val alert: () ->
         get() = thread?.isAlive == true
 
     @Synchronized
-    fun start(demo: Boolean, address: String?, tuning: Boolean, conservative: Boolean): Boolean {
+    fun start(demo: Boolean, address: String?): Boolean {
         if (running) return false
         model.clear()
         stopped = false
         thread =
-            Thread({ run(demo, address, tuning, conservative) }, "MercedesOBD acquisition").also {
+            Thread({ run(demo, address) }, "MercedesOBD acquisition").also {
                 it.start()
             }
         return true
@@ -38,7 +38,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
     }
 
     @SuppressLint("MissingPermission")
-    private fun run(demo: Boolean, address: String?, tuning: Boolean, conservative: Boolean) {
+    private fun run(demo: Boolean, address: String?) {
         var journal: Journal? = null
         var wire: BluetoothWire? = null
         try {
@@ -130,7 +130,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             }
             val w = BluetoothWire(sock, j)
             wire = w
-            val elm = Elm(w, j, !conservative)
+            val elm = Elm(w, j)
             elm.setup(model::notice)
             var group = true
             try {
@@ -142,7 +142,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 model.notice("Grupo rechazado; lecturas individuales")
                 group = false
             }
-            if (tuning) elm.optimize(group, ::publish, model::notice)
+            elm.optimize(group, ::publish, model::notice)
             var consecutive = 0
             var nextTrim = 0L
             var pendingLow: Pair<Int, Long>? = null

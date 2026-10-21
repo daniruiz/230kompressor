@@ -1,5 +1,6 @@
 package com.drasite.mercedesobd
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -11,6 +12,7 @@ import android.graphics.Shader
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.animation.DecelerateInterpolator
 import java.util.Locale
 import kotlin.math.abs
 
@@ -18,8 +20,12 @@ import kotlin.math.abs
 class DashboardView(context: Context, private val model: Model) : View(context) {
     var flashEnabled = true
     private var temperaturesPage = false
+    private var pagePosition = 0f
+    private var pageAnimator: ValueAnimator? = null
     private var touchStartX = 0f
     private var touchStartY = 0f
+    private var touchStartPosition = 0f
+    private var draggingPage = false
     private val swipeDistance = maxOf(
         48 * resources.displayMetrics.density,
         ViewConfiguration.get(context).scaledTouchSlop * 3f,
@@ -28,23 +34,47 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                pageAnimator?.cancel()
                 touchStartX = event.x
                 touchStartY = event.y
+                touchStartPosition = pagePosition
+                draggingPage = false
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dx = event.x - touchStartX
+                val dy = event.y - touchStartY
+                if (!draggingPage && abs(dx) >= swipeDistance && abs(dx) > abs(dy) * 1.5f) {
+                    draggingPage = true
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                if (draggingPage && width > 0) {
+                    // Positive finger movement brings temperatures in from the left.
+                    pagePosition = (touchStartPosition + dx / width).coerceIn(0f, 1f)
+                    postInvalidateOnAnimation()
+                }
                 return true
             }
             MotionEvent.ACTION_UP -> {
                 val dx = event.x - touchStartX
                 val dy = event.y - touchStartY
                 if (abs(dx) >= swipeDistance && abs(dx) > abs(dy) * 1.5f) {
-                    temperaturesPage = dx > 0
-                    contentDescription = if (temperaturesPage)
-                        "MercedesOBD: temperaturas de motor y admisión, control de picado"
-                    else "MercedesOBD: RPM, carga, inyección, correcciones y mezcla"
-                    invalidate()
-                } else performClick()
+                    // Follow the finger: swipe right for temperatures, left for the main panel.
+                    showPage(dx > 0)
+                } else {
+                    showPage(temperaturesPage)
+                    performClick()
+                }
+                draggingPage = false
+                parent?.requestDisallowInterceptTouchEvent(false)
                 return true
             }
-            MotionEvent.ACTION_CANCEL -> return true
+            MotionEvent.ACTION_CANCEL -> {
+                draggingPage = false
+                parent?.requestDisallowInterceptTouchEvent(false)
+                showPage(temperaturesPage)
+                return true
+            }
         }
         return true
     }
@@ -52,6 +82,32 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     override fun performClick(): Boolean {
         super.performClick()
         return true
+    }
+
+    private fun showPage(showTemperatures: Boolean) {
+        val targetPosition = if (showTemperatures) 1f else 0f
+        if (temperaturesPage == showTemperatures && pagePosition == targetPosition) return
+        temperaturesPage = showTemperatures
+        contentDescription = if (temperaturesPage)
+            "MercedesOBD: temperaturas de motor y admisión, control de picado"
+        else "MercedesOBD: RPM, carga, inyección, correcciones y mezcla"
+        pageAnimator?.cancel()
+        pageAnimator = ValueAnimator.ofFloat(pagePosition, targetPosition).apply {
+            duration = 280L
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                pagePosition = it.animatedValue as Float
+                postInvalidateOnAnimation()
+            }
+            start()
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        pageAnimator?.cancel()
+        pageAnimator = null
+        pagePosition = if (temperaturesPage) 1f else 0f
+        super.onDetachedFromWindow()
     }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -294,14 +350,13 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val valid = sample != null && !display.failed && now - sample.at <= SAMPLE_MAX_AGE_MS
 
         canvas.save()
+        canvas.clipRect(0f, 0f, width.toFloat(), layout.contentHeight)
         canvas.scale(canvasScaleX, canvasScaleY)
-        if (temperaturesPage) {
-            drawTemperaturePage(canvas, display, sample, valid, now)
-        } else {
-            drawMetrics(canvas, display, sample, valid)
-            drawKnock(canvas, display, sample, valid, now)
-            drawMixture(canvas, display, sample, valid, now)
-            drawTemperaturesAndAdvance(canvas, sample, valid)
+        if (pagePosition < 1f) {
+            drawPage(canvas, false, pagePosition * DashboardLayout.WIDTH, display, sample, valid, now)
+        }
+        if (pagePosition > 0f) {
+            drawPage(canvas, true, (pagePosition - 1f) * DashboardLayout.WIDTH, display, sample, valid, now)
         }
         canvas.restore()
 
@@ -312,6 +367,45 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         canvas.scale(canvasScaleX, canvasScaleY)
         drawFooter(canvas, display, sample, valid, layout)
         canvas.restore()
+        drawPageIndicator(canvas)
+    }
+
+    private fun drawPage(
+        canvas: Canvas,
+        showTemperatures: Boolean,
+        offset: Float,
+        display: Display,
+        sample: Sample?,
+        valid: Boolean,
+        now: Long,
+    ) {
+        canvas.save()
+        canvas.translate(offset, 0f)
+        canvas.clipRect(0f, 0f, DashboardLayout.WIDTH, DashboardLayout.CONTENT_HEIGHT)
+        if (showTemperatures) {
+            drawTemperaturePage(canvas, display, sample, valid, now)
+        } else {
+            drawMetrics(canvas, display, sample, valid)
+            drawKnock(canvas, display, sample, valid, now)
+            drawMixture(canvas, display, sample, valid, now)
+            drawTemperaturesAndAdvance(canvas, sample, valid)
+        }
+        canvas.restore()
+    }
+
+    private fun drawPageIndicator(canvas: Canvas) {
+        val density = resources.displayMetrics.density
+        val radius = 3f * density
+        val spacing = 14f * density
+        paint.shader = null
+        paint.style = Paint.Style.FILL
+        paint.color = muted
+        // Temperatures sit to the left of the main panel and enter with a right swipe.
+        paint.alpha = (70 + 110 * pagePosition).toInt()
+        canvas.drawCircle(width / 2f - spacing / 2f, 7f * density, radius, paint)
+        paint.alpha = (70 + 110 * (1f - pagePosition)).toInt()
+        canvas.drawCircle(width / 2f + spacing / 2f, 7f * density, radius, paint)
+        paint.alpha = 255
     }
 
     private fun drawMetrics(canvas: Canvas, display: Display, sample: Sample?, valid: Boolean) {
@@ -364,7 +458,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         now: Long,
     ) {
         drawTemperatureGauge(canvas, RectF(8f, 8f, 596f, 405f), "TEMPERATURA MOTOR",
-            if (valid) sample!!.coolant - 40 else null, TemperatureAlerts.MOTOR_LIMIT, 140, amber, now)
+            if (valid) sample!!.coolant - 40 else null, TemperatureAlerts.MOTOR_LIMIT, 140, green, now)
         drawTemperatureGauge(canvas, RectF(604f, 8f, 1192f, 405f), "TEMPERATURA ADMISIÓN",
             if (valid) sample!!.iat - 40 else null, TemperatureAlerts.INTAKE_LIMIT, 100, cyan, now)
         drawKnock(canvas, display, sample, valid, now, compact = true)
@@ -385,6 +479,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val gaugeColor = if (hot) red else color
         drawCard(canvas, bounds, title, gaugeColor, flash)
         val cx = bounds.centerX()
+        val cy = bounds.top + 208f
+        // Keep the dial and its labels proportional inside the responsive card.
+        canvas.save()
+        canvas.scale(textScale / canvasScaleX, textScale / canvasScaleY, cx, cy)
+        val cardTextTransform = textTransform
+        textTransform = CanvasTextTransform(textScale, textScale, textScale)
         val dial = RectF(cx - 148f, bounds.top + 60f, cx + 148f, bounds.top + 356f)
         paint.shader = null
         paint.style = Paint.Style.STROKE
@@ -404,6 +504,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             76f, gaugeColor, true, bounds.width() - 40f, Paint.Align.CENTER)
         drawText(canvas, "0", cx - 116f, bounds.top + 342f, 16f, muted, width = 65f, align = Paint.Align.CENTER)
         drawText(canvas, "$maximum °C", cx + 116f, bounds.top + 342f, 16f, muted, width = 90f, align = Paint.Align.CENTER)
+        textTransform = cardTextTransform
+        canvas.restore()
         drawText(canvas, if (temperature == null) "Sin datos actuales" else if (hot) "TEMPERATURA ALTA · > $limit °C" else "Aviso por encima de $limit °C",
             cx, bounds.bottom - 16f, 16f, gaugeColor, hot, bounds.width() - 32f, Paint.Align.CENTER)
     }
@@ -618,7 +720,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         )
         drawText(
             canvas,
-            (if (temperaturesPage) "← Panel principal · " else "Temperaturas → · ") +
+            (if (temperaturesPage) "Desliza ←: panel principal · " else "Desliza →: temperaturas · ") +
                 display.status.replace('\r', ' ').replace('\n', ' ').take(180),
             footerCenter,
             49f,

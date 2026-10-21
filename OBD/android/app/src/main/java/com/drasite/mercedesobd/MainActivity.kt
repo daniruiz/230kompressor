@@ -40,6 +40,7 @@ class MainActivity : Activity() {
     private var resumed = false
     private var wasRunning = false
     private var exporting = false
+    private var pendingAdapterAddress: String? = null
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     private val ticker =
         object : Runnable {
@@ -51,6 +52,12 @@ class MainActivity : Activity() {
                     cancelSound()
                 }
                 wasRunning = running
+                if (!running && resumed) {
+                    pendingAdapterAddress?.let { address ->
+                        pendingAdapterAddress = null
+                        start(false, address)
+                    }
+                }
                 if (resumed) handler.postDelayed(this, 100)
             }
         }
@@ -174,7 +181,9 @@ class MainActivity : Activity() {
                         .putString("address", d.address)
                         .putString("name", d.name ?: d.address)
                         .apply()
-                    model.notice("Seleccionado ${d.name?:d.address}")
+                    stop()
+                    pendingAdapterAddress = d.address
+                    model.notice("Conectando a ${d.name?:d.address}…")
                 }
                 .setNegativeButton("Cerrar", null)
                 .show()
@@ -194,18 +203,12 @@ class MainActivity : Activity() {
     }
 
     private fun start(demo: Boolean, address: String?) {
+        pendingAdapterAddress = null
         if (exporting) {
             model.notice("Espera a que termine la exportación")
             return
         }
-        if (
-            session.start(
-                demo,
-                address,
-                prefs.getBoolean("tuning", true),
-                prefs.getBoolean("conservative", false),
-            )
-        ) {
+        if (session.start(demo, address)) {
             cancelSound()
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             wasRunning = true
@@ -213,6 +216,7 @@ class MainActivity : Activity() {
     }
 
     private fun stop() {
+        pendingAdapterAddress = null
         val active = session.running
         session.stop()
         cancelSound()
@@ -222,9 +226,19 @@ class MainActivity : Activity() {
 
     private fun beepBurst() {
         if (!prefs.getBoolean("sound", true) || !session.running || !resumed) return
+        val audio = getSystemService(AudioManager::class.java)
+        try {
+            audio.setStreamVolume(
+                AudioManager.STREAM_MUSIC,
+                audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+                0,
+            )
+        } catch (_: SecurityException) {
+            model.notice("Android no permite ajustar el volumen de los avisos")
+        }
         if (tone == null)
             try {
-                tone = ToneGenerator(AudioManager.STREAM_MUSIC, 80)
+                tone = ToneGenerator(AudioManager.STREAM_MUSIC, ToneGenerator.MAX_VOLUME)
             } catch (_: Exception) {
                 return
             }
@@ -235,9 +249,9 @@ class MainActivity : Activity() {
             handler.postAtTime(
                 {
                     if (
-                        gen == soundGeneration && session.running && prefs.getBoolean("sound", true)
+                        gen == soundGeneration && resumed && session.running && prefs.getBoolean("sound", true)
                     )
-                        tone?.startTone(ToneGenerator.TONE_PROP_BEEP, 65)
+                        tone?.startTone(ToneGenerator.TONE_CDMA_HIGH_L, 65)
                 },
                 start + i * 130,
             )
@@ -255,11 +269,9 @@ class MainActivity : Activity() {
             arrayOf(
                 "Seis pitidos por aumento observado",
                 "Parpadeo rojo durante 3 segundos",
-                "Optimización medida OBDLink/STN",
-                "Modo conservador ELM",
             )
-        val keys = arrayOf("sound", "flash", "tuning", "conservative")
-        val values = BooleanArray(4) { prefs.getBoolean(keys[it], it != 3) }
+        val keys = arrayOf("sound", "flash")
+        val values = BooleanArray(keys.size) { prefs.getBoolean(keys[it], true) }
         AlertDialog.Builder(this)
             .setTitle("Ajustes · MercedesOBD")
             .setMultiChoiceItems(names, values) { _, i, value -> values[i] = value }
@@ -269,7 +281,7 @@ class MainActivity : Activity() {
                 edit.apply()
                 dashboard.flashEnabled = values[1]
                 if (!values[0]) cancelSound()
-                model.notice("Guardado · ajustes de conexión en la próxima sesión")
+                model.notice("Ajustes guardados")
             }
             .setNeutralButton("Información") { _, _ ->
                 AlertDialog.Builder(this)
@@ -372,7 +384,7 @@ class MainActivity : Activity() {
     }
 
     override fun onStop() {
-        if (session.running) stop()
+        stop()
         super.onStop()
     }
 
