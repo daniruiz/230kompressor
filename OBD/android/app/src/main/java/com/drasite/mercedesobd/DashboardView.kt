@@ -500,7 +500,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             paint.color = gaugeColor
             canvas.drawArc(dial, 135f, 270f * (temperature.toFloat() / maximum).coerceIn(0f, 1f), false, paint)
         }
-        drawText(canvas, temperature?.let { "$it °C" } ?: "—", cx, bounds.top + 230f,
+        drawText(canvas, temperature?.let { "$it" } ?: "—", cx, bounds.top + 230f,
             76f, gaugeColor, true, bounds.width() - 40f, Paint.Align.CENTER)
         drawText(canvas, "0", cx - 116f, bounds.top + 342f, 16f, muted, width = 65f, align = Paint.Align.CENTER)
         drawText(canvas, "$maximum °C", cx + 116f, bounds.top + 342f, 16f, muted, width = 90f, align = Paint.Align.CENTER)
