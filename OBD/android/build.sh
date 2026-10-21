@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 
+set -e
+
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 tools_dir="$project_dir/.build-tools"
 gradle_version=8.11.1
 sdk_tools_version=11076708
 
-sudo apt-get update
-sudo apt-get install -y openjdk-21-jdk-headless ca-certificates curl unzip
+if command -v pacman > /dev/null; then
+  sudo pacman -S --noconfirm jdk21-openjdk curl unzip
+elif command -v apt-get; then
+  sudo apt-get update
+  sudo apt-get install -y openjdk-21-jdk-headless ca-certificates curl unzip
+else
+  echo "System not supported"
+  exit 1
+fi
 
-export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export JAVA_HOME=$(echo /usr/lib/jvm/java-21-openjdk*)
 export ANDROID_HOME="$tools_dir/android-sdk"
 export ANDROID_USER_HOME="$tools_dir/android-user"
 export GRADLE_USER_HOME="$tools_dir/gradle-cache"
@@ -47,11 +56,10 @@ run_sdkmanager() {
         com.android.sdklib.tool.sdkmanager.SdkManagerCli "$@"
 }
 
-# No se aceptan licencias silenciosamente: sdkmanager muestra los términos.
-run_sdkmanager --sdk_root="$ANDROID_HOME" --licenses
+yes | run_sdkmanager --sdk_root="$ANDROID_HOME" --licenses
 run_sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0'
 
 "$gradle" --project-dir "$project_dir" --no-daemon --console=plain \
     -Dorg.gradle.jvmargs=-Xmx2g :app:assembleDebug
 
-printf '\nAPK generada: %s\n' "$project_dir/app/build/outputs/apk/debug/app-debug.apk"
+mv "$project_dir/app/build/outputs/apk/debug/app-debug.apk" "$project_dir/../MercedesDashboard.apk"
