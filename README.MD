@@ -125,7 +125,7 @@ The definitions include ignition correction associated with coolant and intake a
 
 ### STAGE 3 (~230-250hp)
 - 84mm supercharger pulley
-- 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach ~11.8 AFR at 5,200rpm WOT)
+- 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach ~11.8 AFR at 5,200rpm WOT − near 4.2 Bar with **vacuum line unplugged**)
 
 ### Eaton M62 supercharger speed and pulley ratios
 
