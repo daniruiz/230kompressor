@@ -69,6 +69,10 @@ class Journal(root: File, private val demo: Boolean) : Events, Closeable {
                 "injector_deadtime_fraction_pct",
                 "injection_breakdown_status",
                 "injection_F746_saturated",
+                "ecu_software",
+                "ecu_identification_status",
+                "ltft_low_address",
+                "ltft_high_address",
             )
 
     init {
@@ -96,6 +100,8 @@ class Journal(root: File, private val demo: Boolean) : Events, Closeable {
             "detector" to "observed_correction_increase_NOT_ECU_knock_counter",
             "transport_revision" to "native_spp_v1",
             "diagnostic_ids" to Decoder.ids.map { "11%02X".format(it) },
+            "ecu_identification_policy" to "ROM software reference; once at connection",
+            "supported_ecu_software" to EcuProfiles.all.map { it.software },
         )
     }
 
@@ -150,6 +156,10 @@ class Journal(root: File, private val demo: Boolean) : Events, Closeable {
                 "ltft_high_pct" to d.high?.let { Decoder.trim(it) },
                 "ltft_stored_age_s" to d.trimsAt?.let { maxOf(0, s.at - it) / 1000.0 },
                 "ltft_stored_status" to d.trimsStatus,
+                "ecu_software" to d.ecuSoftware,
+                "ecu_identification_status" to d.ecuIdentificationStatus,
+                "ltft_low_address" to d.ecuProfile?.let { addressHex(it.ltftLowAddress) },
+                "ltft_high_address" to d.ecuProfile?.let { addressHex(it.ltftHighAddress) },
                 "stft_a_raw" to s.stft,
                 "stft_a_pct" to Decoder.trim(s.stft),
                 "ltft_a_raw" to s.ltft,

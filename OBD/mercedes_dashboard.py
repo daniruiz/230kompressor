@@ -17,6 +17,10 @@ RPM, injection, load, coarse calculated MAF, ignition advance, throttle, narrowb
 STN/OBDLink: adapter-managed P3 and measured P4 trial with automatic rollback.
 Use --no-adapter-tuning to keep previous timings. Supply voltage scale remains provisional.
 Stored LTFT endpoints are read every 30 s via service 23, one per fast cycle.
+At connection, read the software reference directly from the six known ROM
+locations and select its LTFT addresses. Ten analysed profiles are supported.
+Unknown/unverified software disables only stored LTFT low/high RAM polling.
+Identification runs once, before grouping/timing optimisation; no extra fast IDs.
 This is a polling policy, not a verified ECU adaptation time.
 Oxygen sensor voltage follows the stock PID 14 conversion, NOT wideband lambda/AFR.
 MAF is the ECU calculated airflow (also available in substitute operation),
@@ -103,6 +107,32 @@ class NegativeResponse(DiagnosticError):
 
 class LinkTimeout(DiagnosticError):
     pass
+
+
+@dataclass(frozen=True)
+class ECUProfile:
+    software: str
+    software_address: int  # Thirteen ASCII characters, in directly mapped ROM.
+    ltft_low_address: int = 0x900C
+    ltft_high_address: int = 0x9014
+
+
+# Matched to code and ROM in the ten supplied original binaries, not to values
+# that merely look like trims. The software reference may survive calibration edits.
+# Service 23: 404 at 3AC30; 643 at 3ACE2. No additional identity is required.
+ECU_PROFILES = (
+    ECUProfile('114.235034.34', 0xE2AC),
+    ECUProfile('114.235153.52', 0xE492),
+    ECUProfile('114.235035.52', 0xE492),
+    ECUProfile('114.235355.56', 0xE492),
+    ECUProfile('114.235404.04', 0xE496),
+    ECUProfile('114.235516.16', 0xE49E),
+    ECUProfile('114.235819.20', 0xE49E),
+    ECUProfile('114.236338.39', 0xE4C6),
+    ECUProfile('114.236438.40', 0xE4C6),
+    ECUProfile('114.236643.43', 0xD4DC, 0x920C, 0x9214),
+)
+ECU_PROFILES_BY_SOFTWARE = {p.software: p for p in ECU_PROFILES}
 
 
 class KnockSound:
@@ -362,6 +392,8 @@ class Journal:
                 'F8C6_calc_raw','injector_deadtime_ms_est','injection_before_deadtime_raw',
                 'injection_before_deadtime_ms_est','injector_deadtime_fraction_pct',
                 'injection_breakdown_status','injection_F746_saturated']
+            self.csv_fields += ['ecu_software','ecu_identification_status',
+                                'ltft_low_address','ltft_high_address']
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
@@ -396,6 +428,11 @@ class Journal:
                 values[f'ltft_{label}_pct'] = trim_percent(raw) if raw is not None else None
             values['ltft_stored_age_s'] = max(0, sample.at-model.ltft_at) if model.ltft_at is not None else None
             values['ltft_stored_status'] = model.ltft_status
+            profile = model.ecu_profile
+            values.update(ecu_software=model.ecu_software,
+                          ecu_identification_status=model.ecu_identification_status,
+                          ltft_low_address=f'0x{profile.ltft_low_address:04X}' if profile else None,
+                          ltft_high_address=f'0x{profile.ltft_high_address:04X}' if profile else None)
         self.write('csv_sample', **values)
 
     def write(self, kind, **values):
@@ -436,6 +473,9 @@ class ELM:
         self.request_gap = 0.060
         self.last_bus_reply = None
         self.last_command = None
+        self.ecu_profile = None
+        self.ecu_software = None
+        self.ecu_identification_status = 'pending'
         self.serial.reset_input_buffer()
 
     def command(self, command: str, timeout=6, allow_repeat=False):
@@ -649,14 +689,88 @@ class ELM:
         sample.duration_ms = (sample.at-start)*1000
         return sample
 
-    def read_stored_trim(self, address):
-        # Custom ECU service 23 returns one word. No length byte.
-        if address not in (0x900C, 0x9014):
-            raise ValueError('Dirección LTFT inválida')
+    def _read_memory_word(self, address):
+        # Custom service 23 returns one LE word from a logical 16-bit address.
+        # No length byte. This helper is also used for known ROM identity cells.
+        if not isinstance(address, int) or not 0 <= address <= 0xFFFE or address & 1:
+            raise ValueError('Dirección de palabra inválida')
         suffix = bytes([0, address >> 8, address & 255])
         reply = self.query('23' + suffix.hex().upper())
         frame = positive(reply, 0x23, b'\x63' + suffix, 6)
         return int.from_bytes(frame[4:6], 'little')
+
+    def identify_ecu(self, notice):
+        """Read-only startup detection; never infer a RAM layout from trim values.
+
+        Probe only the six known ROM string starts. The full software reference
+        and its ROM location must match a profile before enabling endpoint reads.
+        RAM addresses come from that profile. A lost prompt remains
+        fatal: it is unsafe to continue on a desynchronised serial stream.
+        """
+        self.ecu_profile = None
+        self.ecu_software = None
+        self.ecu_identification_status = 'unverified'
+        notice('Identificando software ECU · leyendo referencia en ROM')
+        addresses = dict.fromkeys(p.software_address for p in ECU_PROFILES)
+        cache = {}
+
+        def word(address):
+            if address not in cache:
+                cache[address] = self._read_memory_word(address)
+            return cache[address].to_bytes(2, 'little')
+
+        reason = 'No se encontró una referencia de software conocida'
+        for address in addresses:
+            try:
+                # Each reference is 13 ASCII bytes; seven two-byte reads.
+                # Cache overlapping locations in the bounded ROM search.
+                if word(address) != b'11':
+                    continue
+                raw = b''.join(word(address+i) for i in range(0, 14, 2))[:13]
+                if not re.fullmatch(rb'114\.\d{6}\.\d{2}', raw):
+                    continue
+                self.ecu_software = raw.decode('ascii')
+                profile = ECU_PROFILES_BY_SOFTWARE.get(self.ecu_software)
+                if profile is None or profile.software_address != address:
+                    self.ecu_identification_status = 'unknown_software'
+                    reason = 'Referencia ROM sin perfil de direcciones validado'
+                    break
+                self.ecu_profile = profile
+                self.ecu_identification_status = 'identified_rom'
+                self.journal.write('ecu_identification', software=profile.software,
+                    status=self.ecu_identification_status,
+                    method='ROM',
+                    software_address=f'0x{address:04X}',
+                    ltft_low_address=f'0x{profile.ltft_low_address:04X}',
+                    ltft_high_address=f'0x{profile.ltft_high_address:04X}',
+                    stored_ltft_enabled=True)
+                notice(f'ECU {profile.software} · perfil LTFT seleccionado')
+                return profile
+            except LinkTimeout:
+                raise
+            except DiagnosticError as exc:
+                self.ecu_identification_status = 'read_error'
+                reason = str(exc)
+                self.journal.write('ecu_identification_probe_error', stage='ROM',
+                                   address=f'0x{address:04X}', error=str(exc))
+                # A refused service is not helped by probing further addresses.
+                if isinstance(exc, NegativeResponse) and exc.code in (0x11, 0x12, 0x33):
+                    break
+
+        self.journal.write('ecu_identification', software=self.ecu_software,
+            status=self.ecu_identification_status, reason=reason,
+            method='ROM',
+            stored_ltft_enabled=False)
+        notice('ECU sin perfil verificado · LTFT low/high no disponibles')
+        return None
+
+    def read_stored_trim(self, address):
+        profile = self.ecu_profile
+        if profile is None:
+            raise DiagnosticError('LTFT de RAM desactivado: software ECU sin verificar')
+        if address not in (profile.ltft_low_address, profile.ltft_high_address):
+            raise ValueError('Dirección LTFT no pertenece al software identificado')
+        return self._read_memory_word(address)
 
     def close(self):
         self.serial.close()
@@ -742,7 +856,10 @@ class Model:
         self.ltft_low = self.ltft_high = None
         self.ltft_at = None
         self.ltft_status = 'pendiente'
-        self.ltft_disabled = False
+        self.ltft_disabled = True  # Enabled only after ROM/profile verification.
+        self.ecu_profile = None
+        self.ecu_software = None
+        self.ecu_identification_status = 'pending'
         self.next_ltft = 0.0
         self.ltft_pending = None
         self.previous = None
@@ -759,6 +876,16 @@ class Model:
         self.history = {k: deque(maxlen=90) for k in ('rpm', 'load', 'inj', 'duty', 'retard')}
         self.history['retard'] = []  # Start at first positive correction, then retain every sample.
         self.events = deque(maxlen=5)
+
+    def set_ecu(self, elm):
+        with self.lock:
+            self.ecu_profile = elm.ecu_profile
+            self.ecu_software = elm.ecu_software
+            self.ecu_identification_status = elm.ecu_identification_status
+            self.ltft_disabled = elm.ecu_profile is None
+            self.ltft_low = self.ltft_high = self.ltft_at = self.ltft_pending = None
+            self.next_ltft = 0.0
+            self.ltft_status = 'software sin verificar' if self.ltft_disabled else 'pendiente'
 
     def stored_trims(self, low, high, at=None):
         with self.lock:
@@ -813,17 +940,21 @@ class Model:
 def poll_stored_trims(elm, model, journal, now=None):
     """One optional request per fast cycle; publish a complete cached pair."""
     now = time.monotonic() if now is None else now
-    if model.ltft_disabled or now < model.next_ltft:
+    profile = model.ecu_profile
+    if model.ltft_disabled or profile is None or now < model.next_ltft:
         return
     try:
         if model.ltft_pending is None:
-            low = elm.read_stored_trim(0x900C)
+            low = elm.read_stored_trim(profile.ltft_low_address)
             model.ltft_pending = (low, time.monotonic())
             return  # Next worker iteration reads the fast group before high.
         low, low_at = model.ltft_pending
-        high = elm.read_stored_trim(0x9014)
+        high = elm.read_stored_trim(profile.ltft_high_address)
         model.stored_trims(low, high, low_at)
         journal.write('ltft_stored', low_raw=low, high_raw=high,
+                      software=profile.software,
+                      low_address=f'0x{profile.ltft_low_address:04X}',
+                      high_address=f'0x{profile.ltft_high_address:04X}',
                       low_pct=trim_percent(low), high_pct=trim_percent(high),
                       pair_span_s=time.monotonic()-low_at)
     except LinkTimeout:
@@ -844,6 +975,7 @@ def worker(args, model, stop, journal):
     try:
         if args.demo:
             model.mode = 'DEMO'
+            model.ecu_identification_status = 'demo'
             model.notice('Simulación · eventos programados cada 8 segundos')
             started = time.monotonic()
             prev_at = started
@@ -883,6 +1015,8 @@ def worker(args, model, stop, journal):
             return
         elm = connect_adapter(args, journal, stop, model.notice)
         elm.setup(model.notice, args.adaptive)
+        elm.identify_ecu(model.notice)
+        model.set_ecu(elm)
         mode = 'individual' if args.individual else 'grouped'
         if mode == 'grouped':
             model.notice(f'Configurando {len(IDS)} entradas agrupadas · RAM de diagnóstico')
@@ -1143,10 +1277,16 @@ def render(model, args, width=110, height=44, now=None):
         perf = f'{hz:.1f} Hz · {interval} · adquisición {s.duration_ms:.0f} ms' if s else 'Esperando primera muestra'
         if s:
             perf += f'  ·  edad {age:.1f} s'
-        footer = Text(perf + f'  ·  errores {model.errors}  ·  Ctrl+C salir', style=MUTED)
+        footer = Text(perf + f'  ·  errores {model.errors}  ·  Ctrl+C salir', style=MUTED,
+                      no_wrap=True, overflow='ellipsis')
         mode_label = 'DEMO · SIN COCHE' if args.demo else model.mode.upper() + (' · '+model.adapter_profile if model.adapter_profile else '')
         voltage = ecu_voltage_est(s.voltage_raw, args.voltage_scale) if shown else None
         footer.append('\nECU ' + (f'~{voltage:.2f} V' if voltage is not None else '— V'), style=f'bold {CYAN}')
+        if not args.demo:
+            software_label = model.ecu_software or 'no identificada'
+            footer.append(' · SW '+software_label, style=f'bold {CYAN}')
+            if model.ecu_profile is None:
+                footer.append(' · LTFT RAM desactivado', style=AMBER)
         footer.append(' · '+mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
         layout['foot'].update(Panel(footer, border_style='#334d6d', box=box.ROUNDED, style=f'on {bg}'))
         return layout
@@ -1193,6 +1333,8 @@ def main(argv=None):
         return 1
     journal.write('session', demo=args.demo, port=args.port, baud=args.baud,
                   diagnostic_ids=[f'11{i:02X}' for i in IDS],
+                  ecu_identification_policy='ROM software reference; once at connection',
+                  supported_ecu_software=[p.software for p in ECU_PROFILES],
                   voltage_scale_V_per_raw_assumed=args.voltage_scale, voltage_conversion_verified=False,
                   tick_us_assumed=args.tick_us, correction_deg_per_raw_nominal=0.75,
                   injection_tick_conversion_verified=False,

@@ -129,6 +129,13 @@ class Elm(
     var stn = false
         private set
 
+    var ecuProfile: EcuProfile? = null
+        private set
+    var ecuSoftware: String? = null
+        private set
+    var ecuIdentificationStatus = "pending"
+        private set
+
     private var gap = 60L
     private var lastBus: Long? = null
     private var p3 = false
@@ -273,11 +280,92 @@ class Elm(
         return sample.copy(at = end, acquisitionMs = (end - start).toDouble())
     }
 
-    fun storedTrim(address: Int): Int {
-        require(address == 0x900C || address == 0x9014)
+    private fun readMemoryWord(address: Int): Int {
+        // Service 23 reads one LE word from an even, logical 16-bit address;
+        // there is no length byte. Only known ROM cells and verified LTFT use it.
+        require(address in 0..0xFFFE && (address and 1) == 0) { "Dirección de palabra inválida" }
         val suffix = "00%04X".format(address)
         val frame = Decoder.positive(query("23$suffix"), 0x23, "63$suffix", 6)
         return Decoder.word(frame, 4)
+    }
+
+    /** Run once at connection, before grouping and timing optimisation.
+     * Both the full ROM reference and its location must match. Never infer a RAM
+     * layout from plausible trim values; a lost prompt still ends the session.
+     */
+    fun identifyEcu(notice: (String) -> Unit): EcuProfile? {
+        ecuProfile = null
+        ecuSoftware = null
+        ecuIdentificationStatus = "unverified"
+        notice("Identificando software ECU · leyendo referencia en ROM")
+        val cache = HashMap<Int, Int>()
+        fun word(address: Int) = cache.getOrPut(address) { readMemoryWord(address) }
+        var reason = "No se encontró una referencia de software conocida"
+        for (address in EcuProfiles.all.map { it.softwareAddress }.distinct()) {
+            try {
+                if (word(address) != 0x3131) continue // ASCII "11", little-endian.
+                val raw = ByteArray(14)
+                for (i in 0 until 7) {
+                    val value = word(address + i * 2)
+                    raw[i * 2] = value.toByte()
+                    raw[i * 2 + 1] = (value shr 8).toByte()
+                }
+                val software = raw.copyOf(13).toString(Charsets.US_ASCII)
+                if (!Regex("114\\.[0-9]{6}\\.[0-9]{2}").matches(software)) continue
+                ecuSoftware = software
+                val selected = EcuProfiles.bySoftware[software]
+                if (selected == null || selected.softwareAddress != address) {
+                    ecuIdentificationStatus = "unknown_software"
+                    reason = "Referencia ROM sin perfil de direcciones validado"
+                    break
+                }
+                ecuProfile = selected
+                ecuIdentificationStatus = "identified_rom"
+                log.event(
+                    "ecu_identification",
+                    "software" to selected.software,
+                    "status" to ecuIdentificationStatus,
+                    "method" to "ROM",
+                    "software_address" to addressHex(address),
+                    "ltft_low_address" to addressHex(selected.ltftLowAddress),
+                    "ltft_high_address" to addressHex(selected.ltftHighAddress),
+                    "stored_ltft_enabled" to true,
+                )
+                notice("ECU ${selected.software} · perfil LTFT seleccionado")
+                return selected
+            } catch (e: LinkTimeout) {
+                throw e
+            } catch (e: DiagnosticException) {
+                ecuIdentificationStatus = "read_error"
+                reason = e.message ?: e.toString()
+                log.event(
+                    "ecu_identification_probe_error",
+                    "stage" to "ROM",
+                    "address" to addressHex(address),
+                    "error" to reason,
+                )
+                if (e is NegativeResponse && e.code in listOf(0x11, 0x12, 0x33)) break
+            }
+        }
+        log.event(
+            "ecu_identification",
+            "software" to ecuSoftware,
+            "status" to ecuIdentificationStatus,
+            "reason" to reason,
+            "method" to "ROM",
+            "stored_ltft_enabled" to false,
+        )
+        notice("ECU sin perfil verificado · LTFT low/high no disponibles")
+        return null
+    }
+
+    fun storedTrim(address: Int): Int {
+        val selected = ecuProfile
+            ?: throw DiagnosticException("LTFT de RAM desactivado: software ECU sin verificar")
+        require(address == selected.ltftLowAddress || address == selected.ltftHighAddress) {
+            "Dirección LTFT no pertenece al software identificado"
+        }
+        return readMemoryWord(address)
     }
 
     fun optimize(group: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) {

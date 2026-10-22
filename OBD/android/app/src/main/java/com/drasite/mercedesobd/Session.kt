@@ -54,6 +54,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             }
             if (demo) {
                 model.mode("DEMO · SIN COCHE")
+                model.setEcu(null, null, "demo")
                 val start = monoMs()
                 var last = start
                 var nextTrim = 0L
@@ -136,6 +137,8 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             wire = w
             val elm = Elm(w, j)
             elm.setup(model::notice)
+            val ecuProfile = elm.identifyEcu(model::notice)
+            model.setEcu(ecuProfile, elm.ecuSoftware, elm.ecuIdentificationStatus)
             var group = true
             try {
                 publish(elm.defineGroup())
@@ -150,25 +153,29 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             var consecutive = 0
             var nextTrim = 0L
             var pendingLow: Pair<Int, Long>? = null
-            var trimDisabled = false
+            var trimDisabled = ecuProfile == null
             while (!stopped) {
                 try {
                     model.mode(if (group) "AGRUPADO" else "INDIVIDUAL", elm.profile)
                     publish(elm.acquire(group))
                     consecutive = 0
-                    if (!trimDisabled && monoMs() >= nextTrim) {
+                    if (!trimDisabled && ecuProfile != null && monoMs() >= nextTrim) {
                         try {
                             val low = pendingLow
-                            if (low == null) pendingLow = elm.storedTrim(0x900C) to monoMs()
+                            if (low == null) pendingLow = elm.storedTrim(ecuProfile.ltftLowAddress) to monoMs()
                             else {
-                                val high = elm.storedTrim(0x9014)
+                                val high = elm.storedTrim(ecuProfile.ltftHighAddress)
                                 model.trims(low.first, high, low.second)
                                 j.event(
                                     "ltft_stored",
                                     "low_raw" to low.first,
                                     "high_raw" to high,
+                                    "software" to ecuProfile.software,
+                                    "low_address" to addressHex(ecuProfile.ltftLowAddress),
+                                    "high_address" to addressHex(ecuProfile.ltftHighAddress),
                                     "low_pct" to Decoder.trim(low.first),
                                     "high_pct" to Decoder.trim(high),
+                                    "pair_span_s" to (monoMs() - low.second) / 1000.0,
                                 )
                                 pendingLow = null
                                 nextTrim = monoMs() + 30000

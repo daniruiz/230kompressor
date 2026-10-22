@@ -18,6 +18,9 @@ data class Display(
     val high: Int?,
     val trimsAt: Long?,
     val trimsStatus: String,
+    val ecuProfile: EcuProfile?,
+    val ecuSoftware: String?,
+    val ecuIdentificationStatus: String,
     val rpm: DoubleArray,
     val load: DoubleArray,
     val duty: DoubleArray,
@@ -41,6 +44,9 @@ class Model {
     private var high: Int? = null
     private var trimsAt: Long? = null
     private var trimsStatus = "pendiente"
+    private var ecuProfile: EcuProfile? = null
+    private var ecuSoftware: String? = null
+    private var ecuIdentificationStatus = "pending"
     private val rpm = ArrayDeque<Double>()
     private val load = ArrayDeque<Double>()
     private val duty = ArrayDeque<Double>()
@@ -64,6 +70,9 @@ class Model {
         high = null
         trimsAt = null
         trimsStatus = "pendiente"
+        ecuProfile = null
+        ecuSoftware = null
+        ecuIdentificationStatus = "pending"
         rpm.clear()
         load.clear()
         duty.clear()
@@ -96,6 +105,17 @@ class Model {
         previous = null
         mode = "PARADO"
         status = "Sesión detenida · registros guardados"
+    }
+
+    @Synchronized
+    fun setEcu(selected: EcuProfile?, software: String?, identificationStatus: String) {
+        ecuProfile = selected
+        ecuSoftware = software
+        ecuIdentificationStatus = identificationStatus
+        low = null
+        high = null
+        trimsAt = null
+        trimsStatus = if (selected == null && identificationStatus != "demo") "software sin verificar" else "pendiente"
     }
 
     @Synchronized
@@ -174,6 +194,9 @@ class Model {
             high,
             trimsAt,
             trimsStatus,
+            ecuProfile,
+            ecuSoftware,
+            ecuIdentificationStatus,
             rpm.toDoubleArray(),
             load.toDoubleArray(),
             duty.toDoubleArray(),

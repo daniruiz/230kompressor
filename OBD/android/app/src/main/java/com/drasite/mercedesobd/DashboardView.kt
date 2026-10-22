@@ -704,9 +704,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val footerCenter = 8f + footerWidth / 2
         val volts =
             if (valid) formatValue("~%.2f V", sample!!.voltage * Decoder.VOLT_SCALE) else "— V"
+        val software = if (display.ecuIdentificationStatus == "demo") "" else
+            " · SW ${display.ecuSoftware ?: "no identificada"}" +
+                if (display.ecuProfile == null) " · LTFT RAM desactivado" else ""
         val perf =
             formatValue("%.1f Hz", display.hz) +
-                " · ${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts · errores ${display.errors} · ${display.mode} ${display.profile}"
+                " · ${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software · errores ${display.errors} · ${display.mode} ${display.profile}"
         drawText(
             canvas,
             perf,
