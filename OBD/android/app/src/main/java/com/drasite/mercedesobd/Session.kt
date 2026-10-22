@@ -8,6 +8,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.cos
+import kotlin.math.round
 import kotlin.math.sin
 
 class Session(private val root: File, val model: Model, private val alert: () -> Unit) {
@@ -63,6 +64,9 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                     val load = (60 + 175 * (.5 + .5 * sin(t / 2.2))).toInt()
                     val rpm = (900 + 5200 * (.5 + .5 * sin(t / 3 - 1.5))).toInt()
                     val c = if (phase >= 2) maxOf(0, 8 - ((phase - 2) * 2).toInt()) else 0
+                    val voltage = round((14 + .2 * sin(t / 5)) / Decoder.VOLT_SCALE).toInt().coerceIn(0, 255)
+                    val injection = requireNotNull(Injection.deadtimeTicks(voltage)) +
+                        Injection.calibration.minimumTicks + round(7500 * (.5 + .5 * sin(t / 3 - 1))).toInt()
                     if (now >= nextTrim) {
                         model.trims(
                             (32768 + 1000 * sin(t / 12)).toInt(),
@@ -74,7 +78,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                     publish(
                         Sample(
                             rpm,
-                            1100 + load * 18,
+                            injection,
                             load,
                             intArrayOf(c, maxOf(0, c - 2), 0, 0),
                             stft = (32768 + 2500 * sin(t)).toInt(),
@@ -85,7 +89,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                             advance = ((-15 + 20 * sin(t / 4) + 66) / .75).toInt(),
                             throttle = (255 * (.5 + .5 * sin(t / 3))).toInt(),
                             oxygen = (0x2456 * (1 + .7 * sin(t * 4))).toInt(),
-                            voltage = ((14 + .2 * sin(t / 5)) / Decoder.VOLT_SCALE).toInt(),
+                            voltage = voltage,
                             at = now,
                             acquisitionMs = (now - last).toDouble(),
                         )

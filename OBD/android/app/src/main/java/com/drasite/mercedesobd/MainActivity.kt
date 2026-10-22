@@ -287,7 +287,7 @@ class MainActivity : Activity() {
                 AlertDialog.Builder(this)
                     .setTitle("Interpretación de lecturas")
                     .setMessage(
-                        "Duty y tiempo F746 usan 2,6667 µs/unidad y una inyección por 720°: estimados. Voltaje ECU usa 0,09375 V/unidad: provisional. La sonda estrecha indica voltaje, no AFR. El contador registra aumentos observados, no un contador de detonaciones validado.\n\nLa sesión se detiene al salir de primer plano."
+                        "F746 es la duración común solicitada, no un pulso eléctrico medido. Duty y tiempo usan 2,6667 µs/unidad y una inyección por 720°: estimados. Los registros descomponen el tiempo muerto con F734 y la curva fija SW404 banco 1, sin lecturas adicionales. El tiempo anterior a la compensación supone el funcionamiento normal y no demuestra flujo de combustible. Voltaje ECU usa 0,09375 V/unidad: provisional. La sonda estrecha indica voltaje, no AFR. El contador registra aumentos observados, no un contador de detonaciones validado.\n\nLa sesión se detiene al salir de primer plano."
                     )
                     .setPositiveButton("Cerrar", null)
                     .show()

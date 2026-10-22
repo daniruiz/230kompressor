@@ -58,7 +58,18 @@ class Journal(root: File, private val demo: Boolean) : Events, Closeable {
             "ltft_stored_status",
         ) +
             (1..4).flatMap { listOf("knock_channel_${it}_raw", "knock_channel_${it}_deg_est") } +
-            listOf("stft_a_raw", "stft_a_pct", "ltft_a_raw", "ltft_a_pct")
+            listOf("stft_a_raw", "stft_a_pct", "ltft_a_raw", "ltft_a_pct") +
+            listOf(
+                "injection_cycle_720_ms",
+                "injection_cycle_margin_ms_est",
+                "F8C6_calc_raw",
+                "injector_deadtime_ms_est",
+                "injection_before_deadtime_raw",
+                "injection_before_deadtime_ms_est",
+                "injector_deadtime_fraction_pct",
+                "injection_breakdown_status",
+                "injection_F746_saturated",
+            )
 
     init {
         root.mkdirs()
@@ -72,7 +83,17 @@ class Journal(root: File, private val demo: Boolean) : Events, Closeable {
             "demo" to demo,
             "platform" to "android_native",
             "tick_us_assumed" to Decoder.TICK_US,
+            "injection_tick_conversion_verified" to false,
+            "injection_duty_basis" to "F746 common request; one pulse per 720 degrees assumed; not measured output duty",
+            "injector_deadtime_source" to Injection.calibration.source,
+            "injector_calibration_sha256" to Injection.calibration.sha256,
+            "injector_deadtime_curve" to Injection.calibration.nodes,
+            "injector_deadtime_is_direct_ram_read" to false,
+            "injector_minimum_ticks" to Injection.calibration.minimumTicks,
+            "voltage_scale_V_per_raw_assumed" to Decoder.VOLT_SCALE,
             "voltage_conversion_verified" to false,
+            "correction_deg_per_raw_nominal" to 0.75,
+            "detector" to "observed_correction_increase_NOT_ECU_knock_counter",
             "transport_revision" to "native_spp_v1",
             "diagnostic_ids" to Decoder.ids.map { "11%02X".format(it) },
         )
@@ -101,10 +122,6 @@ class Journal(root: File, private val demo: Boolean) : Events, Closeable {
                 "demo" to demo,
                 "rpm" to s.rpm,
                 "load_raw" to s.load,
-                "F746_raw" to s.injection,
-                "injection_ms_est" to s.injectionMs,
-                "injector_duty_est_pct" to s.duty,
-                "duty_over_100_est" to (s.duty > 100),
                 "acquisition_ms" to s.acquisitionMs,
                 "cycle_ms" to s.cycleMs,
                 "observed_count" to d.count,
@@ -138,6 +155,7 @@ class Journal(root: File, private val demo: Boolean) : Events, Closeable {
                 "ltft_a_raw" to s.ltft,
                 "ltft_a_pct" to Decoder.trim(s.ltft),
             )
+        v.putAll(s.injectionMetrics.logValues())
         s.corrections.forEachIndexed { i, n ->
             v["knock_channel_${i+1}_raw"] = n
             v["knock_channel_${i+1}_deg_est"] = n * .75

@@ -96,11 +96,13 @@ data class Sample(
     val acquisitionMs: Double = 0.0,
     val cycleMs: Long? = null,
 ) {
+    val injectionMetrics = Injection.metrics(injection, rpm, voltage)
+
     val injectionMs
-        get() = injection * Decoder.TICK_US / 1000
+        get() = injectionMetrics.totalMs
 
     val duty
-        get() = injectionMs * rpm / 1200
+        get() = injectionMetrics.duty
 
     val retard
         get() = (corrections.maxOrNull() ?: 0) * .75
