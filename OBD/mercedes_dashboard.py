@@ -58,6 +58,9 @@ try:
 except ImportError:
     raise SystemExit('Instala la interfaz: python3 -m pip install rich')
 
+MIN_WIDTH = 78
+MIN_HEIGHT = 29
+
 # ROM pointer table 0xDE48, service 22 at 0x3ABC0 and group at 0x3AF14.
 # 1107 -> F74C/F74D: MAF and load; replaces redundant 1106.
 # 1110 -> F734/F735: voltage is ONLY the first byte; F735 is unrelated.
@@ -1172,11 +1175,11 @@ def render(model, args, width=110, height=44, now=None):
         bg = '#811c31' if red else BG
         layout = Layout()
         layout.split_column(Layout(name='metrics', size=14),
-                            Layout(name='lower', ratio=1, minimum_size=20),
+                            Layout(name='lower', ratio=1, minimum_size=15),
                             Layout(name='foot', size=4))
         layout['lower'].split_row(Layout(name='knock', ratio=2), Layout(name='extras', ratio=1))
-        if width < 82 or height < 34:
-            return Panel(Text('Amplía la terminal a 82 columnas × 34 filas como mínimo.\n'+model.status, style=CYAN), style=f'on {bg}')
+        if width < MIN_WIDTH or height < MIN_HEIGHT:
+            return Panel(Text(f'Amplía la terminal a {MIN_WIDTH} columnas × {MIN_HEIGHT} filas como mínimo.\n'+model.status, style=CYAN), style=f'on {bg}')
         shown = s is not None and not stale
         rpm, load, inj = (s.rpm,s.load,s.injection) if s else (0,0,0)
         trace_width = width//3-2
@@ -1224,14 +1227,14 @@ def render(model, args, width=110, height=44, now=None):
             table.add_row(indices, counter_box)
         else:
             table.add_row(indices)
-        retard_line = Text('\nRetardo de encendido: ', style=MUTED)
+        retard_line = Text(f'{"" if model.count > 0 else "\n"}Retardo de encendido: ', style=MUTED)
         retard_line.append(f'{correction*0.75:.2f}°' if shown else '—',
                            style=f'bold {MAGENTA}')
         body = [table,
                 Align.center(retard_line),
                 '',
                 spark(model.history['retard'],max(4,max(model.history['retard'],default=0)),
-                      max(20,width*2//3-6),height=max(7,height-33),color=MAGENTA,full=True)]
+                      max(20,width*2//3-6),height=max(6,height-33),color=MAGENTA,full=True)]
         if model.events:
             at,message=model.events[0]
             body.append(Text(f'\nÚltimo aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
@@ -1258,7 +1261,7 @@ def render(model, args, width=110, height=44, now=None):
         temperatures.add_column(justify='right')
         for label,raw in zip(('ADMISIÓN','REFRIGERANTE'),reversed(s.temperatures if s else (40,40))):
             temperatures.add_row(label, Text(f'{raw-40} °C' if shown else '—', style=f'bold {AMBER}'))
-        layout['extras'].split_column(Layout(name='mixture',size=8), Layout(name='temps',size=4), Layout(name='advance',minimum_size=8))
+        layout['extras'].split_column(Layout(name='mixture',size=8), Layout(name='temps',size=4), Layout(name='advance',minimum_size=3))
         layout['mixture'].update(Panel(mixture, title='MEZCLA', border_style=GREEN,
                                        box=box.ROUNDED, style=f'on {bg}'))
         layout['temps'].update(Panel(temperatures, title='TEMPERATURAS', border_style=AMBER,
@@ -1266,10 +1269,12 @@ def render(model, args, width=110, height=44, now=None):
         adv = advance_degrees(s.advance_raw) if shown and s.advance_raw is not None else None
         advance_text = Text(f'{adv:+.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
-        advance_bar = bar(abs(adv), 40, color=CYAN) if adv is not None else Text('─'*24, style=MUTED)
+        advance_bar = bar(abs(adv), 40, 24 if height > 36 else 15, color=CYAN) if adv is not None else Text('─'*24, style=MUTED)
         direction = ('antes del PMS' if adv < 0 else 'después del PMS' if adv > 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
-        layout['advance'].update(Panel(Group('', Align.center(advance_text), '',
-            Align.center(advance_bar), Align.center(Text(direction, style=MUTED))),
+        layout['advance'].update(Panel(Align.center(Group(Align.center(advance_text),
+                                                          Align.center(advance_bar),
+                                                          Align.center(Text(direction, style=MUTED))) if height > 36 else advance_text + advance_bar,
+                                                    vertical='middle'),
             title=Text('AVANCE DE ENCENDIDO', style=f'bold {CYAN}'), border_style=CYAN,
             box=box.ROUNDED, style=f'on {bg}', padding=(0,1)))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
@@ -1351,6 +1356,9 @@ def main(argv=None):
     thread=threading.Thread(target=worker,args=(args,model,stop,journal),daemon=True)
     thread.start()
     started=time.monotonic()
+    if console.width < MIN_WIDTH or console.height < MIN_HEIGHT:
+        sys.__stdout__.write(f"\033[8;{MIN_HEIGHT};{MIN_WIDTH}t")
+        sys.__stdout__.flush()
     try:
         with Live(console=console,screen=True,auto_refresh=False,vertical_overflow='crop') as live:
             while not args.seconds or time.monotonic()-started < args.seconds:
