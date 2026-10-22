@@ -1267,13 +1267,13 @@ def render(model, args, width=110, height=44, now=None):
         layout['temps'].update(Panel(temperatures, title='TEMPERATURAS', border_style=AMBER,
                                      box=box.ROUNDED, style=f'on {bg}'))
         adv = advance_degrees(s.advance_raw) if shown and s.advance_raw is not None else None
-        advance_text = Text(f'{adv:+.1f}°' if adv is not None else '—',
+        advance_text = Text(f'{adv:+5.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
         advance_bar = bar(abs(adv), 40, 24 if height > 36 else 15, color=CYAN) if adv is not None else Text('─'*24, style=MUTED)
         direction = ('antes del PMS' if adv < 0 else 'después del PMS' if adv > 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
         layout['advance'].update(Panel(Align.center(Group(Align.center(advance_text),
                                                           Align.center(advance_bar),
-                                                          Align.center(Text(direction, style=MUTED))) if height > 36 else advance_text + advance_bar,
+                                                          Align.center(Text(direction, style=MUTED))) if height > 36 else advance_text + ' ' + advance_bar,
                                                     vertical='middle'),
             title=Text('AVANCE DE ENCENDIDO', style=f'bold {CYAN}'), border_style=CYAN,
             box=box.ROUNDED, style=f'on {bg}', padding=(0,1)))
