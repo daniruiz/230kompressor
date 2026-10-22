@@ -4,7 +4,13 @@ Demo: python3 mercedes_dashboard.py --demo
 Car:  python3 mercedes_dashboard.py /dev/ttyUSB0
 
 The red alert counts observed rises in candidate knock corrections, NOT a
-validated ECU knock counter. F746 milliseconds use a provisional timer scale.
+validated ECU knock counter. F746 is the common requested injection duration,
+not a measured electrical pulse. Milliseconds use a provisional timer scale.
+SW404 bank 1: reconstruct dead-time compensation from the already-read F734
+and the 47CA curve (239F4..23A06), without additional diagnostic requests.
+SW404 bank 1 calibration constants are fixed in this script.
+No binary file is required. The curve result is NOT a direct RAM read of F8C6.
+The before-compensation value assumes the running path, without saturation.
 The ECU knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, live STFT/LTFT, temperatures,
 RPM, injection, load, coarse calculated MAF, ignition advance, throttle, narrowband oxygen sensor and supply voltage.
@@ -58,6 +64,9 @@ IDS = (0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x07, 0x0B, 0x0A, 0x1F, 0x10)
 # 149 * 3/32 = 13.97 V is plausible, but is not proof of the divider ratio.
 VOLTAGE_V_PER_RAW_EST = 3 / 32
 LTFT_INTERVAL = 30.0
+# SW404 bank 1. Both stock and the analysed 230k_ME21 tune have this curve.
+# 47CA: pointer F734, offset 0, shift 4, count 17; data at 47D0..47E0.
+DEADTIME_NODES_404 = (112,112,112,112,112,63,43,33,26,21,21,21,21,21,21,21,21)
 # 111F -> 81C0; comparator at 159F0 uses ROM 41A8 = 0x2456.
 O2_SWITCH_RAW = 0x2456
 # 110A -> F74F: byte used directly for OBD throttle position.
@@ -216,15 +225,81 @@ def grouped(reply: str) -> Sample:
 
 
 def duty_percent(injection_raw: int, rpm: int, tick_us: float = 8/3) -> float:
-    """Estimate commanded duty; F746 is a timer count after dead-time compensation.
+    """Estimate duty of the common request; include dead-time compensation.
 
     tick_us and one pulse per 720 crank degrees remain assumptions to validate.
-    This is commanded electrical time, not the injector's effective flow-open time.
+    F746 is upstream of per-output corrections, scheduling and cuts. It does
+    not establish the actual electrical pulse or injector effective flow time.
     """
-    if injection_raw < 0 or rpm < 0 or tick_us <= 0:
+    if injection_raw < 0 or rpm < 0 or not math.isfinite(tick_us) or tick_us <= 0:
         raise ValueError('Valores inválidos para estimar el duty')
     pulse_ms = injection_raw * tick_us / 1000
     return pulse_ms * rpm / 1200
+
+
+@dataclass(frozen=True)
+class InjectorCalibration:
+    nodes: tuple[int, ...] = DEADTIME_NODES_404
+    minimum_ticks: int = 187
+    source: str = '404 banco 1, constantes fijas'
+    sha256: str | None = None
+
+
+def deadtime_ticks(voltage_raw: int | None, calibration: InjectorCalibration) -> int | None:
+    """Reproduce 3C504 + 3C4DA/3C4EE, followed by multiplication by 15.
+
+    ROR by 4 yields the index in RL5 and fraction in RH5. SHR #8 feeds
+    carry into ADDCB/SUBCB: round the magnitude of the delta, ties upward,
+    then add/subtract it. Python round() would disagree at half steps.
+    C166 ISA: https://www.keil.com/dd/docs/datashts/infineon/c166ism.pdf
+    No physical battery-voltage or injector-clock assumption enters this.
+    """
+    if voltage_raw is None:
+        return None
+    if not isinstance(voltage_raw, int) or not 0 <= voltage_raw <= 255:
+        raise ValueError('F734 debe ser un byte')
+    if len(calibration.nodes) != 17 or any(not 0 <= x <= 255 for x in calibration.nodes):
+        raise ValueError('Se requieren 17 nodos de un byte')
+    index, fraction = voltage_raw >> 4, (voltage_raw & 15) << 4
+    a, b = calibration.nodes[index:index+2]
+    delta = (abs(b-a)*fraction+128) >> 8
+    return 15*(a+delta if b >= a else a-delta)
+
+
+def injection_metrics(sample: Sample, args) -> dict:
+    """Same calculation for UI, CSV and JSONL; no additional ECU requests."""
+    cal = args.injector_calibration
+    raw = sample.injection
+    total_ms = raw*args.tick_us/1000
+    duty = duty_percent(raw, sample.rpm, args.tick_us)
+    dead = deadtime_ticks(sample.voltage_raw, cal)
+    net = None
+    if sample.rpm == 0:
+        status = 'engine_stopped_request_may_be_retained'
+    elif raw == 65535:
+        status = 'F746_saturated_cannot_reverse'
+    elif dead is None:
+        status = 'missing_F734'
+    elif sample.rpm < 600:
+        status = 'low_rpm_start_path_not_excluded'
+    elif raw-dead < cal.minimum_ticks:
+        status = 'below_running_minimum_path_not_applicable'
+    else:
+        # A mathematical decomposition of the normal running path, not a
+        # measurement of effective injector flow or proof that fuel is on.
+        net = raw-dead
+        status = 'running_path_assumed'
+    return dict(F746_raw=raw, injection_ms_est=total_ms,
+                injector_duty_est_pct=duty, duty_over_100_est=duty > 100,
+                injection_cycle_720_ms=120000/sample.rpm if sample.rpm else None,
+                injection_cycle_margin_ms_est=(120000/sample.rpm-total_ms) if sample.rpm else None,
+                F8C6_calc_raw=dead,
+                injector_deadtime_ms_est=dead*args.tick_us/1000 if dead is not None else None,
+                injection_before_deadtime_raw=net,
+                injection_before_deadtime_ms_est=net*args.tick_us/1000 if net is not None else None,
+                injector_deadtime_fraction_pct=100*dead/raw if dead is not None and raw and net is not None else None,
+                injection_breakdown_status=status,
+                injection_F746_saturated=raw == 65535)
 
 
 def advance_degrees(raw):
@@ -283,14 +358,16 @@ class Journal:
                 'ltft_stored_age_s','ltft_stored_status']
             self.csv_fields += [f'knock_channel_{i}_{unit}' for i in range(1,5) for unit in ('raw','deg_est')]
             self.csv_fields += [f'{name}_{unit}' for name in ('stft_a','ltft_a') for unit in ('raw','pct')]
+            self.csv_fields += ['injection_cycle_720_ms','injection_cycle_margin_ms_est',
+                'F8C6_calc_raw','injector_deadtime_ms_est','injection_before_deadtime_raw',
+                'injection_before_deadtime_ms_est','injector_deadtime_fraction_pct',
+                'injection_breakdown_status','injection_F746_saturated']
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
     def sample(self, sample, args, model, event):
         values = dict(demo=args.demo, rpm=sample.rpm, load_raw=sample.load,
-            F746_raw=sample.injection, injection_ms_est=sample.injection*args.tick_us/1000,
-            injector_duty_est_pct=duty_percent(sample.injection,sample.rpm,args.tick_us),
-            duty_over_100_est=duty_percent(sample.injection,sample.rpm,args.tick_us)>100,
+            **injection_metrics(sample, args),
             cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms, observed_count=model.count, observed_event=event,
             coolant_C=sample.temperatures[0]-40, iat_C=sample.temperatures[1]-40,
             coolant_raw=sample.temperatures[0], iat_raw=sample.temperatures[1], pairs_raw=sample.pairs_raw)
@@ -785,7 +862,9 @@ def worker(args, model, stop, journal):
                 sample.voltage_raw = round((14.0 + 0.2*math.sin(t/5))/args.voltage_scale)
                 sample.voltage_raw = min(255, max(0, sample.voltage_raw))
                 sample.maf_raw = min(255, int(load*rpm/100000))
-                sample.injection = round(7500*(0.5+0.5*math.sin(t/3-1)))
+                sample.injection = (deadtime_ticks(sample.voltage_raw, args.injector_calibration)
+                                    + args.injector_calibration.minimum_ticks
+                                    + round(7500*(0.5+0.5*math.sin(t/3-1))))
                 sample.advance_raw = round((-15 + 20*math.sin(t/4) + 66)/0.75)
                 if now >= model.next_ltft:
                     model.stored_trims(int(32768+1000*math.sin(t/12)),
@@ -796,7 +875,7 @@ def worker(args, model, stop, journal):
                 prev_at = now
                 event = model.accept(sample, args.tick_us)
                 journal.sample(sample, args, model, event)
-                journal.write('sample', demo=True, rpm=rpm, F746_raw=sample.injection,
+                journal.write('sample', demo=True, rpm=rpm, **injection_metrics(sample, args),
                               load_raw=load, correction_raw=corrections, observed_event=event,
                               observed_count=model.count, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms)
                 if stop.wait(0.125):
@@ -833,11 +912,9 @@ def worker(args, model, stop, journal):
                 journal.sample(sample, args, model, event)
                 consecutive = 0
                 journal.write('sample', demo=False, mode=mode, rpm=sample.rpm,
-                              F746_raw=sample.injection, load_raw=sample.load,
+                              **injection_metrics(sample, args), load_raw=sample.load,
                               correction_raw=sample.corrections, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms,
                               observed_event=event, observed_count=model.count,
-                              injection_ms_est=sample.injection*args.tick_us/1000,
-                              injector_duty_est_pct=duty_percent(sample.injection, sample.rpm, args.tick_us),
                               correction_deg_nominal=[n*0.75 for n in sample.corrections])
                 poll_stored_trims(elm, model, journal)
             except LinkTimeout:
@@ -976,12 +1053,23 @@ def render(model, args, width=110, height=44, now=None):
         layout['load'].update(metric('CARGA INTERNA', str(load) if shown else '—', 'raw',
             (f'Mariposa: {s.throttle_raw*100/255:.1f} %' if shown and s.throttle_raw is not None else 'Mariposa: —'), AMBER, load/255,
             spark(model.history['load'],255,trace_width,color=AMBER),bg))
-        ms = inj*args.tick_us/1000
-        duty = duty_percent(inj, rpm, args.tick_us) if s else 0
+        injection = injection_metrics(s, args) if shown else None
+        duty = injection['injector_duty_est_pct'] if injection else 0
         duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
-        layout['inj'].update(metric('INYECCIÓN / DUTY', f'~{duty:.1f}' if shown else '—', '%',
-            (f'~{ms:.2f} ms · {inj} raw' if shown else 'Sin lectura actual de F746'), duty_color, duty/100,
-            spark(model.history['duty'],max(100,max(model.history['duty'],default=100)),trace_width,color=duty_color),bg))
+        detail = (
+            f"~{injection['injection_ms_est']:.2f} ms · {inj} raw"
+            if injection else 'Sin lectura actual de F746'
+        )
+        layout['inj'].update(metric(
+            'INYECCIÓN / DUTY',
+            f'~{duty:.1f}' if shown else '—', '%',
+            detail, duty_color, duty/100,
+            spark(
+                model.history['duty'],
+                max(100, max(model.history['duty'], default=100)),
+                trace_width, color=duty_color
+            ), bg
+        ))
         table = Table.grid(expand=True, padding=(0,2))
         table.add_column(ratio=1)
         correction = max(s.corrections) if s else 0
@@ -1087,6 +1175,7 @@ def parse_args(argv=None):
         p.error('baud y tick-us positivos; seconds >= 0')
     if not math.isfinite(a.voltage_scale) or a.voltage_scale <= 0:
         p.error('voltage-scale debe ser finito y positivo')
+    a.injector_calibration = InjectorCalibration()
     return a
 
 
@@ -1106,6 +1195,13 @@ def main(argv=None):
                   diagnostic_ids=[f'11{i:02X}' for i in IDS],
                   voltage_scale_V_per_raw_assumed=args.voltage_scale, voltage_conversion_verified=False,
                   tick_us_assumed=args.tick_us, correction_deg_per_raw_nominal=0.75,
+                  injection_tick_conversion_verified=False,
+                  injection_duty_basis='F746 common request; one pulse per 720 degrees assumed; not measured output duty',
+                  injector_deadtime_source=args.injector_calibration.source,
+                  injector_calibration_sha256=args.injector_calibration.sha256,
+                  injector_deadtime_curve=list(args.injector_calibration.nodes),
+                  injector_deadtime_is_direct_ram_read=False,
+                  injector_minimum_ticks=args.injector_calibration.minimum_ticks,
                   adaptive=args.adaptive, response_timeout_ms=512, request_gap_ms=60,
                   transport_revision='stn_measured_p4_with_rollback_v3',
                   adapter_tuning=not args.no_adapter_tuning and not args.conservative,
