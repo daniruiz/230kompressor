@@ -37,6 +37,8 @@ class MainActivity : Activity() {
     private var tone: ToneGenerator? = null
     private var soundGeneration = 0
     private var nextBurst = 0L
+    private var demoMode = false
+    private var volumeBeforeAlert: Int? = null
     private var resumed = false
     private var wasRunning = false
     private var exporting = false
@@ -210,6 +212,7 @@ class MainActivity : Activity() {
         }
         if (session.start(demo, address)) {
             cancelSound()
+            demoMode = demo
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             wasRunning = true
         } else model.notice("Detén la sesión actual antes de iniciar otra")
@@ -226,16 +229,6 @@ class MainActivity : Activity() {
 
     private fun beepBurst() {
         if (!prefs.getBoolean("sound", true) || !session.running || !resumed) return
-        val audio = getSystemService(AudioManager::class.java)
-        try {
-            audio.setStreamVolume(
-                AudioManager.STREAM_MUSIC,
-                audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
-                0,
-            )
-        } catch (_: SecurityException) {
-            model.notice("Android no permite ajustar el volumen de los avisos")
-        }
         if (tone == null)
             try {
                 tone = ToneGenerator(AudioManager.STREAM_MUSIC, ToneGenerator.MAX_VOLUME)
@@ -250,18 +243,62 @@ class MainActivity : Activity() {
                 {
                     if (
                         gen == soundGeneration && resumed && session.running && prefs.getBoolean("sound", true)
-                    )
-                        tone?.startTone(ToneGenerator.TONE_CDMA_HIGH_L, 65)
+                    ) {
+                        if (!demoMode) maximizeAlertVolume()
+                        try {
+                            tone?.startTone(ToneGenerator.TONE_CDMA_HIGH_L, 65)
+                        } catch (_: RuntimeException) {
+                            cancelSound()
+                        }
+                    }
                 },
                 start + i * 130,
             )
+        }
+        val end = nextBurst
+        handler.postAtTime(
+            {
+                // A later burst may still be using the saved volume.
+                if (gen == soundGeneration && end == nextBurst) restoreAlertVolume()
+            },
+            end,
+        )
+    }
+
+    private fun maximizeAlertVolume() {
+        if (volumeBeforeAlert != null) return
+        val audio = getSystemService(AudioManager::class.java)
+        try {
+            volumeBeforeAlert = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+            audio.setStreamVolume(
+                AudioManager.STREAM_MUSIC,
+                audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+                0,
+            )
+        } catch (_: SecurityException) {
+            model.notice("Android no permite ajustar el volumen de los avisos")
+        }
+    }
+
+    private fun restoreAlertVolume() {
+        val volume = volumeBeforeAlert ?: return
+        try {
+            getSystemService(AudioManager::class.java)
+                .setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
+            volumeBeforeAlert = null
+        } catch (_: SecurityException) {
+            model.notice("Android no permite restaurar el volumen anterior")
         }
     }
 
     private fun cancelSound() {
         soundGeneration++
         nextBurst = 0
-        tone?.stopTone()
+        try {
+            tone?.stopTone()
+        } finally {
+            restoreAlertVolume()
+        }
     }
 
     private fun settings() {
@@ -379,6 +416,7 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         resumed = false
+        cancelSound()
         handler.removeCallbacks(ticker)
         super.onPause()
     }
@@ -390,6 +428,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         session.stop()
+        cancelSound()
         handler.removeCallbacksAndMessages(null)
         tone?.release()
         tone = null
