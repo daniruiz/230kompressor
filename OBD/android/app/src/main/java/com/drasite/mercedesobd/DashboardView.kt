@@ -13,7 +13,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.animation.DecelerateInterpolator
-import java.util.Locale
 import kotlin.math.abs
 
 /** Native Canvas dashboard: vector graphics, no terminal or web/runtime layer. */
@@ -89,8 +88,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         if (temperaturesPage == showTemperatures && pagePosition == targetPosition) return
         temperaturesPage = showTemperatures
         contentDescription = if (temperaturesPage)
-            "MercedesOBD: temperaturas de motor y admisión, control de picado"
-        else "MercedesOBD: RPM, carga, inyección, correcciones y mezcla"
+            tr("MercedesOBD: temperaturas de motor y admisión, control de picado", "MercedesOBD: engine and intake temperatures, knock control")
+        else tr("MercedesOBD: RPM, carga, inyección, correcciones y mezcla", "MercedesOBD: RPM, load, injection, corrections and mixture")
         pageAnimator?.cancel()
         pageAnimator = ValueAnimator.ofFloat(pagePosition, targetPosition).apply {
             duration = 280L
@@ -128,12 +127,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
 
     init {
         contentDescription =
-            "MercedesOBD: RPM, carga, inyección, correcciones y mezcla"
+            tr("MercedesOBD: RPM, carga, inyección, correcciones y mezcla", "MercedesOBD: RPM, load, injection, corrections and mixture")
         isFocusable = true
     }
 
     private fun formatValue(pattern: String, vararg values: Any) =
-        String.format(Locale.ROOT, pattern, *values)
+        String.format(I18n.locale, pattern, *values)
 
     private fun drawText(
         canvas: Canvas,
@@ -415,9 +414,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawMetric(
             canvas,
             RectF(8f, 8f, 397f, 264f),
-            "RÉGIMEN",
-            if (valid) "%,d rpm".format(Locale.GERMANY, rpm) else "—",
-            "0–6.500 rpm",
+            tr("RÉGIMEN", "ENGINE SPEED"),
+            if (valid) formatValue("%,d rpm", rpm) else "—",
+            tr("0–6.500 rpm", "0–6,500 rpm"),
             display.rpm,
             6500.0,
             rpm / 6500.0,
@@ -426,10 +425,10 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawMetric(
             canvas,
             RectF(405f, 8f, 794f, 264f),
-            "CARGA INTERNA",
+            tr("CARGA INTERNA", "INTERNAL LOAD"),
             if (valid) "$load" else "—",
-            if (valid) formatValue("Mariposa %.1f %%", sample!!.throttle * 100.0 / 255)
-            else "Mariposa —",
+            if (valid) formatValue(tr("Mariposa %.1f %%", "Throttle %.1f %%"), sample!!.throttle * 100.0 / 255)
+            else tr("Mariposa —", "Throttle —"),
             display.load,
             255.0,
             load / 255.0,
@@ -439,10 +438,10 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawMetric(
             canvas,
             RectF(802f, 8f, 1192f, 264f),
-            "INYECCIÓN / DUTY EST.",
+            tr("INYECCIÓN / DUTY EST.", "INJECTION / EST. DUTY"),
             if (valid) formatValue("~%.1f %%", duty) else "—",
             if (valid) formatValue("~%.2f ms · %d raw", sample!!.injectionMs, sample.injection)
-            else "F746 sin lectura actual",
+            else tr("F746 sin lectura actual", "No current F746 reading"),
             display.duty,
             maxOf(100.0, display.duty.maxOrNull() ?: 100.0),
             duty / 100,
@@ -457,9 +456,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         valid: Boolean,
         now: Long,
     ) {
-        drawTemperatureGauge(canvas, RectF(8f, 8f, 596f, 405f), "TEMPERATURA MOTOR",
+        drawTemperatureGauge(canvas, RectF(8f, 8f, 596f, 405f), tr("TEMPERATURA MOTOR", "ENGINE TEMPERATURE"),
             if (valid) sample!!.coolant - 40 else null, TemperatureAlerts.MOTOR_LIMIT, 140, green, now)
-        drawTemperatureGauge(canvas, RectF(604f, 8f, 1192f, 405f), "TEMPERATURA ADMISIÓN",
+        drawTemperatureGauge(canvas, RectF(604f, 8f, 1192f, 405f), tr("TEMPERATURA ADMISIÓN", "INTAKE TEMPERATURE"),
             if (valid) sample!!.iat - 40 else null, TemperatureAlerts.INTAKE_LIMIT, 100, cyan, now)
         drawKnock(canvas, display, sample, valid, now, compact = true)
     }
@@ -506,7 +505,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawText(canvas, "$maximum °C", cx + 116f, bounds.top + 342f, 16f, muted, width = 90f, align = Paint.Align.CENTER)
         textTransform = cardTextTransform
         canvas.restore()
-        drawText(canvas, if (temperature == null) "Sin datos actuales" else if (hot) "TEMPERATURA ALTA · > $limit °C" else "Aviso por encima de $limit °C",
+        drawText(canvas, if (temperature == null) tr("Sin datos actuales", "No current data") else if (hot) tr("TEMPERATURA ALTA · > $limit °C", "HIGH TEMPERATURE · > $limit °C") else tr("Aviso por encima de $limit °C", "Alert above $limit °C"),
             cx, bounds.bottom - 16f, 16f, gaugeColor, hot, bounds.width() - 32f, Paint.Align.CENTER)
     }
 
@@ -523,10 +522,10 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val center = kr.centerX()
         val valueY = if (compact) 470f else 339f
         val channelY = if (compact) 497f else 377f
-        drawCard(canvas, kr, "CONTROL DE PICADO", purple, flash)
+        drawCard(canvas, kr, tr("CONTROL DE PICADO", "KNOCK CONTROL"), purple, flash)
         drawText(
             canvas,
-            if (valid) formatValue("Retardo %.2f°", sample!!.retard) else "Retardo —",
+            if (valid) formatValue(tr("Retardo %.2f°", "Retard %.2f°"), sample!!.retard) else tr("Retardo —", "Retard —"),
             if (compact) center else 340f,
             valueY,
             if (compact) 23f else 27f,
@@ -572,7 +571,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             canvas,
             if (display.lastAlertAt != null)
                 formatValue(
-                    "Último aviso hace %.1f s · Aumento en canal(es): %s",
+                    tr("Último aviso hace %.1f s · Aumento en canal(es): %s", "Last alert %.1f s ago · Increase in channel(s): %s"),
                     maxOf(0L, now - display.lastAlertAt) / 1000.0,
                     display.lastAlertChannels.joinToString(","),
                 )
@@ -594,7 +593,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         valid: Boolean,
         now: Long,
     ) {
-        drawCard(canvas, RectF(803f, 272f, 1192f, 435f), "MEZCLA", green)
+        drawCard(canvas, RectF(803f, 272f, 1192f, 435f), tr("MEZCLA", "MIXTURE"), green)
         fun row(label: String, value: String, y: Float, color: Int = green) {
             drawText(canvas, label, 816f, y, 14f, muted, false, 145f)
             drawText(canvas, value, 1179f, y, 15f, color, true, 215f, Paint.Align.RIGHT)
@@ -615,7 +614,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                 now - display.trimsAt <= STORED_TRIM_MAX_AGE_MS &&
                 display.trimsStatus == "ok"
         row(
-            "LTFT low / high",
+            tr("LTFT baja / alta", "LTFT low / high"),
             if (trimFresh && display.low != null && display.high != null)
                 formatValue(
                     "%+.2f / %+.2f %%",
@@ -626,7 +625,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             350f,
         )
         row(
-            "Caudalímetro",
+            tr("Caudalímetro", "Airflow"),
             if (valid)
                 formatValue(
                     "%s%.1f g/s",
@@ -638,12 +637,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             cyan,
         )
         row(
-            "Sonda λ",
+            tr("Sonda λ", "O₂ sensor"),
             if (valid)
                 formatValue(
                     "%.3f V · %s",
                     Decoder.oxygen(sample!!.oxygen),
-                    if (sample.oxygen > 0x2456) "rico" else "pobre",
+                    if (sample.oxygen > 0x2456) tr("rico", "rich") else tr("pobre", "lean"),
                 )
             else "—",
             410f,
@@ -652,11 +651,11 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     }
 
     private fun drawTemperaturesAndAdvance(canvas: Canvas, sample: Sample?, valid: Boolean) {
-        drawCard(canvas, RectF(803f, 443f, 1192f, 514f), "TEMPERATURAS", amber)
+        drawCard(canvas, RectF(803f, 443f, 1192f, 514f), tr("TEMPERATURAS", "TEMPERATURES"), amber)
         drawText(
             canvas,
-            if (valid) "Admisión ${sample!!.iat-40} °C     Refrigerante ${sample.coolant-40} °C"
-            else "Admisión —     Refrigerante —",
+            if (valid) tr("Admisión ${sample!!.iat-40} °C     Refrigerante ${sample.coolant-40} °C", "Intake ${sample!!.iat-40} °C     Coolant ${sample.coolant-40} °C")
+            else tr("Admisión —     Refrigerante —", "Intake —     Coolant —"),
             997f,
             496f,
             16f,
@@ -665,7 +664,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             365f,
             Paint.Align.CENTER,
         )
-        drawCard(canvas, RectF(803f, 522f, 1192f, 621f), "AVANCE DE ENCENDIDO", cyan)
+        drawCard(canvas, RectF(803f, 522f, 1192f, 621f), tr("AVANCE DE ENCENDIDO", "IGNITION ADVANCE"), cyan)
         val adv = if (valid) Decoder.advance(sample!!.advance) else null
         drawText(
             canvas,
@@ -681,8 +680,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawMeter(canvas, RectF(815f, 584f, 1180f, 590f), (adv?.let { abs(it) } ?: 0.0) / 40, cyan)
         drawText(
             canvas,
-            if (adv == null) "Sin lectura"
-            else if (adv < 0) "Antes del PMS" else if (adv > 0) "Después del PMS" else "En el PMS",
+            if (adv == null) tr("Sin lectura", "No reading")
+            else if (adv < 0) tr("Antes del PMS", "Before TDC") else if (adv > 0) tr("Después del PMS", "After TDC") else tr("En el PMS", "At TDC"),
             997f,
             610f,
             12f,
@@ -705,11 +704,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val volts =
             if (valid) formatValue("~%.2f V", sample!!.voltage * Decoder.VOLT_SCALE) else "— V"
         val software = if (display.ecuIdentificationStatus == "demo") "" else
-            " · SW ${display.ecuSoftware ?: "no identificada"}" +
-                if (display.ecuProfile == null) " · LTFT RAM desactivado" else ""
+            tr(" · SW ${display.ecuSoftware ?: "no identificada"}", " · SW ${display.ecuSoftware ?: "unidentified"}") +
+                if (display.ecuProfile == null) tr(" · LTFT RAM desactivado", " · stored LTFT disabled") else ""
         val perf =
             formatValue("%.1f Hz", display.hz) +
-                " · ${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software · errores ${display.errors} · ${display.mode} ${display.profile}"
+                tr(" · ${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software · errores ${display.errors}", " · ${sample?.cycleMs?:"—"} ms/cycle · ECU $volts$software · errors ${display.errors}") +
+                " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
         drawText(
             canvas,
             perf,
@@ -723,7 +723,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         )
         drawText(
             canvas,
-            (if (temperaturesPage) "Desliza ←: panel principal · " else "Desliza →: temperaturas · ") +
+            (if (temperaturesPage) tr("Desliza ←: panel principal · ", "Swipe ←: main dashboard · ") else tr("Desliza →: temperaturas · ", "Swipe →: temperatures · ")) +
                 display.status.replace('\r', ' ').replace('\n', ' ').take(180),
             footerCenter,
             49f,

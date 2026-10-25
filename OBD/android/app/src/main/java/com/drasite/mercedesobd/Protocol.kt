@@ -36,15 +36,15 @@ object Decoder {
                 .filter { it.isNotEmpty() && it.length % 2 == 0 && it.matches(Regex("[0-9A-F]+")) }
         val found = frames.filter { it.startsWith(prefix) }
         if (found.size == 1 && found[0].length == length * 2) return unhex(found[0])
-        if (found.size > 1) throw DiagnosticException("Respuestas múltiples")
+        if (found.size > 1) throw DiagnosticException(tr("Respuestas múltiples", "Multiple responses"))
         frames
             .firstOrNull { it.length == 6 && it.startsWith("7F%02X".format(service)) }
             ?.let { throw NegativeResponse(service, it.substring(4).toInt(16)) }
-        throw DiagnosticException("Respuesta inválida o incompleta: ${reply.take(160)}")
+        throw DiagnosticException(tr("Respuesta inválida o incompleta: ${reply.take(160)}", "Invalid or incomplete response: ${reply.take(160)}"))
     }
 
     fun pairs(b: ByteArray): Sample {
-        if (b.size != 24) throw DiagnosticException("Se esperaban doce pares")
+        if (b.size != 24) throw DiagnosticException(tr("Se esperaban doce pares", "Expected twelve pairs"))
         return Sample(
             rpm = word(b, 0),
             injection = word(b, 2),
@@ -174,7 +174,7 @@ class Elm(
     fun at(cmd: String, optional: Boolean = false): Boolean {
         val reply = command(cmd)
         val ok = reply.uppercase(Locale.ROOT).split(Regex("\\s+")).contains("OK")
-        if (!ok && !optional) throw DiagnosticException("$cmd rechazado: ${reply.take(120)}")
+        if (!ok && !optional) throw DiagnosticException(tr("$cmd rechazado: ${reply.take(120)}", "$cmd rejected: ${reply.take(120)}"))
         return ok
     }
 
@@ -207,7 +207,7 @@ class Elm(
         var reply = command(request())
         if (reply.trim() == "?" && fast && optimized) {
             fast = false
-            if (hostGapTuned || hostGapProbing) rollback("Sufijo de una respuesta rechazado")
+            if (hostGapTuned || hostGapProbing) rollback(tr("Sufijo de una respuesta rechazado", "Single-response suffix rejected"))
             reply = command(payload)
         }
         if (
@@ -224,7 +224,7 @@ class Elm(
     fun setup(notice: (String) -> Unit) {
         at("ATE0")
         val identity = command("ATI").trim()
-        notice("Adaptador: $identity")
+        notice(tr("Adaptador: $identity", "Adapter: $identity"))
         val firmware = command("STI", 2000).trim()
         stn = Regex("\\bSTN\\d+\\b|OBDLINK", RegexOption.IGNORE_CASE).containsMatchIn(firmware)
         val hardware = if (stn) command("STDI", 2000).trim() else null
@@ -235,7 +235,7 @@ class Elm(
             "hardware" to hardware,
         )
         at("ATPC")
-        notice("Cerrando sesión anterior · 6 s")
+        notice(tr("Cerrando sesión anterior · 6 s", "Closing previous session · 6 s"))
         pause(6000)
         for (cmd in
             listOf(
@@ -259,12 +259,12 @@ class Elm(
         }
         log.event("keyword_check", "disabled_acknowledged" to kwDisabled)
         at("ATAL", true)
-        notice("Inicializando Mercedes · dirección 01")
+        notice(tr("Inicializando Mercedes · dirección 01", "Starting Mercedes diagnostics · address 01"))
         val init = command("ATSI", 20000)
         val keywords = command("ATKW").trim()
         command("ATDP")
         if (listOf("ERROR", "UNABLE", "BUS BUSY").any { init.contains(it, true) })
-            throw DiagnosticException("Inicialización fallida: $init")
+            throw DiagnosticException(tr("Inicialización fallida: $init", "Initialization failed: $init"))
         verifyLink()
         log.event(
             "ecu_link_verified",
@@ -313,7 +313,7 @@ class Elm(
     private fun readMemoryWord(address: Int): Int {
         // Service 23 reads one LE word from an even, logical 16-bit address;
         // there is no length byte. Only known ROM cells and verified LTFT use it.
-        require(address in 0..0xFFFE && (address and 1) == 0) { "Dirección de palabra inválida" }
+        require(address in 0..0xFFFE && (address and 1) == 0) { tr("Dirección de palabra inválida", "Invalid word address") }
         val suffix = "00%04X".format(address)
         val frame = Decoder.positive(query("23$suffix"), 0x23, "63$suffix", 6)
         return Decoder.word(frame, 4)
@@ -327,10 +327,10 @@ class Elm(
         ecuProfile = null
         ecuSoftware = null
         ecuIdentificationStatus = "unverified"
-        notice("Identificando software ECU · leyendo referencia en ROM")
+        notice(tr("Identificando software ECU · leyendo referencia en ROM", "Identifying ECU software · reading ROM reference"))
         val cache = HashMap<Int, Int>()
         fun word(address: Int) = cache.getOrPut(address) { readMemoryWord(address) }
-        var reason = "No se encontró una referencia de software conocida"
+        var reason = tr("No se encontró una referencia de software conocida", "No known software reference found")
         for (address in EcuProfiles.all.map { it.softwareAddress }.distinct()) {
             try {
                 if (word(address) != 0x3131) continue // ASCII "11", little-endian.
@@ -346,7 +346,7 @@ class Elm(
                 val selected = EcuProfiles.bySoftware[software]
                 if (selected == null || selected.softwareAddress != address) {
                     ecuIdentificationStatus = "unknown_software"
-                    reason = "Referencia ROM sin perfil de direcciones validado"
+                    reason = tr("Referencia ROM sin perfil de direcciones validado", "ROM reference has no verified address profile")
                     break
                 }
                 ecuProfile = selected
@@ -361,7 +361,7 @@ class Elm(
                     "ltft_high_address" to addressHex(selected.ltftHighAddress),
                     "stored_ltft_enabled" to true,
                 )
-                notice("ECU ${selected.software} · perfil LTFT seleccionado")
+                notice(tr("ECU ${selected.software} · perfil LTFT seleccionado", "ECU ${selected.software} · LTFT profile selected"))
                 return selected
             } catch (e: LinkTimeout) {
                 throw e
@@ -385,15 +385,15 @@ class Elm(
             "method" to "ROM",
             "stored_ltft_enabled" to false,
         )
-        notice("ECU sin perfil verificado · LTFT low/high no disponibles")
+        notice(tr("ECU sin perfil verificado · LTFT low/high no disponibles", "ECU profile unverified · stored LTFT low/high unavailable"))
         return null
     }
 
     fun storedTrim(address: Int): Int {
         val selected = ecuProfile
-            ?: throw DiagnosticException("LTFT de RAM desactivado: software ECU sin verificar")
+            ?: throw DiagnosticException(tr("LTFT de RAM desactivado: software ECU sin verificar", "Stored LTFT disabled: unverified ECU software"))
         require(address == selected.ltftLowAddress || address == selected.ltftHighAddress) {
-            "Dirección LTFT no pertenece al software identificado"
+            tr("Dirección LTFT no pertenece al software identificado", "LTFT address does not belong to identified software")
         }
         return readMemoryWord(address)
     }
@@ -411,7 +411,7 @@ class Elm(
             profile = "STN P3 adaptador"
         }
         if (!group) return
-        notice("OBDLink · midiendo tiempos")
+        notice(tr("OBDLink · midiendo tiempos", "OBDLink · measuring timings"))
         try {
             val base = ArrayList<Double>()
             val trial = ArrayList<Double>()
@@ -428,7 +428,7 @@ class Elm(
                 publish(s)
                 trial.add(s.acquisitionMs)
                 if (fallbacks > 0 || !fast) {
-                    rollback("Atajo rechazado")
+                    rollback(tr("Atajo rechazado", "Shortcut rejected"))
                     return
                 }
             }
@@ -449,7 +449,7 @@ class Elm(
         } catch (e: LinkTimeout) {
             throw e
         } catch (e: DiagnosticException) {
-            rollback(e.message ?: "Error prueba")
+            rollback(e.message ?: tr("Error prueba", "Trial error"))
         }
     }
 
@@ -474,7 +474,7 @@ class Elm(
             "failed" to false,
             "reason" to null,
         )
-        notice("ELM · comprobando espera del programa (60 / 20 / 0 ms)")
+        notice(tr("ELM · comprobando espera del programa (60 / 20 / 0 ms)", "ELM · testing host wait (60 / 20 / 0 ms)"))
 
         fun collect(waitMs: Long, count: Int, values: MutableList<Double>) {
             gap = waitMs
@@ -482,9 +482,9 @@ class Elm(
                 val sample = acquire(true)
                 publish(sample)
                 if (elmTimingProbeDisabled || fallbacks != fallbackCount || !fast)
-                    throw DiagnosticException("Prueba cancelada tras recuperar la comunicación")
+                    throw DiagnosticException(tr("Prueba cancelada tras recuperar la comunicación", "Trial cancelled after recovering communication"))
                 if (!sample.acquisitionMs.isFinite() || sample.acquisitionMs <= 0)
-                    throw DiagnosticException("Duración de adquisición inválida durante la prueba")
+                    throw DiagnosticException(tr("Duración de adquisición inválida durante la prueba", "Invalid acquisition duration during trial"))
                 if (index > 0) values.add(sample.acquisitionMs)
             }
         }
@@ -533,10 +533,10 @@ class Elm(
             throw e
         } catch (e: InterruptedException) {
             outcome["failed"] = true
-            outcome["reason"] = "Prueba interrumpida por el usuario"
+            outcome["reason"] = tr("Prueba interrumpida por el usuario", "Trial interrupted by user")
             throw e
         } catch (e: DiagnosticException) {
-            rollback(e.message ?: "Error prueba")
+            rollback(e.message ?: tr("Error prueba", "Trial error"))
             outcome["failed"] = true
             outcome["reason"] = e.message
         } finally {
@@ -554,7 +554,7 @@ class Elm(
                 "disabled" to elmTimingProbeDisabled,
             )
         }
-        notice("$profile · lectura preparada")
+        notice(I18n.profile(profile) + tr(" · lectura preparada", " · ready to read"))
     }
 
     private fun median(values: List<Double>): Double {

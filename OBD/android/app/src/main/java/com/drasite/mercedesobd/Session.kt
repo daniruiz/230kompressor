@@ -100,11 +100,11 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 }
                 return
             }
-            model.notice("Conectando Bluetooth SPP…")
+            model.notice(tr("Conectando Bluetooth SPP…", "Connecting Bluetooth SPP…"))
             val adapter =
                 BluetoothAdapter.getDefaultAdapter()
-                    ?: throw DiagnosticException("Bluetooth no disponible")
-            if (!adapter.isEnabled) throw DiagnosticException("Activa Bluetooth en Ajustes")
+                    ?: throw DiagnosticException(tr("Bluetooth no disponible", "Bluetooth unavailable"))
+            if (!adapter.isEnabled) throw DiagnosticException(tr("Activa Bluetooth en Ajustes", "Enable Bluetooth in Settings"))
             val device = adapter.getRemoteDevice(requireNotNull(address))
             val sock =
                 device.createRfcommSocketToServiceRecord(
@@ -151,7 +151,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 throw e
             } catch (e: DiagnosticException) {
                 j.event("fallback", "reason" to e.toString())
-                model.notice("Grupo rechazado; lecturas individuales")
+                model.notice(tr("Grupo rechazado; lecturas individuales", "Group rejected; individual reads"))
                 group = false
             }
             if (adapterTuning) elm.optimize(group, ::publish, model::notice)
@@ -205,15 +205,15 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                     throw e
                 } catch (e: DiagnosticException) {
                     consecutive++
-                    model.reject(e.message ?: "Respuesta inválida")
+                    model.reject(e.message ?: tr("Respuesta inválida", "Invalid response"))
                     if (elm.rollback(e.message ?: "Error")) continue
                     if (group && consecutive >= 3) {
                         elm.verifyLink()
                         group = false
                         consecutive = 0
-                        j.event("fallback", "reason" to "3 errores de grupo; RPM individual válida")
+                        j.event("fallback", "reason" to tr("3 errores de grupo; RPM individual válida", "3 errors de grupo; RPM individual válida"))
                     } else if (consecutive >= 5)
-                        throw DiagnosticException("Cinco ciclos sin datos válidos")
+                        throw DiagnosticException(tr("Cinco ciclos sin datos válidos", "Five cycles without valid data"))
                 }
             }
         } catch (e: Exception) {
@@ -235,7 +235,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             try {
                 journal?.close()
             } catch (e: Exception) {
-                model.reject("Error cerrando registros: ${e.message}")
+                model.reject(tr("Error cerrando registros: ${e.message}", "Error closing logs: ${e.message}"))
             }
             if (stopped) model.stop()
         }

@@ -46,6 +46,11 @@ import sys
 import threading
 import time
 
+if __package__:
+    from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
+else:
+    from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
+
 try:
     from rich import box
     from rich.align import Align
@@ -57,7 +62,7 @@ try:
     from rich.table import Table
     from rich.text import Text
 except ImportError:
-    raise SystemExit('Instala la interfaz: python3 -m pip install rich')
+    raise SystemExit(tr('Instala la interfaz: python3 -m pip install rich', 'Install the interface: python3 -m pip install rich'))
 
 MIN_WIDTH = 78
 MIN_HEIGHT = 29
@@ -199,16 +204,16 @@ def positive(reply: str, service: int, prefix: bytes, length: int) -> bytes:
     if len(found) == 1 and len(found[0]) == length:
         return found[0]
     if len(found) > 1:
-        raise DiagnosticError('Respuestas múltiples; no se elige una arbitrariamente')
+        raise DiagnosticError(tr('Respuestas múltiples; no se elige una arbitrariamente', 'Multiple responses; cannot choose one arbitrarily'))
     negative = [f for f in frames if len(f) == 3 and f[:2] == bytes([0x7f, service])]
     if negative:
         raise NegativeResponse(service, negative[0][2])
-    raise DiagnosticError('Respuesta inválida o incompleta: ' + repr(reply[:160]))
+    raise DiagnosticError(tr('Respuesta inválida o incompleta: ', 'Invalid or incomplete response: ') + repr(reply[:160]))
 
 
 def definition(slot: int, ident: int, clear: bool = False) -> str:
     if not 1 <= slot <= 12 or not 1 <= ident <= 255:
-        raise ValueError('Slot o identificador inválido')
+        raise ValueError(tr('Slot o identificador inválido', 'Invalid slot or identifier'))
     # 809E=01, 809F=D2 (define) / D0 (clear), 80A0=slot,
     # 80A1=11, 80A2=nonzero id (also required on the clear path).
     return f'2C01{0xD0 if clear else 0xD2:02X}{slot:02X}11{ident:02X}'
@@ -235,7 +240,7 @@ class Sample:
 
 def from_pairs(pairs: list[bytes]) -> Sample:
     if len(pairs) != len(IDS) or any(len(p) != 2 for p in pairs):
-        raise DiagnosticError('Número de señales incorrecto')
+        raise DiagnosticError(tr('Número de señales incorrecto', 'Incorrect signal count'))
     signals = dict(zip(IDS, pairs))
     return Sample(int.from_bytes(signals[0x04], 'little'),
                   int.from_bytes(signals[0x0D], 'little'), signals[0x07][1],
@@ -266,7 +271,7 @@ def duty_percent(injection_raw: int, rpm: int, tick_us: float = 8/3) -> float:
     not establish the actual electrical pulse or injector effective flow time.
     """
     if injection_raw < 0 or rpm < 0 or not math.isfinite(tick_us) or tick_us <= 0:
-        raise ValueError('Valores inválidos para estimar el duty')
+        raise ValueError(tr('Valores inválidos para estimar el duty', 'Invalid values for estimating duty cycle'))
     pulse_ms = injection_raw * tick_us / 1000
     return pulse_ms * rpm / 1200
 
@@ -291,9 +296,9 @@ def deadtime_ticks(voltage_raw: int | None, calibration: InjectorCalibration) ->
     if voltage_raw is None:
         return None
     if not isinstance(voltage_raw, int) or not 0 <= voltage_raw <= 255:
-        raise ValueError('F734 debe ser un byte')
+        raise ValueError(tr('F734 debe ser un byte', 'F734 must be a byte'))
     if len(calibration.nodes) != 17 or any(not 0 <= x <= 255 for x in calibration.nodes):
-        raise ValueError('Se requieren 17 nodos de un byte')
+        raise ValueError(tr('Se requieren 17 nodos de un byte', '17 one-byte nodes are required'))
     index, fraction = voltage_raw >> 4, (voltage_raw & 15) << 4
     a, b = calibration.nodes[index:index+2]
     delta = (abs(b-a)*fraction+128) >> 8
@@ -463,7 +468,7 @@ class ELM:
         try:
             import serial
         except ImportError as exc:
-            raise DiagnosticError('Instala pyserial: python3 -m pip install pyserial') from exc
+            raise DiagnosticError(tr('Instala pyserial: python3 -m pip install pyserial', 'Install pyserial: python3 -m pip install pyserial')) from exc
         self.serial = serial.serial_for_url(port, baudrate=baud, timeout=0.02, write_timeout=2)
         self.port, self.baud = port, baud
         self.port_metadata = None
@@ -542,7 +547,7 @@ class ELM:
                                    **timing_fields(received_at, prompt=True))
                 # Unexpected traffic after prompt must not silently become next response.
                 if trailing.strip():
-                    raise LinkTimeout('Datos inesperados después del prompt; se detiene la sesión')
+                    raise LinkTimeout(tr('Datos inesperados después del prompt; se detiene la sesión', 'Unexpected data after the prompt; stopping the session'))
                 self.last_command = command
                 if is_bus_request:
                     self.last_bus_reply = time.monotonic()
@@ -556,13 +561,13 @@ class ELM:
         self.last_command = None
         if self.stop.is_set():
             raise InterruptedError
-        raise LinkTimeout('ELM sin prompt >: ' + command)
+        raise LinkTimeout(tr('ELM sin prompt >: ', 'ELM missing prompt >: ') + command)
 
     def at(self, command, optional=False):
         reply = self.command(command)
         okay = 'OK' in reply.upper().split()
         if not okay and not optional:
-            raise DiagnosticError(command + ' rechazado: ' + repr(reply))
+            raise DiagnosticError(command + tr(' rechazado: ', ' rejected: ') + repr(reply))
         return okay
 
     def query(self, payload, optimized=True, allow_repeat=True):
@@ -572,7 +577,7 @@ class ELM:
             # An older clone may not accept the response-count suffix.
             self.fast = False
             if self.host_gap_tuned or self.host_gap_probing:
-                self.restore_transport('Sufijo de una respuesta rechazado')
+                self.restore_transport(tr('Sufijo de una respuesta rechazado', 'Single-response suffix rejected'))
             reply = self.command(payload)
         # Retry only read services, never replay group definitions or writes.
         if 'NO DATA' in reply.upper() and payload.startswith(('22', '2A')):
@@ -597,7 +602,7 @@ class ELM:
         self.adaptive = adaptive if self.fast else '0'
         self.at('ATE0')
         identity = self.command('ATI').strip()
-        notice('Adaptador listo · ' + identity)
+        notice(tr('Adaptador listo · ', 'Adapter ready · ') + identity)
         # Detect actual ST command support, not merely the serial port name.
         firmware = self.command('STI', timeout=2).strip()
         self.is_stn = bool(re.search(r'\bSTN\d+\b|OBDLINK', firmware, re.I))
@@ -609,7 +614,7 @@ class ELM:
                            group_ids=[f'11{x:02X}' for x in IDS],
                            decoder_revision='12_ids_load_from_1107_voltage_1110_v2')
         self.at('ATPC')
-        notice('Cerrando sesión anterior · 6 s')
+        notice(tr('Cerrando sesión anterior · 6 s', 'Closing previous session · 6 s'))
         if self.stop.wait(6):
             raise InterruptedError
         for cmd in ('ATD', 'ATE0', 'ATL0', 'ATS0', 'ATH0', 'ATM0', 'ATSP4',
@@ -618,13 +623,13 @@ class ELM:
             self.at(cmd)
         # Group packets exceed the 7-byte limit of some ELM implementations.
         self.at('ATAL', optional=True)
-        notice('Inicializando diagnosis Mercedes · dirección 01')
+        notice(tr('Inicializando diagnosis Mercedes · dirección 01', 'Starting Mercedes diagnostics · address 01'))
         init = self.command('ATSI', timeout=20)
         kw = self.command('ATKW').strip()
         self.command('ATDP')
         if any(s in init.upper() for s in ('ERROR', 'UNABLE', 'BUS BUSY')):
-            raise DiagnosticError('Inicialización fallida: ' + init.strip())
-        notice('Sesión lista · palabras clave ' + kw)
+            raise DiagnosticError(tr('Inicialización fallida: ', 'Initialization failed: ') + init.strip())
+        notice(tr('Sesión lista · palabras clave ', 'Session ready · keywords ') + kw)
         # Read one known identifier with the conservative response wait first.
         positive(self.query('221104', optimized=False), 0x22, b'\x62\x11\x04', 5)
 
@@ -673,7 +678,7 @@ class ELM:
         # Avoid dozens of individual requests just to benchmark startup.
         if mode != 'grouped':
             return
-        notice('OBDLink/STN · comprobando tiempos de lectura')
+        notice(tr('OBDLink/STN · comprobando tiempos de lectura', 'OBDLink/STN · checking read timings'))
         try:
             baseline = []
             for _ in range(4):
@@ -691,7 +696,7 @@ class ELM:
                 publish(sample)
                 trial.append(sample.duration_ms)
                 if self.timing_fallbacks or not self.fast:
-                    self.restore_transport('Atajo de respuesta rechazado durante prueba')
+                    self.restore_transport(tr('Atajo de respuesta rechazado durante prueba', 'Response shortcut rejected during trial'))
                     return
             # Exclude first request after a local AT/ST command from each set.
             base_ms = statistics.median(baseline[1:])
@@ -712,7 +717,7 @@ class ELM:
         except DiagnosticError as exc:
             self.restore_transport(str(exc))
             self.journal.write('transport_benchmark_error', error=str(exc))
-        notice(self.adapter_profile + ' · lectura preparada')
+        notice(profile_text(self.adapter_profile) + tr(' · lectura preparada', ' · ready to read'))
 
     def optimize_elm_transport(self, mode, notice, publish):
         """Automatic read-only trial: change only the host wait, never adapter PPs.
@@ -731,7 +736,7 @@ class ELM:
         results = dict(baseline_ms=[], trial_20_ms=[], trial_0_ms=[], control_ms=[])
         outcome = dict(selected_host_gap_ms=60, gain_ms=0.0, gain_pct=0.0,
                        failed=False, reason=None)
-        notice('ELM · comprobando espera del programa (60 / 20 / 0 ms)')
+        notice(tr('ELM · comprobando espera del programa (60 / 20 / 0 ms)', 'ELM · testing host wait (60 / 20 / 0 ms)'))
 
         def collect(gap, count, values):
             self.request_gap = gap
@@ -740,9 +745,9 @@ class ELM:
                 publish(sample)
                 if (self.elm_timing_probe_disabled or self.timing_fallbacks != fallback_count
                         or not self.fast):
-                    raise DiagnosticError('Prueba cancelada tras recuperar la comunicación')
+                    raise DiagnosticError(tr('Prueba cancelada tras recuperar la comunicación', 'Trial cancelled after recovering communication'))
                 if not math.isfinite(sample.duration_ms) or sample.duration_ms <= 0:
-                    raise DiagnosticError('Duración de adquisición inválida durante la prueba')
+                    raise DiagnosticError(tr('Duración de adquisición inválida durante la prueba', 'Invalid acquisition duration during trial'))
                 if index:
                     values.append(sample.duration_ms)
 
@@ -780,7 +785,7 @@ class ELM:
             self.elm_timing_probe_disabled = True
             raise
         except InterruptedError:
-            outcome.update(failed=True, reason='Prueba interrumpida por el usuario')
+            outcome.update(failed=True, reason=tr('Prueba interrumpida por el usuario', 'Trial interrupted by user'))
             raise
         except DiagnosticError as exc:
             self.restore_transport(str(exc))
@@ -792,7 +797,7 @@ class ELM:
                                profile=self.adapter_profile,
                                timing_basis='host_acquisition_including_wait_not_kline',
                                disabled=self.elm_timing_probe_disabled)
-        notice(self.adapter_profile + ' · lectura preparada')
+        notice(profile_text(self.adapter_profile) + tr(' · lectura preparada', ' · ready to read'))
 
     def define_group(self):
         # Define active slots. Clear remaining slots so frame layout is exact,
@@ -825,7 +830,7 @@ class ELM:
         # Custom service 23 returns one LE word from a logical 16-bit address.
         # No length byte. This helper is also used for known ROM identity cells.
         if not isinstance(address, int) or not 0 <= address <= 0xFFFE or address & 1:
-            raise ValueError('Dirección de palabra inválida')
+            raise ValueError(tr('Dirección de palabra inválida', 'Invalid word address'))
         suffix = bytes([0, address >> 8, address & 255])
         reply = self.query('23' + suffix.hex().upper())
         frame = positive(reply, 0x23, b'\x63' + suffix, 6)
@@ -842,7 +847,7 @@ class ELM:
         self.ecu_profile = None
         self.ecu_software = None
         self.ecu_identification_status = 'unverified'
-        notice('Identificando software ECU · leyendo referencia en ROM')
+        notice(tr('Identificando software ECU · leyendo referencia en ROM', 'Identifying ECU software · reading ROM reference'))
         addresses = dict.fromkeys(p.software_address for p in ECU_PROFILES)
         cache = {}
 
@@ -851,7 +856,7 @@ class ELM:
                 cache[address] = self._read_memory_word(address)
             return cache[address].to_bytes(2, 'little')
 
-        reason = 'No se encontró una referencia de software conocida'
+        reason = tr('No se encontró una referencia de software conocida', 'No known software reference found')
         for address in addresses:
             try:
                 # Each reference is 13 ASCII bytes; seven two-byte reads.
@@ -865,7 +870,7 @@ class ELM:
                 profile = ECU_PROFILES_BY_SOFTWARE.get(self.ecu_software)
                 if profile is None or profile.software_address != address:
                     self.ecu_identification_status = 'unknown_software'
-                    reason = 'Referencia ROM sin perfil de direcciones validado'
+                    reason = tr('Referencia ROM sin perfil de direcciones validado', 'ROM reference has no verified address profile')
                     break
                 self.ecu_profile = profile
                 self.ecu_identification_status = 'identified_rom'
@@ -876,7 +881,7 @@ class ELM:
                     ltft_low_address=f'0x{profile.ltft_low_address:04X}',
                     ltft_high_address=f'0x{profile.ltft_high_address:04X}',
                     stored_ltft_enabled=True)
-                notice(f'ECU {profile.software} · perfil LTFT seleccionado')
+                notice(tr(f'ECU {profile.software} · perfil LTFT seleccionado', f'ECU {profile.software} · LTFT profile selected'))
                 return profile
             except LinkTimeout:
                 raise
@@ -893,15 +898,15 @@ class ELM:
             status=self.ecu_identification_status, reason=reason,
             method='ROM',
             stored_ltft_enabled=False)
-        notice('ECU sin perfil verificado · LTFT low/high no disponibles')
+        notice(tr('ECU sin perfil verificado · LTFT low/high no disponibles', 'ECU profile unverified · stored LTFT low/high unavailable'))
         return None
 
     def read_stored_trim(self, address):
         profile = self.ecu_profile
         if profile is None:
-            raise DiagnosticError('LTFT de RAM desactivado: software ECU sin verificar')
+            raise DiagnosticError(tr('LTFT de RAM desactivado: software ECU sin verificar', 'Stored LTFT disabled: unverified ECU software'))
         if address not in (profile.ltft_low_address, profile.ltft_high_address):
-            raise ValueError('Dirección LTFT no pertenece al software identificado')
+            raise ValueError(tr('Dirección LTFT no pertenece al software identificado', 'LTFT address does not belong to identified software'))
         return self._read_memory_word(address)
 
     def close(self):
@@ -957,7 +962,7 @@ def connect_adapter(args, journal, stop, notice):
     try:
         ports = adapter_ports()
     except ImportError as exc:
-        raise DiagnosticError('Instala pyserial: python3 -m pip install pyserial') from exc
+        raise DiagnosticError(tr('Instala pyserial: python3 -m pip install pyserial', 'Install pyserial: python3 -m pip install pyserial')) from exc
     errors = []
     for port in ports:
         for baud in dict.fromkeys((args.baud, 115200, 38400, 9600, 57600, 19200)):
@@ -965,15 +970,15 @@ def connect_adapter(args, journal, stop, notice):
                 raise InterruptedError
             elm = None
             try:
-                notice(f'Buscando adaptador · {port} · {baud} baud')
+                notice(tr(f'Buscando adaptador · {port} · {baud} baud', f'Searching for adapter · {port} · {baud} baud'))
                 elm = ELM(port, baud, journal, stop,
                           fast=not args.conservative, repeat=False)
                 reply = elm.command('ATE0', timeout=1.5)
                 if 'OK' not in reply.upper().split():
-                    raise DiagnosticError('ATE0 sin OK')
+                    raise DiagnosticError(tr('ATE0 sin OK', 'ATE0 did not return OK'))
                 identity = elm.command('ATI', timeout=1.5).strip()
                 if not re.search(r'ELM|OBDLINK|STN|OBDII|OBD-II', identity, re.I):
-                    raise DiagnosticError('Identidad no reconocida: ' + identity)
+                    raise DiagnosticError(tr('Identidad no reconocida: ', 'Unrecognized identity: ') + identity)
                 args.port, args.baud = port, baud
                 elm.port_metadata = adapter_port_metadata(port)
                 journal.write('adapter', port=port, baud=baud, identity=identity,
@@ -991,10 +996,10 @@ def connect_adapter(args, journal, stop, notice):
                     # An unavailable/busy port cannot be fixed by changing baud.
                     break
     journal.write('discovery_failed', attempts=errors)
-    raise DiagnosticError('No se encontró un adaptador serie ELM/OBDLink USB o Bluetooth. '
+    raise DiagnosticError(tr('No se encontró un adaptador serie ELM/OBDLink USB o Bluetooth. '
                           'Comprueba alimentación y permisos, cierra otros programas; '
                           'para Bluetooth, empareja y habilita un puerto serie COM o rfcomm. '
-                          'También puedes indicar COM3, /dev/ttyUSB0 o /dev/rfcomm0.')
+                          'También puedes indicar COM3, /dev/ttyUSB0 o /dev/rfcomm0.', 'No USB or Bluetooth ELM/OBDLink serial adapter found. Check power and permissions, close other programs; for Bluetooth, pair the device and enable a COM or rfcomm serial port. You can also specify COM3, /dev/ttyUSB0 or /dev/rfcomm0.'))
 
 
 class Model:
@@ -1016,7 +1021,7 @@ class Model:
         self.alert_until = 0.0
         self.mode = 'iniciando'
         self.adapter_profile = ''
-        self.status = 'Preparando conexión'
+        self.status = tr('Preparando conexión', 'Preparing connection')
         self.fatal = False
         self.errors = 0
         self.failed = False
@@ -1070,7 +1075,7 @@ class Model:
                     self.sound.notify()
                 self.alert_until = sample.at + 3.0
                 slots = ','.join(str(i+1) for i in raised)
-                self.events.appendleft((sample.at, f'Aumento en canal(es): {slots}'))
+                self.events.appendleft((sample.at, tr(f'Aumento en canal(es): {slots}', f'Increase in channel(s): {slots}')))
             self.previous = self.sample = sample
             self.failed = False
             self.samples += 1
@@ -1082,7 +1087,7 @@ class Model:
             retard = max(sample.corrections, default=0)
             if self.history['retard'] or retard > 0:
                 self.history['retard'].append(retard)
-            self.status = 'Recibiendo datos' if not raised else 'Aumento de corrección observado'
+            self.status = tr('Recibiendo datos', 'Receiving data') if not raised else tr('Aumento de corrección observado', 'Correction increase observed')
             return bool(raised)
 
 
@@ -1109,7 +1114,7 @@ def poll_stored_trims(elm, model, journal, now=None):
     except LinkTimeout:
         raise
     except DiagnosticError as exc:
-        elm.restore_transport('Lectura LTFT: ' + str(exc))
+        elm.restore_transport(tr('Lectura LTFT: ', 'LTFT read: ') + str(exc))
         disabled = isinstance(exc, NegativeResponse) and exc.code in (0x11, 0x12, 0x31, 0x33)
         with model.lock:
             model.ltft_disabled = disabled
@@ -1125,7 +1130,7 @@ def worker(args, model, stop, journal):
         if args.demo:
             model.mode = 'DEMO'
             model.ecu_identification_status = 'demo'
-            model.notice('Simulación · eventos programados cada 8 segundos')
+            model.notice(tr('Simulación · eventos programados cada 8 segundos', 'Simulation · events scheduled every 8 seconds'))
             started = time.monotonic()
             prev_at = started
             while not stop.is_set():
@@ -1168,7 +1173,7 @@ def worker(args, model, stop, journal):
         model.set_ecu(elm)
         mode = 'individual' if args.individual else 'grouped'
         if mode == 'grouped':
-            model.notice(f'Configurando {len(IDS)} entradas agrupadas · RAM de diagnóstico')
+            model.notice(tr(f'Configurando {len(IDS)} entradas agrupadas · RAM de diagnóstico', f'Configuring {len(IDS)} grouped entries · diagnostic RAM'))
             try:
                 first = elm.define_group()
                 event = model.accept(first, args.tick_us)
@@ -1177,7 +1182,7 @@ def worker(args, model, stop, journal):
                 raise
             except DiagnosticError as exc:
                 journal.write('fallback', reason=str(exc))
-                model.reject('Grupo rechazado; paso a lecturas individuales')
+                model.reject(tr('Grupo rechazado; paso a lecturas individuales', 'Group rejected; switching to individual reads'))
                 mode = 'individual'
         def publish_probe(sample):
             event = model.accept(sample, args.tick_us)
@@ -1210,14 +1215,14 @@ def worker(args, model, stop, journal):
                 model.reject(str(exc))
                 if elm.restore_transport(str(exc)):
                     model.adapter_profile = elm.adapter_profile
-                    model.notice('Tiempos compatibles restaurados · reintentando lectura')
+                    model.notice(tr('Tiempos compatibles restaurados · reintentando lectura', 'Compatible timings restored · retrying read'))
                     continue
                 if mode == 'grouped' and consecutive >= 3:
                     mode = model.mode = 'individual'
                     journal.write('fallback', reason='3 respuestas de grupo inválidas')
                     consecutive = 0
                 elif consecutive >= 5:
-                    raise DiagnosticError('Cinco ciclos sin datos válidos. ' + str(exc))
+                    raise DiagnosticError(tr('Cinco ciclos sin datos válidos. ', 'Five cycles without valid data. ') + str(exc))
     except InterruptedError:
         pass
     except Exception as exc:
@@ -1328,26 +1333,26 @@ def render(model, args, width=110, height=44, now=None):
                             Layout(name='foot', size=4))
         layout['lower'].split_row(Layout(name='knock', ratio=2), Layout(name='extras', ratio=1))
         if width < MIN_WIDTH or height < MIN_HEIGHT:
-            return Panel(Text(f'Amplía la terminal a {MIN_WIDTH} columnas × {MIN_HEIGHT} filas como mínimo.\n'+model.status, style=CYAN), style=f'on {bg}')
+            return Panel(Text(tr(f'Amplía la terminal a {MIN_WIDTH} columnas × {MIN_HEIGHT} filas como mínimo.\n', f'Resize the terminal to at least {MIN_WIDTH} columns × {MIN_HEIGHT} rows.\n')+model.status, style=CYAN), style=f'on {bg}')
         shown = s is not None and not stale
         rpm, load, inj = (s.rpm,s.load,s.injection) if s else (0,0,0)
         trace_width = width//3-2
         layout['metrics'].split_row(Layout(name='rpm'),Layout(name='load'),Layout(name='inj'))
-        layout['rpm'].update(metric('RÉGIMEN', f'{rpm:,}'.replace(',','.') if shown else '—', 'rpm',
-            '0–6.500 rpm', CYAN, rpm/6500,
+        layout['rpm'].update(metric(tr('RÉGIMEN', 'ENGINE SPEED'), rpm_text(rpm) if shown else '—', 'rpm',
+            tr('0–6.500 rpm', '0–6,500 rpm'), CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
-        layout['load'].update(metric('CARGA INTERNA', str(load) if shown else '—', 'raw',
-            (f'Mariposa: {s.throttle_raw*100/255:.1f} %' if shown and s.throttle_raw is not None else 'Mariposa: —'), AMBER, load/255,
+        layout['load'].update(metric(tr('CARGA INTERNA', 'INTERNAL LOAD'), str(load) if shown else '—', 'raw',
+            (tr(f'Mariposa: {s.throttle_raw*100/255:.1f} %', f'Throttle: {s.throttle_raw*100/255:.1f} %') if shown and s.throttle_raw is not None else tr('Mariposa: —', 'Throttle: —')), AMBER, load/255,
             spark(model.history['load'],255,trace_width,color=AMBER),bg))
         injection = injection_metrics(s, args) if shown else None
         duty = injection['injector_duty_est_pct'] if injection else 0
         duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
         detail = (
             f"~{injection['injection_ms_est']:.2f} ms · {inj} raw"
-            if injection else 'Sin lectura actual de F746'
+            if injection else tr('Sin lectura actual de F746', 'No current F746 reading')
         )
         layout['inj'].update(metric(
-            'INYECCIÓN / DUTY',
+            tr('INYECCIÓN / DUTY', 'INJECTION / DUTY'),
             f'~{duty:.1f}' if shown else '—', '%',
             detail, duty_color, duty/100,
             spark(
@@ -1365,7 +1370,7 @@ def render(model, args, width=110, height=44, now=None):
         row=[]
         for i in range(4):
             n=s.corrections[i] if s and i < len(s.corrections) else 0
-            row.append(Text(f'\nC{i+1}: {n*0.75:.2f}°' if shown else f'CANAL {i+1}   —',
+            row.append(Text(f'\nC{i+1}: {n*0.75:.2f}°' if shown else tr(f'CANAL {i+1}   —', f'CHANNEL {i+1}   —'),
                             style=f'italic bold {MAGENTA}' if n and shown else MUTED))
         indices.add_row(*row)
         if model.count > 0:
@@ -1376,7 +1381,7 @@ def render(model, args, width=110, height=44, now=None):
             table.add_row(indices, counter_box)
         else:
             table.add_row(indices)
-        retard_line = Text(f'{"" if model.count > 0 else "\n"}Retardo de encendido: ', style=MUTED)
+        retard_line = Text(('' if model.count > 0 else '\n') + tr('Retardo de encendido: ', 'Ignition retard: '), style=MUTED)
         retard_line.append(f'{correction*0.75:.2f}°' if shown else '—',
                            style=f'bold {MAGENTA}')
         body = [table,
@@ -1386,8 +1391,8 @@ def render(model, args, width=110, height=44, now=None):
                       max(20,width*2//3-6),height=max(6,height-33),color=MAGENTA,full=True)]
         if model.events:
             at,message=model.events[0]
-            body.append(Text(f'\nÚltimo aviso hace {max(0,now-at):.1f} s · {message}',style=MUTED))
-        layout['knock'].update(Panel(Group(*body), title=Text(' CONTROL DE PICADO ', style=f'bold {MAGENTA}'),
+            body.append(Text(tr(f'\nÚltimo aviso hace {max(0,now-at):.1f} s · {message}', f'\nLast alert {max(0,now-at):.1f} s ago · {message}'),style=MUTED))
+        layout['knock'].update(Panel(Group(*body), title=Text(tr(' CONTROL DE PICADO ', ' KNOCK CONTROL '), style=f'bold {MAGENTA}'),
             box=box.HEAVY if flashing else box.ROUNDED, border_style=RED if flashing else MAGENTA,
             style=f'on {bg}', padding=(0,2)))
         mixture = Table.grid(expand=True, padding=(0,1))
@@ -1397,81 +1402,96 @@ def render(model, args, width=110, height=44, now=None):
             mixture.add_row(label, Text(f'{trim_percent(raw):+.2f} %' if shown else '—',
                                         style=f'bold {GREEN}'))
         stored_age = now-model.ltft_at if model.ltft_at is not None else math.inf
-        for label,raw in (('LTFT low',model.ltft_low), ('LTFT high',model.ltft_high)):
+        for label,raw in ((tr('LTFT baja', 'LTFT low'),model.ltft_low), (tr('LTFT alta', 'LTFT high'),model.ltft_high)):
             valid = raw is not None and stored_age <= LTFT_INTERVAL + 5 and model.ltft_status == 'ok'
             value = f'{trim_percent(raw):+.2f} %' if valid else '—'
             mixture.add_row(label, Text(value, style=f'bold {GREEN if valid else MUTED}'))
         maf = f'{s.maf_raw*MAF_GS_PER_RAW:.1f} g/s' if shown and s.maf_raw is not None else '—'
-        mixture.add_row('Caudalímetro', Text(maf, style=f'bold {CYAN}'))
-        oxygen = f'{oxygen_voltage(s.oxygen_raw):.3f} V · {oxygen_state(s.oxygen_raw)}' if shown and s.oxygen_raw is not None else '—'
-        mixture.add_row('Sonda λ', Text(oxygen, style=f'bold {AMBER}'))
+        mixture.add_row(tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
+        oxygen_label = tr('rico', 'rich') if shown and s.oxygen_raw is not None and s.oxygen_raw > O2_SWITCH_RAW else tr('pobre', 'lean')
+        oxygen = f'{oxygen_voltage(s.oxygen_raw):.3f} V · {oxygen_label}' if shown and s.oxygen_raw is not None else '—'
+        mixture.add_row(tr('Sonda λ', 'O₂ sensor'), Text(oxygen, style=f'bold {AMBER}'))
         temperatures = Table.grid(expand=True, padding=(0,1))
         temperatures.add_column(style=MUTED)
         temperatures.add_column(justify='right')
-        for label,raw in zip(('ADMISIÓN','REFRIGERANTE'),reversed(s.temperatures if s else (40,40))):
+        for label,raw in zip((tr('ADMISIÓN', 'INTAKE'),tr('REFRIGERANTE', 'COOLANT')),reversed(s.temperatures if s else (40,40))):
             temperatures.add_row(label, Text(f'{raw-40} °C' if shown else '—', style=f'bold {AMBER}'))
         layout['extras'].split_column(Layout(name='mixture',size=8), Layout(name='temps',size=4), Layout(name='advance',minimum_size=3))
-        layout['mixture'].update(Panel(mixture, title='MEZCLA', border_style=GREEN,
+        layout['mixture'].update(Panel(mixture, title=tr('MEZCLA', 'MIXTURE'), border_style=GREEN,
                                        box=box.ROUNDED, style=f'on {bg}'))
-        layout['temps'].update(Panel(temperatures, title='TEMPERATURAS', border_style=AMBER,
+        layout['temps'].update(Panel(temperatures, title=tr('TEMPERATURAS', 'TEMPERATURES'), border_style=AMBER,
                                      box=box.ROUNDED, style=f'on {bg}'))
         adv = advance_degrees(s.advance_raw) if shown and s.advance_raw is not None else None
         advance_text = Text(f'{adv:+5.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
         advance_bar = bar(abs(adv), 40, 24 if height > 36 else 15, color=CYAN) if adv is not None else Text('─'*24, style=MUTED)
-        direction = ('antes del PMS' if adv < 0 else 'después del PMS' if adv > 0 else 'en el PMS') if adv is not None else 'Sin lectura actual'
+        direction = (tr('antes del PMS', 'before TDC') if adv < 0 else tr('después del PMS', 'after TDC') if adv > 0 else tr('en el PMS', 'at TDC')) if adv is not None else tr('Sin lectura actual', 'No current reading')
         layout['advance'].update(Panel(Align.center(Group(Align.center(advance_text),
                                                           Align.center(advance_bar),
                                                           Align.center(Text(direction, style=MUTED))) if height > 36 else advance_text + ' ' + advance_bar,
                                                     vertical='middle'),
-            title=Text('AVANCE DE ENCENDIDO', style=f'bold {CYAN}'), border_style=CYAN,
+            title=Text(tr('AVANCE DE ENCENDIDO', 'IGNITION ADVANCE'), style=f'bold {CYAN}'), border_style=CYAN,
             box=box.ROUNDED, style=f'on {bg}', padding=(0,1)))
         hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
-        interval = f'{s.interval_ms:.0f} ms/ciclo' if s and s.interval_ms is not None else 'primer ciclo'
-        perf = f'{hz:.1f} Hz · {interval} · adquisición {s.duration_ms:.0f} ms' if s else 'Esperando primera muestra'
+        interval = tr(f'{s.interval_ms:.0f} ms/ciclo', f'{s.interval_ms:.0f} ms/cycle') if s and s.interval_ms is not None else tr('primer ciclo', 'first cycle')
+        perf = tr(f'{hz:.1f} Hz · {interval} · adquisición {s.duration_ms:.0f} ms', f'{hz:.1f} Hz · {interval} · acquisition {s.duration_ms:.0f} ms') if s else tr('Esperando primera muestra', 'Waiting for first sample')
         if s:
-            perf += f'  ·  edad {age:.1f} s'
-        footer = Text(perf + f'  ·  errores {model.errors}  ·  Ctrl+C salir', style=MUTED,
+            perf += tr(f'  ·  edad {age:.1f} s', f'  ·  age {age:.1f} s')
+        footer = Text(perf + tr(f'  ·  errores {model.errors}  ·  Ctrl+C salir', f'  ·  errors {model.errors}  ·  Ctrl+C to exit'), style=MUTED,
                       no_wrap=True, overflow='ellipsis')
-        mode_label = 'DEMO · SIN COCHE' if args.demo else model.mode.upper() + (' · '+model.adapter_profile if model.adapter_profile else '')
+        mode_label = tr('DEMO · SIN COCHE', 'DEMO · NO CAR') if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
         voltage = ecu_voltage_est(s.voltage_raw, args.voltage_scale) if shown else None
         footer.append('\nECU ' + (f'~{voltage:.2f} V' if voltage is not None else '— V'), style=f'bold {CYAN}')
         if not args.demo:
-            software_label = model.ecu_software or 'no identificada'
+            software_label = model.ecu_software or tr('no identificada', 'unidentified')
             footer.append(' · SW '+software_label, style=f'bold {CYAN}')
             if model.ecu_profile is None:
-                footer.append(' · LTFT RAM desactivado', style=AMBER)
+                footer.append(tr(' · LTFT RAM desactivado', ' · stored LTFT disabled'), style=AMBER)
         footer.append(' · '+mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
         layout['foot'].update(Panel(footer, border_style='#334d6d', box=box.ROUNDED, style=f'on {bg}'))
         return layout
 
 
+@localized_arguments
 def parse_args(argv=None):
-    p=argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('port', nargs='?', help='Opcional: autodetección USB/Bluetooth; o /dev/ttyUSB0, /dev/rfcomm0, COM5, socket://IP:PUERTO')
-    p.add_argument('--demo', action='store_true', help='Datos simulados, sin abrir puerto ni importar pyserial')
-    p.add_argument('--baud', type=int, default=115200)
-    p.add_argument('--seconds', type=float, default=0, help='Duración; 0 hasta Ctrl+C')
+    p=argparse.ArgumentParser(description=tr(
+        'Panel MercedesOBD. Idioma automático: español o inglés.\n'
+        'Demo: mercedes_dashboard.py --demo\n'
+        'Coche: mercedes_dashboard.py COM3 (o autodetección sin indicar puerto).\n\n'
+        'El contador muestra aumentos de corrección observados, no detonaciones validadas.\n'
+        'El tiempo y duty de inyección y el voltaje ECU son estimados. La sonda estrecha\n'
+        'indica voltaje, no AFR. Los registros conservan unidades y campos estables.',
+        'MercedesOBD dashboard. Automatic language: Spanish or English.\n'
+        'Demo: mercedes_dashboard.py --demo\n'
+        'Car: mercedes_dashboard.py COM3 (or omit the port for auto-detection).\n\n'
+        'The counter shows observed correction increases, not validated knock events.\n'
+        'Injection duration/duty and ECU voltage are estimates. The narrowband sensor\n'
+        'shows voltage, not AFR. Logs keep stable units and field names.'),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('port', nargs='?', help=tr('Opcional: autodetección USB/Bluetooth; o /dev/ttyUSB0, /dev/rfcomm0, COM5, socket://IP:PUERTO', 'Optional: USB/Bluetooth auto-detection; or /dev/ttyUSB0, /dev/rfcomm0, COM5, socket://IP:PORT'))
+    p.add_argument('--demo', action='store_true', help=tr('Datos simulados, sin abrir puerto ni importar pyserial', 'Simulated data; no port opened or pyserial imported'))
+    p.add_argument('--baud', type=int, default=115200, help=tr('Velocidad del puerto serie', 'Serial port baud rate'))
+    p.add_argument('--seconds', type=float, default=0, help=tr('Duración; 0 hasta Ctrl+C', 'Duration; 0 until Ctrl+C'))
     p.add_argument('--adaptive', choices=['0','1','2'], default='0',
-                   help='Ajuste ELM: 0 fijo (por defecto, más estable); 1/2 adaptativo')
-    p.add_argument('--individual', action='store_true', help='Usar 22 en vez de intentar la agrupación')
+                   help=tr('Ajuste ELM: 0 fijo (por defecto, más estable); 1/2 adaptativo', 'ELM timing: 0 fixed (default, more stable); 1/2 adaptive'))
+    p.add_argument('--individual', action='store_true', help=tr('Usar 22 en vez de intentar la agrupación', 'Use service 22 instead of attempting grouped reads'))
     p.add_argument('--no-adapter-tuning', action='store_true',
-                   help='Desactivar la optimización automática de tiempos para ELM y OBDLink/STN')
+                   help=tr('Desactivar la optimización automática de tiempos para ELM y OBDLink/STN', 'Disable automatic timing optimization for ELM and OBDLink/STN'))
     # Keep the former opt-in flag as a compatible alias; tuning is now automatic.
     p.add_argument('--elm-timing-probe', action='store_true', default=True,
                    help=argparse.SUPPRESS)
-    p.add_argument('--conservative', action='store_true', help='Sin sufijo de una respuesta ni repetición por CR')
-    p.add_argument('--tick-us', type=float, default=8/3, help='Escala no verificada de F746; provisional 2.6666667 us/raw')
+    p.add_argument('--conservative', action='store_true', help=tr('Sin sufijo de una respuesta ni repetición por CR', 'Disable single-response suffix and repeat-by-CR'))
+    p.add_argument('--tick-us', type=float, default=8/3, help=tr('Escala no verificada de F746; provisional 2.6666667 us/raw', 'Unverified F746 scale; provisional 2.6666667 us/raw'))
     p.add_argument('--voltage-scale', type=float, default=VOLTAGE_V_PER_RAW_EST,
-                   help='Escala provisional F734 en V/raw, por defecto 0.09375; pendiente de validar')
-    p.add_argument('--no-flash', action='store_true', help='Mantener aviso sin parpadeo de fondo')
-    p.add_argument('--log-dir', type=Path, default=Path('logs'))
-    p.add_argument('--no-log', action='store_true')
+                   help=tr('Escala provisional F734 en V/raw, por defecto 0.09375; pendiente de validar', 'Provisional F734 scale in V/raw, default 0.09375; pending validation'))
+    p.add_argument('--no-flash', action='store_true', help=tr('Mantener aviso sin parpadeo de fondo', 'Keep alerts without flashing the background'))
+    p.add_argument('--log-dir', type=Path, default=Path('logs'), help=tr('Carpeta de registros', 'Log directory'))
+    p.add_argument('--no-log', action='store_true', help=tr('Desactivar registros', 'Disable logging'))
     a=p.parse_args(argv)
     if a.baud <= 0 or not math.isfinite(a.seconds) or a.seconds < 0 or not math.isfinite(a.tick_us) or a.tick_us <= 0:
-        p.error('baud y tick-us positivos; seconds >= 0')
+        p.error(tr('baud y tick-us positivos; seconds >= 0', 'baud and tick-us must be positive; seconds >= 0'))
     if not math.isfinite(a.voltage_scale) or a.voltage_scale <= 0:
-        p.error('voltage-scale debe ser finito y positivo')
+        p.error(tr('voltage-scale debe ser finito y positivo', 'voltage-scale must be finite and positive'))
     a.injector_calibration = InjectorCalibration()
     return a
 
@@ -1486,7 +1506,7 @@ def main(argv=None):
         journal=Journal(args.log_dir, not args.no_log)
     except OSError as exc:
         sound.close()
-        console.print(Text('No se puede crear el registro: '+str(exc),style='red'))
+        console.print(Text(tr('No se puede crear el registro: ', 'Cannot create log: ')+str(exc),style='red'))
         return 1
     journal.write('session', demo=args.demo, port=args.port, baud=args.baud,
                   diagnostic_ids=[f'11{i:02X}' for i in IDS],
@@ -1527,9 +1547,9 @@ def main(argv=None):
         stop.set()
         sound.close()
         thread.join(timeout=3)
-    console.print(Text('Sesión finalizada · '+model.status,style='red' if model.fatal else 'cyan'))
+    console.print(Text(tr('Sesión finalizada · ', 'Session ended · ')+model.status,style='red' if model.fatal else 'cyan'))
     if journal.path:
-        console.print(Text('Registro: '+str(journal.path.resolve())))
+        console.print(Text(tr('Registro: ', 'Log: ')+str(journal.path.resolve())))
         console.print(Text('CSV: '+str(journal.csv_path.resolve())))
     return 1 if model.fatal else 0
 

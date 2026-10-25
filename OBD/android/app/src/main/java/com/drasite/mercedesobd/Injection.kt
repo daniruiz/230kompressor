@@ -49,7 +49,7 @@ object Injection {
      */
     fun dutyPercent(raw: Int, rpm: Int, tickUs: Double = Decoder.TICK_US): Double {
         require(raw >= 0 && rpm >= 0 && tickUs.isFinite() && tickUs > 0) {
-            "Valores inválidos para estimar el duty"
+            tr("Valores inválidos para estimar el duty", "Invalid values for estimating duty cycle")
         }
         return (raw * tickUs / 1000) * rpm / 1200
     }
@@ -61,9 +61,9 @@ object Injection {
      */
     fun deadtimeTicks(voltageRaw: Int?, cal: InjectorCalibration = calibration): Int? {
         if (voltageRaw == null) return null
-        require(voltageRaw in 0..255) { "F734 debe ser un byte" }
+        require(voltageRaw in 0..255) { tr("F734 debe ser un byte", "F734 must be a byte") }
         require(cal.nodes.size == 17 && cal.nodes.all { it in 0..255 }) {
-            "Se requieren 17 nodos de un byte"
+            tr("Se requieren 17 nodos de un byte", "17 one-byte nodes are required")
         }
         val index = voltageRaw shr 4
         val fraction = (voltageRaw and 15) shl 4

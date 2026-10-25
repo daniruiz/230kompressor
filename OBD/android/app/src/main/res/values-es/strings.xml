@@ -1,0 +1,4 @@
+<resources>
+    <!-- Declare Spanish support so Android retains it in the app locale configuration. -->
+    <string name="app_name">MercedesOBD</string>
+</resources>

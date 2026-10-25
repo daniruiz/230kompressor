@@ -35,7 +35,7 @@ class Model {
     private var alertUntil = 0L
     private var lastAlertAt: Long? = null
     private var lastAlertChannels = emptyList<Int>()
-    private var status = "Selecciona Demo o un adaptador emparejado"
+    private var status = tr("Selecciona Demo o un adaptador emparejado", "Select Demo or a paired adapter")
     private var mode = "PARADO"
     private var profile = ""
     private var errors = 0
@@ -61,7 +61,7 @@ class Model {
         alertUntil = 0
         lastAlertAt = null
         lastAlertChannels = emptyList()
-        status = "Preparando sesión"
+        status = tr("Preparando sesión", "Preparing session")
         mode = "INICIANDO"
         profile = ""
         errors = 0
@@ -104,7 +104,7 @@ class Model {
         failed = true
         previous = null
         mode = "PARADO"
-        status = "Sesión detenida · registros guardados"
+        status = tr("Sesión detenida · registros guardados", "Session stopped · logs saved")
     }
 
     @Synchronized
@@ -151,7 +151,7 @@ class Model {
         previous = s
         sample = s
         failed = false
-        status = if (raised) "Aumento de corrección observado" else "Recibiendo datos"
+        status = if (raised) tr("Aumento de corrección observado", "Correction increase observed") else tr("Recibiendo datos", "Receiving data")
         fun add(q: ArrayDeque<Double>, v: Double) {
             q.add(v)
             if (q.size > 90) q.removeFirst()

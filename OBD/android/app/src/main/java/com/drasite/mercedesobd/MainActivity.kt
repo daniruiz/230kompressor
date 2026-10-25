@@ -92,7 +92,7 @@ class MainActivity : Activity() {
             Button(this).apply {
                 text = "⋮"
                 textSize = 24f
-                contentDescription = "Menú de acciones"
+                contentDescription = tr("Menú de acciones", "Actions menu")
                 setTextColor(Color.WHITE)
                 setPadding(0, 0, 0, 0)
                 minWidth = 0
@@ -108,15 +108,15 @@ class MainActivity : Activity() {
 
     private fun showActions(anchor: View) {
         val popup = PopupMenu(this, anchor, Gravity.RIGHT)
-        val deviceName = prefs.getString("name", "Adaptador") ?: "Adaptador"
+        val deviceName = prefs.getString("name", tr("Adaptador", "Adapter")) ?: tr("Adaptador", "Adapter")
         val actions =
             listOf<Pair<String, () -> Unit>>(
-                "Adaptador: $deviceName" to { selectDevice() },
-                "Conectar" to { connect() },
+                tr("Adaptador: $deviceName", "Adapter: $deviceName") to { selectDevice() },
+                tr("Conectar", "Connect") to { connect() },
                 "Demo" to { start(true, null) },
-                "Parar" to { stop() },
-                "Exportar" to { export() },
-                "Ajustes" to { settings() },
+                tr("Parar", "Stop") to { stop() },
+                tr("Exportar", "Export") to { export() },
+                tr("Ajustes", "Settings") to { settings() },
             )
         actions.forEach { (label, action) ->
             popup.menu.add(label).setOnMenuItemClickListener {
@@ -152,7 +152,7 @@ class MainActivity : Activity() {
         if (requestCode == 1) {
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
                 if (pendingConnect) connect() else selectDevice()
-            } else model.notice("Permiso Dispositivos cercanos denegado")
+            } else model.notice(tr("Permiso Dispositivos cercanos denegado", "Nearby devices permission denied"))
         }
     }
 
@@ -162,18 +162,18 @@ class MainActivity : Activity() {
         try {
             val adapter =
                 BluetoothAdapter.getDefaultAdapter()
-                    ?: throw IllegalStateException("Este dispositivo no tiene Bluetooth")
+                    ?: throw IllegalStateException(tr("Este dispositivo no tiene Bluetooth", "This device has no Bluetooth"))
             if (!adapter.isEnabled) {
-                model.notice("Activa Bluetooth y empareja el adaptador en Ajustes")
+                model.notice(tr("Activa Bluetooth y empareja el adaptador en Ajustes", "Enable Bluetooth and pair the adapter in Settings"))
                 return
             }
             val devices = adapter.bondedDevices.sortedBy { it.name ?: it.address }
             if (devices.isEmpty()) {
-                model.notice("Empareja el OBDLink/ELM en los ajustes Bluetooth de Android")
+                model.notice(tr("Empareja el OBDLink/ELM en los ajustes Bluetooth de Android", "Pair the OBDLink/ELM in Android Bluetooth settings"))
                 return
             }
             AlertDialog.Builder(this)
-                .setTitle("Adaptadores ya emparejados")
+                .setTitle(tr("Adaptadores ya emparejados", "Paired adapters"))
                 .setItems(
                     devices.map { "${it.name?:"Bluetooth"}\n${it.address}" }.toTypedArray()
                 ) { _, i ->
@@ -185,9 +185,9 @@ class MainActivity : Activity() {
                         .apply()
                     stop()
                     pendingAdapterAddress = d.address
-                    model.notice("Conectando a ${d.name?:d.address}…")
+                    model.notice(tr("Conectando a ${d.name?:d.address}…", "Connecting to ${d.name?:d.address}…"))
                 }
-                .setNegativeButton("Cerrar", null)
+                .setNegativeButton(tr("Cerrar", "Close"), null)
                 .show()
         } catch (e: Exception) {
             model.notice(e.message ?: e.toString())
@@ -207,7 +207,7 @@ class MainActivity : Activity() {
     private fun start(demo: Boolean, address: String?) {
         pendingAdapterAddress = null
         if (exporting) {
-            model.notice("Espera a que termine la exportación")
+            model.notice(tr("Espera a que termine la exportación", "Wait for the export to finish"))
             return
         }
         if (session.start(demo, address, prefs.getBoolean("adapter_tuning", true))) {
@@ -215,7 +215,7 @@ class MainActivity : Activity() {
             demoMode = demo
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             wasRunning = true
-        } else model.notice("Detén la sesión actual antes de iniciar otra")
+        } else model.notice(tr("Detén la sesión actual antes de iniciar otra", "Stop the current session before starting another"))
     }
 
     private fun stop() {
@@ -224,7 +224,7 @@ class MainActivity : Activity() {
         session.stop()
         cancelSound()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        if (active) model.notice("Deteniendo sesión…") else model.stop()
+        if (active) model.notice(tr("Deteniendo sesión…", "Stopping session…")) else model.stop()
     }
 
     private fun beepBurst() {
@@ -276,7 +276,7 @@ class MainActivity : Activity() {
                 0,
             )
         } catch (_: SecurityException) {
-            model.notice("Android no permite ajustar el volumen de los avisos")
+            model.notice(tr("Android no permite ajustar el volumen de los avisos", "Android does not allow changing alert volume"))
         }
     }
 
@@ -287,7 +287,7 @@ class MainActivity : Activity() {
                 .setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
             volumeBeforeAlert = null
         } catch (_: SecurityException) {
-            model.notice("Android no permite restaurar el volumen anterior")
+            model.notice(tr("Android no permite restaurar el volumen anterior", "Android does not allow restoring the previous volume"))
         }
     }
 
@@ -304,51 +304,51 @@ class MainActivity : Activity() {
     private fun settings() {
         val names =
             arrayOf(
-                "Seis pitidos por aumento observado",
-                "Parpadeo rojo durante 3 segundos",
-                "Optimizar tiempos del adaptador (próxima conexión)",
+                tr("Seis pitidos por aumento observado", "Six beeps per observed increase"),
+                tr("Parpadeo rojo durante 3 segundos", "Red flash for 3 seconds"),
+                tr("Optimizar tiempos del adaptador (próxima conexión)", "Optimize adapter timings (next connection)"),
             )
         val keys = arrayOf("sound", "flash", "adapter_tuning")
         val values = BooleanArray(keys.size) { prefs.getBoolean(keys[it], true) }
         AlertDialog.Builder(this)
-            .setTitle("Ajustes · MercedesOBD")
+            .setTitle(tr("Ajustes · MercedesOBD", "Settings · MercedesOBD"))
             .setMultiChoiceItems(names, values) { _, i, value -> values[i] = value }
-            .setPositiveButton("Guardar") { _, _ ->
+            .setPositiveButton(tr("Guardar", "Save")) { _, _ ->
                 val edit = prefs.edit()
                 keys.forEachIndexed { i, k -> edit.putBoolean(k, values[i]) }
                 edit.apply()
                 dashboard.flashEnabled = values[1]
                 if (!values[0]) cancelSound()
-                model.notice("Ajustes guardados")
+                model.notice(tr("Ajustes guardados", "Settings saved"))
             }
-            .setNeutralButton("Información") { _, _ ->
+            .setNeutralButton(tr("Información", "Information")) { _, _ ->
                 AlertDialog.Builder(this)
-                    .setTitle("Interpretación de lecturas")
+                    .setTitle(tr("Interpretación de lecturas", "Interpreting readings"))
                     .setMessage(
-                        "F746 es la duración común solicitada, no un pulso eléctrico medido. Duty y tiempo usan 2,6667 µs/unidad y una inyección por 720°: estimados. Los registros descomponen el tiempo muerto con F734 y la curva fija SW404 banco 1, sin lecturas adicionales. El tiempo anterior a la compensación supone el funcionamiento normal y no demuestra flujo de combustible. Voltaje ECU usa 0,09375 V/unidad: provisional. La sonda estrecha indica voltaje, no AFR. El contador registra aumentos observados, no un contador de detonaciones validado.\n\nLa sesión se detiene al salir de primer plano."
+                        tr("F746 es la duración común solicitada, no un pulso eléctrico medido. Duty y tiempo usan 2,6667 µs/unidad y una inyección por 720°: estimados. Los registros descomponen el tiempo muerto con F734 y la curva fija SW404 banco 1, sin lecturas adicionales. El tiempo anterior a la compensación supone el funcionamiento normal y no demuestra flujo de combustible. Voltaje ECU usa 0,09375 V/unidad: provisional. La sonda estrecha indica voltaje, no AFR. El contador registra aumentos observados, no un contador de detonaciones validado.\n\nLa sesión se detiene al salir de primer plano.", "F746 is the common requested duration, not a measured electrical pulse. Duty and duration assume 2.6667 µs/unit and one injection per 720°: estimates. Logs break down dead time using F734 and the fixed SW404 bank 1 curve, with no additional reads. Duration before compensation assumes normal running and does not establish fuel flow. ECU voltage uses 0.09375 V/unit: provisional. The narrowband sensor shows voltage, not AFR. The counter records observed increases, not a validated knock count.\n\nThe session stops when the app leaves the foreground.")
                     )
-                    .setPositiveButton("Cerrar", null)
+                    .setPositiveButton(tr("Cerrar", "Close"), null)
                     .show()
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(tr("Cancelar", "Cancel"), null)
             .show()
     }
 
     private fun export() {
         if (session.running) {
-            model.notice("Pulsa Parar y espera al cierre antes de exportar")
+            model.notice(tr("Pulsa Parar y espera al cierre antes de exportar", "Tap Stop and wait for the session to end before exporting"))
             return
         }
         if (exporting) return
         exporting = true
-        model.notice("Preparando ZIP de registros…")
+        model.notice(tr("Preparando ZIP de registros…", "Preparing log ZIP…"))
         Thread {
                 try {
                     val files =
                         File(filesDir, "logs").listFiles()?.filter {
                             it.extension in listOf("csv", "jsonl")
                         } ?: emptyList()
-                    require(files.isNotEmpty()) { "Todavía no hay registros" }
+                    require(files.isNotEmpty()) { tr("Todavía no hay registros", "No logs yet") }
                     ZipOutputStream(File(cacheDir, "me21_logs.zip").outputStream()).use { z ->
                         files.forEach { f ->
                             z.putNextEntry(ZipEntry(f.name))
@@ -370,13 +370,13 @@ class MainActivity : Activity() {
                             startActivityForResult(intent, EXPORT_LOGS_REQUEST)
                         } catch (e: Exception) {
                             exporting = false
-                            model.notice("No se pudo abrir el selector: ${e.message}")
+                            model.notice(tr("No se pudo abrir el selector: ${e.message}", "Could not open file picker: ${e.message}"))
                         }
                     }
                 } catch (e: Exception) {
                     runOnUiThread {
                         exporting = false
-                        model.notice("Exportación: ${e.message}")
+                        model.notice(tr("Exportación: ${e.message}", "Export: ${e.message}"))
                     }
                 }
             }
@@ -390,7 +390,7 @@ class MainActivity : Activity() {
         val uri = data?.data
         if (resultCode != RESULT_OK || uri == null) {
             exporting = false
-            model.notice("Exportación cancelada")
+            model.notice(tr("Exportación cancelada", "Export cancelled"))
             return
         }
         Thread {
@@ -399,9 +399,9 @@ class MainActivity : Activity() {
                         requireNotNull(out)
                         File(cacheDir, "me21_logs.zip").inputStream().use { it.copyTo(out) }
                     }
-                    model.notice("Registros exportados")
+                    model.notice(tr("Registros exportados", "Logs exported"))
                 } catch (e: Exception) {
-                    model.notice("No se pudo exportar: ${e.message}")
+                    model.notice(tr("No se pudo exportar: ${e.message}", "Could not export: ${e.message}"))
                 } finally {
                     runOnUiThread { exporting = false }
                 }

@@ -49,7 +49,7 @@ class BluetoothWire(private val socket: BluetoothSocket, private val log: Events
                 val chunk = ByteArray(minOf(n, 4096))
                 val got = input.read(chunk)
                 val receivedAt = monoMs()
-                if (got < 0) throw LinkTimeout("Bluetooth desconectado")
+                if (got < 0) throw LinkTimeout(tr("Bluetooth desconectado", "Bluetooth disconnected"))
                 if (got > 0) {
                     if (firstByteAt == null) firstByteAt = receivedAt
                     for (i in 0 until got) {
@@ -63,7 +63,7 @@ class BluetoothWire(private val socket: BluetoothSocket, private val log: Events
                 val prompt = bytes.indexOf('>'.code.toByte())
                 if (prompt >= 0) {
                     if (bytes.copyOfRange(prompt + 1, bytes.size).any { it.u() > 32 })
-                        throw LinkTimeout("Tráfico inesperado después del prompt")
+                        throw LinkTimeout(tr("Tráfico inesperado después del prompt", "Unexpected traffic after the prompt"))
                     val raw = bytes.copyOfRange(0, prompt)
                     val reply = raw.toString(Charsets.US_ASCII)
                     log.event(
@@ -78,9 +78,9 @@ class BluetoothWire(private val socket: BluetoothSocket, private val log: Events
                     )
                     return reply
                 }
-                if (data.size() > 65536) throw LinkTimeout("Respuesta demasiado larga")
+                if (data.size() > 65536) throw LinkTimeout(tr("Respuesta demasiado larga", "Response too long"))
             }
-            throw LinkTimeout("ELM sin prompt >: $command")
+            throw LinkTimeout(tr("ELM sin prompt >: $command", "ELM missing prompt >: $command"))
         } catch (e: Exception) {
             val ended = monoMs()
             log.event(
@@ -95,7 +95,7 @@ class BluetoothWire(private val socket: BluetoothSocket, private val log: Events
             // A socket closed by the watchdog is also a lost prompt, not a
             // recoverable diagnostic response. Let the benchmark log it as fatal.
             if (e is IOException)
-                throw LinkTimeout("Bluetooth desconectado: ${e.message}").also { it.initCause(e) }
+                throw LinkTimeout(tr("Bluetooth desconectado: ${e.message}", "Bluetooth disconnected: ${e.message}")).also { it.initCause(e) }
             throw e
         } finally {
             timeout.cancel(false)
