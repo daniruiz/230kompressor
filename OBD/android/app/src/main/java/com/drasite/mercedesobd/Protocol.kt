@@ -108,8 +108,14 @@ data class Sample(
         get() = (corrections.maxOrNull() ?: 0) * .75
 }
 
+data class ExchangeTiming(val totalStart: Long = monoMs(), val hostGapWaitMs: Long = 0)
+
 interface Wire : Closeable {
-    fun exchange(command: String, timeoutMs: Long = 6000): String
+    fun exchange(
+        command: String,
+        timeoutMs: Long = 6000,
+        timing: ExchangeTiming = ExchangeTiming(),
+    ): String
 }
 
 interface Events {
@@ -140,16 +146,27 @@ class Elm(
     private var lastBus: Long? = null
     private var p3 = false
     private var p4 = false
+    private var hostGapTuned = false
+    private var hostGapProbing = false
+    private var elmTimingProbeDisabled = false
+    private var elmTimingProbeCompleted = false
     private var fallbacks = 0
 
     fun command(cmd: String, timeout: Long = 6000): String {
+        if (Thread.currentThread().isInterrupted) throw InterruptedException()
+        val totalStart = now()
+        var hostGapWait = 0L
         val bus = !(cmd.startsWith("AT") || cmd.startsWith("ST"))
         if (bus)
             lastBus?.let {
                 val remain = gap - (now() - it)
-                if (remain > 0) pause(remain)
+                if (remain > 0) {
+                    val waitStart = now()
+                    pause(remain)
+                    hostGapWait = now() - waitStart
+                }
             }
-        val reply = wire.exchange(cmd, timeout)
+        val reply = wire.exchange(cmd, timeout, ExchangeTiming(totalStart, hostGapWait))
         if (bus) lastBus = now()
         return reply
     }
@@ -162,16 +179,26 @@ class Elm(
     }
 
     fun rollback(reason: String): Boolean {
-        if (!p3 && !p4) return false
+        val elmGapActive = hostGapTuned || hostGapProbing
+        if (!p3 && !p4 && !elmGapActive) return false
         if (p4) {
             at("STIP4 5")
             p4 = false
         }
         gap = 60
         p3 = false
+        hostGapTuned = false
+        hostGapProbing = false
+        if (elmGapActive) elmTimingProbeDisabled = true
         fallbacks++
-        profile = "STN compatible"
-        log.event("transport_fallback", "reason" to reason)
+        profile = if (stn) "STN compatible" else "ELM compatible"
+        log.event(
+            "transport_fallback",
+            "reason" to reason,
+            "host_gap_ms" to 60,
+            "p4_ms" to if (stn) 5 else null,
+            "elm_timing_probe_disabled" to elmTimingProbeDisabled,
+        )
         return true
     }
 
@@ -180,6 +207,7 @@ class Elm(
         var reply = command(request())
         if (reply.trim() == "?" && fast && optimized) {
             fast = false
+            if (hostGapTuned || hostGapProbing) rollback("Sufijo de una respuesta rechazado")
             reply = command(payload)
         }
         if (
@@ -251,8 +279,10 @@ class Elm(
 
     fun defineGroup(): Sample {
         Decoder.ids.forEachIndexed { i, id ->
-            Decoder.positive(query(Decoder.definition(i + 1, id), false), 0x2C, "6C01D2", 3)
+            // Send each definition explicitly; only read services may retry NO DATA.
+            Decoder.positive(query(Decoder.definition(i + 1, id)), 0x2C, "6C01D2", 3)
         }
+        // Verify a full response before applying the one-response shortcut to reads.
         return Decoder.grouped(query("2A0101", false))
     }
 
@@ -369,7 +399,11 @@ class Elm(
     }
 
     fun optimize(group: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) {
-        if (!stn || !fast) return
+        if (!fast) return
+        if (!stn) {
+            optimizeElm(group, publish, notice)
+            return
+        }
         profile = "STN compatible"
         if (at("STPTRQ 60", true)) {
             p3 = true
@@ -398,11 +432,6 @@ class Elm(
                     return
                 }
             }
-            fun median(xs: List<Double>): Double {
-                val v = xs.sorted()
-                return if (v.size % 2 == 1) v[v.size / 2]
-                else (v[v.size / 2 - 1] + v[v.size / 2]) / 2
-            }
             val b = median(base.drop(1))
             val t = median(trial.drop(1))
             val accept = t < b * .97
@@ -422,5 +451,115 @@ class Elm(
         } catch (e: DiagnosticException) {
             rollback(e.message ?: "Error prueba")
         }
+    }
+
+    /** Read-only trial, matching mercedes_dashboard.optimize_elm_transport.
+     * Measure acquisition including host waits, discarding each phase's first cycle.
+     * Both 60 ms controls must show >=3% and >=8 ms savings. This measures host
+     * observations, not physical K-line P3 compliance, and never changes adapter PPs.
+     */
+    private fun optimizeElm(group: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) {
+        if (!group || elmTimingProbeDisabled || elmTimingProbeCompleted) return
+        hostGapProbing = true
+        hostGapTuned = false
+        val fallbackCount = fallbacks
+        val baseline = ArrayList<Double>()
+        val trial20 = ArrayList<Double>()
+        val trial0 = ArrayList<Double>()
+        val control = ArrayList<Double>()
+        val outcome = linkedMapOf<String, Any?>(
+            "selected_host_gap_ms" to 60L,
+            "gain_ms" to 0.0,
+            "gain_pct" to 0.0,
+            "failed" to false,
+            "reason" to null,
+        )
+        notice("ELM · comprobando espera del programa (60 / 20 / 0 ms)")
+
+        fun collect(waitMs: Long, count: Int, values: MutableList<Double>) {
+            gap = waitMs
+            repeat(count + 1) { index ->
+                val sample = acquire(true)
+                publish(sample)
+                if (elmTimingProbeDisabled || fallbacks != fallbackCount || !fast)
+                    throw DiagnosticException("Prueba cancelada tras recuperar la comunicación")
+                if (!sample.acquisitionMs.isFinite() || sample.acquisitionMs <= 0)
+                    throw DiagnosticException("Duración de adquisición inválida durante la prueba")
+                if (index > 0) values.add(sample.acquisitionMs)
+            }
+        }
+
+        fun worthwhile(candidate: Double, reference: Double) =
+            reference - candidate >= 8.0 && candidate <= reference * .97
+
+        try {
+            collect(60, 6, baseline)
+            collect(20, 6, trial20)
+            collect(0, 6, trial0)
+            collect(60, 3, control)
+            val base = median(baseline)
+            val last = median(control)
+            val reference = minOf(base, last)
+            val ms20 = median(trial20)
+            val ms0 = median(trial0)
+            var selected = 60L
+            var selectedMedian = reference
+            if (worthwhile(ms20, reference)) {
+                selected = 20
+                selectedMedian = ms20
+            }
+            if (worthwhile(ms0, reference) && (selected == 60L || worthwhile(ms0, ms20))) {
+                selected = 0
+                selectedMedian = ms0
+            }
+            gap = selected
+            hostGapTuned = selected < 60
+            profile = if (hostGapTuned) "ELM host $selected ms" else "ELM compatible"
+            outcome.putAll(mapOf(
+                "baseline_median_ms" to base,
+                "control_median_ms" to last,
+                "reference_median_ms" to reference,
+                "trial_20_median_ms" to ms20,
+                "trial_0_median_ms" to ms0,
+                "selected_host_gap_ms" to selected,
+                "gain_ms" to reference - selectedMedian,
+                "gain_pct" to (reference - selectedMedian) / reference * 100,
+            ))
+        } catch (e: LinkTimeout) {
+            // No prompt: never send recovery commands into an unsynchronised stream.
+            outcome["failed"] = true
+            outcome["reason"] = e.message
+            elmTimingProbeDisabled = true
+            throw e
+        } catch (e: InterruptedException) {
+            outcome["failed"] = true
+            outcome["reason"] = "Prueba interrumpida por el usuario"
+            throw e
+        } catch (e: DiagnosticException) {
+            rollback(e.message ?: "Error prueba")
+            outcome["failed"] = true
+            outcome["reason"] = e.message
+        } finally {
+            hostGapProbing = false
+            elmTimingProbeCompleted = true
+            log.event(
+                "elm_transport_benchmark",
+                "baseline_ms" to baseline,
+                "trial_20_ms" to trial20,
+                "trial_0_ms" to trial0,
+                "control_ms" to control,
+                *outcome.toList().toTypedArray(),
+                "profile" to profile,
+                "timing_basis" to "host_acquisition_including_wait_not_kline",
+                "disabled" to elmTimingProbeDisabled,
+            )
+        }
+        notice("$profile · lectura preparada")
+    }
+
+    private fun median(values: List<Double>): Double {
+        val sorted = values.sorted()
+        return if (sorted.size % 2 == 1) sorted[sorted.size / 2]
+        else (sorted[sorted.size / 2 - 1] + sorted[sorted.size / 2]) / 2
     }
 }

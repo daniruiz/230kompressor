@@ -210,7 +210,7 @@ class MainActivity : Activity() {
             model.notice("Espera a que termine la exportación")
             return
         }
-        if (session.start(demo, address)) {
+        if (session.start(demo, address, prefs.getBoolean("adapter_tuning", true))) {
             cancelSound()
             demoMode = demo
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -306,8 +306,9 @@ class MainActivity : Activity() {
             arrayOf(
                 "Seis pitidos por aumento observado",
                 "Parpadeo rojo durante 3 segundos",
+                "Optimizar tiempos del adaptador (próxima conexión)",
             )
-        val keys = arrayOf("sound", "flash")
+        val keys = arrayOf("sound", "flash", "adapter_tuning")
         val values = BooleanArray(keys.size) { prefs.getBoolean(keys[it], true) }
         AlertDialog.Builder(this)
             .setTitle("Ajustes · MercedesOBD")

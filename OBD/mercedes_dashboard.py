@@ -15,7 +15,8 @@ The ECU knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, live STFT/LTFT, temperatures,
 RPM, injection, load, coarse calculated MAF, ignition advance, throttle, narrowband oxygen sensor and supply voltage.
 STN/OBDLink: adapter-managed P3 and measured P4 trial with automatic rollback.
-Use --no-adapter-tuning to keep previous timings. Supply voltage scale remains provisional.
+ELM clones: automatically benchmark shorter host-side waits on grouped reads.
+Use --no-adapter-tuning to disable automatic timing optimisation. Supply voltage scale remains provisional.
 Stored LTFT endpoints are read every 30 s via service 23, one per fast cycle.
 At connection, read the software reference directly from the six known ROM
 locations and select its LTFT addresses. Ten analysed profiles are supported.
@@ -464,6 +465,8 @@ class ELM:
         except ImportError as exc:
             raise DiagnosticError('Instala pyserial: python3 -m pip install pyserial') from exc
         self.serial = serial.serial_for_url(port, baudrate=baud, timeout=0.02, write_timeout=2)
+        self.port, self.baud = port, baud
+        self.port_metadata = None
         self.journal, self.stop = journal, stop
         self.fast, self.repeat = fast, repeat
         self.adaptive = '0'
@@ -471,6 +474,10 @@ class ELM:
         self.adapter_profile = 'ELM compatible'
         self.adapter_p3 = False
         self.p4_fast = False
+        self.host_gap_tuned = False
+        self.host_gap_probing = False
+        self.elm_timing_probe_disabled = False
+        self.elm_timing_probe_completed = False
         self.timing_fallbacks = 0
         self.response_timeout = '80'  # 128 * 4 ms = 512 ms; suffix 1 returns early.
         self.request_gap = 0.060
@@ -482,27 +489,57 @@ class ELM:
         self.serial.reset_input_buffer()
 
     def command(self, command: str, timeout=6, allow_repeat=False):
+        """Exchange timing observes host receive batches, not physical K-line bytes.
+
+        seconds starts at the write; total_seconds also includes the host gap.
+        last_payload_byte_ms marks the batch containing the last non-whitespace
+        byte before '>', which may be adapter text rather than ECU data. A zero
+        prompt_tail_ms means those bytes arrived in the same read batch.
+        """
         if self.stop.is_set():
             raise InterruptedError
+        total_start = time.monotonic()
+        host_gap_wait = 0.0
         is_bus_request = not command.upper().startswith(('AT', 'ST'))
         if is_bus_request and self.last_bus_reply is not None:
             remaining = self.request_gap - (time.monotonic() - self.last_bus_reply)
-            if remaining > 0 and self.stop.wait(remaining):
-                raise InterruptedError
+            if remaining > 0:
+                wait_start = time.monotonic()
+                interrupted = self.stop.wait(remaining)
+                host_gap_wait = time.monotonic() - wait_start
+                if interrupted:
+                    raise InterruptedError
         repeated = allow_repeat and self.repeat and command == self.last_command
         wire = '' if repeated else command
         start = time.monotonic()
         self.serial.write((wire + '\r').encode('ascii'))
         data = bytearray()
+        first_byte_at = last_payload_byte_at = None
+
+        def timing_fields(ended, prompt=False):
+            return dict(host_gap_wait_ms=host_gap_wait*1000,
+                        total_seconds=ended-total_start,
+                        first_byte_ms=(first_byte_at-start)*1000 if first_byte_at is not None else None,
+                        last_payload_byte_ms=(last_payload_byte_at-start)*1000 if last_payload_byte_at is not None else None,
+                        prompt_tail_ms=(ended-last_payload_byte_at)*1000 if prompt and last_payload_byte_at is not None else None,
+                        timing_basis='host_receive_batches_not_kline')
+
         while not self.stop.is_set() and time.monotonic() - start < timeout:
             chunk = self.serial.read(max(1, min(self.serial.in_waiting, 4096)))
+            received_at = time.monotonic()
+            if chunk:
+                if first_byte_at is None:
+                    first_byte_at = received_at
+                if chunk.split(b'>', 1)[0].strip(b'\r\n\t '):
+                    last_payload_byte_at = received_at
             data.extend(chunk)
             if b'>' in data:
                 raw, trailing = bytes(data).split(b'>', 1)
                 reply = raw.decode('ascii', errors='replace')
                 self.journal.write('exchange', command=command, wire=wire, repeat=repeated,
                                    reply=reply, raw_hex=raw.hex(), prompt=True,
-                                   seconds=time.monotonic()-start)
+                                   seconds=received_at-start,
+                                   **timing_fields(received_at, prompt=True))
                 # Unexpected traffic after prompt must not silently become next response.
                 if trailing.strip():
                     raise LinkTimeout('Datos inesperados después del prompt; se detiene la sesión')
@@ -512,9 +549,10 @@ class ELM:
                 return reply
             if len(data) > 65536:
                 break
+        ended = time.monotonic()
         self.journal.write('exchange', command=command, wire=wire,
                            raw_hex=bytes(data).hex(), prompt=False,
-                           seconds=time.monotonic()-start)
+                           seconds=ended-start, **timing_fields(ended))
         self.last_command = None
         if self.stop.is_set():
             raise InterruptedError
@@ -527,12 +565,14 @@ class ELM:
             raise DiagnosticError(command + ' rechazado: ' + repr(reply))
         return okay
 
-    def query(self, payload, optimized=True):
+    def query(self, payload, optimized=True, allow_repeat=True):
         command = payload + ' 1' if self.fast and optimized else payload
-        reply = self.command(command, allow_repeat=optimized)
+        reply = self.command(command, allow_repeat=optimized and allow_repeat)
         if reply.strip() == '?' and command != payload:
             # An older clone may not accept the response-count suffix.
             self.fast = False
+            if self.host_gap_tuned or self.host_gap_probing:
+                self.restore_transport('Sufijo de una respuesta rechazado')
             reply = self.command(payload)
         # Retry only read services, never replay group definitions or writes.
         if 'NO DATA' in reply.upper() and payload.startswith(('22', '2A')):
@@ -562,7 +602,10 @@ class ELM:
         firmware = self.command('STI', timeout=2).strip()
         self.is_stn = bool(re.search(r'\bSTN\d+\b|OBDLINK', firmware, re.I))
         hardware = self.command('STDI', timeout=2).strip() if re.search(r'STN|OBDLINK', firmware, re.I) else None
+        if self.port_metadata is None:
+            self.port_metadata = adapter_port_metadata(self.port)
         self.journal.write('adapter_details', identity=identity, firmware=firmware, hardware=hardware,
+                           port=self.port, baud=self.baud, **self.port_metadata,
                            group_ids=[f'11{x:02X}' for x in IDS],
                            decoder_revision='12_ids_load_from_1107_voltage_1110_v2')
         self.at('ATPC')
@@ -587,7 +630,8 @@ class ELM:
 
     def restore_transport(self, reason):
         """Rollback once; never repeatedly retest a timing that failed this session."""
-        if not (self.adapter_p3 or self.p4_fast):
+        elm_gap_active = self.host_gap_tuned or self.host_gap_probing
+        if not (self.adapter_p3 or self.p4_fast or elm_gap_active):
             return False
         # These are volatile adapter settings, not ECU calibration writes.
         if self.p4_fast:
@@ -595,11 +639,16 @@ class ELM:
             self.p4_fast = False
         self.request_gap = 0.060
         self.adapter_p3 = False
+        self.host_gap_tuned = False
+        self.host_gap_probing = False
+        if elm_gap_active:
+            self.elm_timing_probe_disabled = True
         self.repeat = False
         self.timing_fallbacks += 1
-        self.adapter_profile = 'STN compatible'
+        self.adapter_profile = 'STN compatible' if self.is_stn else 'ELM compatible'
         self.journal.write('transport_fallback', reason=reason,
-                           host_gap_ms=60, p4_ms=5)
+                           host_gap_ms=60, p4_ms=5 if self.is_stn else None,
+                           elm_timing_probe_disabled=self.elm_timing_probe_disabled)
         return True
 
     def optimize_transport(self, mode, notice, publish):
@@ -665,6 +714,86 @@ class ELM:
             self.journal.write('transport_benchmark_error', error=str(exc))
         notice(self.adapter_profile + ' · lectura preparada')
 
+    def optimize_elm_transport(self, mode, notice, publish):
+        """Automatic read-only trial: change only the host wait, never adapter PPs.
+
+        Each phase discards its first cycle and measures steady-state acquisition
+        including the host wait. Both initial and final 60 ms controls must show
+        a >=3% and >=8 ms gain. A failed profile is never tested again this session.
+        The short trial demonstrates observed replies, not physical P3 compliance.
+        """
+        if (self.is_stn or not self.fast or mode != 'grouped'
+                or self.elm_timing_probe_disabled or self.elm_timing_probe_completed):
+            return
+        self.host_gap_probing = True
+        self.host_gap_tuned = False
+        fallback_count = self.timing_fallbacks
+        results = dict(baseline_ms=[], trial_20_ms=[], trial_0_ms=[], control_ms=[])
+        outcome = dict(selected_host_gap_ms=60, gain_ms=0.0, gain_pct=0.0,
+                       failed=False, reason=None)
+        notice('ELM · comprobando espera del programa (60 / 20 / 0 ms)')
+
+        def collect(gap, count, values):
+            self.request_gap = gap
+            for index in range(count+1):
+                sample = self.acquire(mode)
+                publish(sample)
+                if (self.elm_timing_probe_disabled or self.timing_fallbacks != fallback_count
+                        or not self.fast):
+                    raise DiagnosticError('Prueba cancelada tras recuperar la comunicación')
+                if not math.isfinite(sample.duration_ms) or sample.duration_ms <= 0:
+                    raise DiagnosticError('Duración de adquisición inválida durante la prueba')
+                if index:
+                    values.append(sample.duration_ms)
+
+        def worthwhile(candidate, reference):
+            return reference-candidate >= 8.0 and candidate <= reference*0.97
+
+        try:
+            collect(0.060, 6, results['baseline_ms'])
+            collect(0.020, 6, results['trial_20_ms'])
+            collect(0.000, 6, results['trial_0_ms'])
+            collect(0.060, 3, results['control_ms'])
+            baseline = statistics.median(results['baseline_ms'])
+            control = statistics.median(results['control_ms'])
+            reference = min(baseline, control)
+            median_20 = statistics.median(results['trial_20_ms'])
+            median_0 = statistics.median(results['trial_0_ms'])
+            selected = 0.060
+            selected_median = reference
+            if worthwhile(median_20, reference):
+                selected, selected_median = 0.020, median_20
+            if worthwhile(median_0, reference) and (selected == 0.060 or worthwhile(median_0, median_20)):
+                selected, selected_median = 0.000, median_0
+            self.request_gap = selected
+            self.host_gap_tuned = selected < 0.060
+            self.adapter_profile = (f'ELM host {selected*1000:.0f} ms'
+                                    if self.host_gap_tuned else 'ELM compatible')
+            outcome.update(baseline_median_ms=baseline, control_median_ms=control,
+                           reference_median_ms=reference, trial_20_median_ms=median_20,
+                           trial_0_median_ms=median_0, selected_host_gap_ms=selected*1000,
+                           gain_ms=reference-selected_median,
+                           gain_pct=(reference-selected_median)/reference*100)
+        except LinkTimeout as exc:
+            # Never send a recovery command into a stream without a prompt.
+            outcome.update(failed=True, reason=str(exc))
+            self.elm_timing_probe_disabled = True
+            raise
+        except InterruptedError:
+            outcome.update(failed=True, reason='Prueba interrumpida por el usuario')
+            raise
+        except DiagnosticError as exc:
+            self.restore_transport(str(exc))
+            outcome.update(failed=True, reason=str(exc))
+        finally:
+            self.host_gap_probing = False
+            self.elm_timing_probe_completed = True
+            self.journal.write('elm_transport_benchmark', **results, **outcome,
+                               profile=self.adapter_profile,
+                               timing_basis='host_acquisition_including_wait_not_kline',
+                               disabled=self.elm_timing_probe_disabled)
+        notice(self.adapter_profile + ' · lectura preparada')
+
     def define_group(self):
         # Define active slots. Clear remaining slots so frame layout is exact,
         # regardless of any diagnostic client previously connected.
@@ -673,7 +802,7 @@ class ELM:
             ident = 0x04 if clear else IDS[slot-1]
             cmd = definition(slot, ident, clear)
             expected = bytes([0x6C, 0x01, 0xD0 if clear else 0xD2])
-            positive(self.query(cmd, optimized=False), 0x2C, expected, 3)
+            positive(self.query(cmd, optimized=True, allow_repeat=False), 0x2C, expected, 3)
         # Learn/verify one complete single response BEFORE the '1' shortcut.
         return grouped(self.query('2A0101', optimized=False))
 
@@ -778,6 +907,21 @@ class ELM:
     def close(self):
         self.serial.close()
 
+def adapter_port_metadata(port):
+    """Read OS port descriptions only; never infer transport from a COM number."""
+    metadata = dict(port_description=None, port_hwid=None)
+    try:
+        from serial.tools import list_ports
+        for item in list_ports.comports():
+            if item.device == port:
+                metadata.update(port_description=item.description or None,
+                                port_hwid=item.hwid or None)
+                break
+    except (ImportError, OSError):
+        pass
+    return metadata
+
+
 def adapter_ports():
     """Enumerate serial USB and Bluetooth SPP ports, including Linux rfcomm."""
     from serial.tools import list_ports
@@ -831,7 +975,9 @@ def connect_adapter(args, journal, stop, notice):
                 if not re.search(r'ELM|OBDLINK|STN|OBDII|OBD-II', identity, re.I):
                     raise DiagnosticError('Identidad no reconocida: ' + identity)
                 args.port, args.baud = port, baud
-                journal.write('adapter', port=port, baud=baud, identity=identity)
+                elm.port_metadata = adapter_port_metadata(port)
+                journal.write('adapter', port=port, baud=baud, identity=identity,
+                               **elm.port_metadata)
                 return elm
             except InterruptedError:
                 if elm:
@@ -1037,7 +1183,10 @@ def worker(args, model, stop, journal):
             event = model.accept(sample, args.tick_us)
             journal.sample(sample, args, model, event)
         if not args.no_adapter_tuning:
-            elm.optimize_transport(mode, model.notice, publish_probe)
+            if elm.is_stn:
+                elm.optimize_transport(mode, model.notice, publish_probe)
+            elif args.elm_timing_probe:
+                elm.optimize_elm_transport(mode, model.notice, publish_probe)
         model.mode = mode
         model.adapter_profile = elm.adapter_profile
         consecutive = 0
@@ -1307,7 +1456,10 @@ def parse_args(argv=None):
                    help='Ajuste ELM: 0 fijo (por defecto, más estable); 1/2 adaptativo')
     p.add_argument('--individual', action='store_true', help='Usar 22 en vez de intentar la agrupación')
     p.add_argument('--no-adapter-tuning', action='store_true',
-                   help='Desactivar ajustes y prueba de tiempos específicos de OBDLink/STN')
+                   help='Desactivar la optimización automática de tiempos para ELM y OBDLink/STN')
+    # Keep the former opt-in flag as a compatible alias; tuning is now automatic.
+    p.add_argument('--elm-timing-probe', action='store_true', default=True,
+                   help=argparse.SUPPRESS)
     p.add_argument('--conservative', action='store_true', help='Sin sufijo de una respuesta ni repetición por CR')
     p.add_argument('--tick-us', type=float, default=8/3, help='Escala no verificada de F746; provisional 2.6666667 us/raw')
     p.add_argument('--voltage-scale', type=float, default=VOLTAGE_V_PER_RAW_EST,
@@ -1350,8 +1502,10 @@ def main(argv=None):
                   injector_deadtime_is_direct_ram_read=False,
                   injector_minimum_ticks=args.injector_calibration.minimum_ticks,
                   adaptive=args.adaptive, response_timeout_ms=512, request_gap_ms=60,
-                  transport_revision='stn_measured_p4_with_rollback_v3',
+                  transport_revision='elm_auto_host_gap_and_chunk_timestamps_v5',
                   adapter_tuning=not args.no_adapter_tuning and not args.conservative,
+                  elm_timing_probe=args.elm_timing_probe and not args.no_adapter_tuning and not args.conservative,
+                  exchange_timing_basis='host_receive_batches_not_kline',
                   detector='observed_correction_increase_NOT_ECU_knock_counter')
     thread=threading.Thread(target=worker,args=(args,model,stop,journal),daemon=True)
     thread.start()

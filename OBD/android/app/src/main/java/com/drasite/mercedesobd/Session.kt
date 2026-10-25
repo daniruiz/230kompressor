@@ -19,12 +19,12 @@ class Session(private val root: File, val model: Model, private val alert: () ->
         get() = thread?.isAlive == true
 
     @Synchronized
-    fun start(demo: Boolean, address: String?): Boolean {
+    fun start(demo: Boolean, address: String?, adapterTuning: Boolean = true): Boolean {
         if (running) return false
         model.clear()
         stopped = false
         thread =
-            Thread({ run(demo, address) }, "MercedesOBD acquisition").also {
+            Thread({ run(demo, address, adapterTuning) }, "MercedesOBD acquisition").also {
                 it.start()
             }
         return true
@@ -39,11 +39,11 @@ class Session(private val root: File, val model: Model, private val alert: () ->
     }
 
     @SuppressLint("MissingPermission")
-    private fun run(demo: Boolean, address: String?) {
+    private fun run(demo: Boolean, address: String?, adapterTuning: Boolean) {
         var journal: Journal? = null
         var wire: BluetoothWire? = null
         try {
-            val j = Journal(root, demo)
+            val j = Journal(root, demo, adapterTuning)
             journal = j
             val temperatureAlerts = TemperatureAlerts()
             fun publish(s: Sample) {
@@ -105,12 +105,11 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 BluetoothAdapter.getDefaultAdapter()
                     ?: throw DiagnosticException("Bluetooth no disponible")
             if (!adapter.isEnabled) throw DiagnosticException("Activa Bluetooth en Ajustes")
+            val device = adapter.getRemoteDevice(requireNotNull(address))
             val sock =
-                adapter
-                    .getRemoteDevice(requireNotNull(address))
-                    .createRfcommSocketToServiceRecord(
-                        UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-                    )
+                device.createRfcommSocketToServiceRecord(
+                    UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+                )
             socket = sock
             if (stopped) throw InterruptedException()
             val watchdog = Executors.newSingleThreadScheduledExecutor()
@@ -135,6 +134,12 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             }
             val w = BluetoothWire(sock, j)
             wire = w
+            j.event(
+                "adapter_connection",
+                "transport" to "bluetooth_spp",
+                "bluetooth_name" to device.name,
+                "bluetooth_address" to device.address,
+            )
             val elm = Elm(w, j)
             elm.setup(model::notice)
             val ecuProfile = elm.identifyEcu(model::notice)
@@ -149,7 +154,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 model.notice("Grupo rechazado; lecturas individuales")
                 group = false
             }
-            elm.optimize(group, ::publish, model::notice)
+            if (adapterTuning) elm.optimize(group, ::publish, model::notice)
             var consecutive = 0
             var nextTrim = 0L
             var pendingLow: Pair<Int, Long>? = null

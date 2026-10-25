@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 import org.json.JSONArray
 import org.json.JSONObject
 
-class Journal(root: File, private val demo: Boolean) : Events, Closeable {
+class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = true) : Events, Closeable {
     private val stamp =
         DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS")
             .withZone(ZoneOffset.UTC)
@@ -98,7 +98,13 @@ class Journal(root: File, private val demo: Boolean) : Events, Closeable {
             "voltage_conversion_verified" to false,
             "correction_deg_per_raw_nominal" to 0.75,
             "detector" to "observed_correction_increase_NOT_ECU_knock_counter",
-            "transport_revision" to "native_spp_v1",
+            "transport_revision" to "native_spp_elm_auto_host_gap_and_chunk_timestamps_v2",
+            "adapter_tuning" to (adapterTuning && !demo),
+            "elm_timing_probe" to (adapterTuning && !demo),
+            "adaptive" to "0",
+            "response_timeout_ms" to 512,
+            "request_gap_ms" to 60,
+            "exchange_timing_basis" to "host_receive_batches_not_kline",
             "diagnostic_ids" to Decoder.ids.map { "11%02X".format(it) },
             "ecu_identification_policy" to "ROM software reference; once at connection",
             "supported_ecu_software" to EcuProfiles.all.map { it.software },
