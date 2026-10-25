@@ -321,15 +321,6 @@ class MainActivity : Activity() {
                 if (!values[0]) cancelSound()
                 model.notice(tr("Ajustes guardados", "Settings saved"))
             }
-            .setNeutralButton(tr("Información", "Information")) { _, _ ->
-                AlertDialog.Builder(this)
-                    .setTitle(tr("Interpretación de lecturas", "Interpreting readings"))
-                    .setMessage(
-                        tr("F746 es la duración común solicitada, no un pulso eléctrico medido. Duty y tiempo usan 2,6667 µs/unidad y una inyección por 720°: estimados. Los registros descomponen el tiempo muerto con F734 y la curva fija SW404 banco 1, sin lecturas adicionales. El tiempo anterior a la compensación supone el funcionamiento normal y no demuestra flujo de combustible. Voltaje ECU usa 0,09375 V/unidad: provisional. La sonda estrecha indica voltaje, no AFR. El contador registra aumentos observados, no un contador de detonaciones validado.\n\nLa sesión se detiene al salir de primer plano.", "F746 is the common requested duration, not a measured electrical pulse. Duty and duration assume 2.6667 µs/unit and one injection per 720°: estimates. Logs break down dead time using F734 and the fixed SW404 bank 1 curve, with no additional reads. Duration before compensation assumes normal running and does not establish fuel flow. ECU voltage uses 0.09375 V/unit: provisional. The narrowband sensor shows voltage, not AFR. The counter records observed increases, not a validated knock count.\n\nThe session stops when the app leaves the foreground.")
-                    )
-                    .setPositiveButton(tr("Cerrar", "Close"), null)
-                    .show()
-            }
             .setNegativeButton(tr("Cancelar", "Cancel"), null)
             .show()
     }
