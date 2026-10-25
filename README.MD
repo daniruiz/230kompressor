@@ -170,6 +170,37 @@ By installing the **CobraRTP FlashOnline board, you can add real-time tuning cap
 
 After modifications, the checksum should normally be corrected, but I just found out that the car doesn't care about it. If you tune your ECU live and forget to update the checksum, the next time you start the engine it will work anyway. So the checksum doesn't seem to be relevant for this ECU (it didn't even show a CEL code via OBD).
 
+## Immo off
+
+The project now includes **software-based immo off without a JULIE emulator**. It bypasses the ECU's EZS immobilizer verification.
+
+The [TunerPro patch](Patches/ME21_404_EZS_bypass_EXPERIMENTAL.xdf) is marked **experimental** and targets the exact stock **114.235404.04 (404)** binary only. Keep your original backup; this is not a universal patch for other ME2.1 software versions.
+
+## OBD dashboard for PC and Android
+
+Live engine monitoring on **PC and Android**, using compatible ELM327 adapters over Bluetooth. Reverse-engineering the Mercedes diagnostic protocol unlocks extra ECU readings beyond standard OBD.
+
+### Extra capabilities
+
+- **Knock control:** monitor ignition corrections and observed increases in real time.
+- **Per-cylinder knock retard:** see the individual correction for each of the four cylinders.
+- **Injection time and injector duty:** monitor estimated injection duration and duty cycle.
+- **Internal engine load:** read the value the ECU uses for its maps, on its full 0–255 scale.
+- **Live ECU RAM readings:** access internal values, including injection corrections.
+- **CSV logging:** save readings for later analysis in MegaLogViewer.
+- **Faster data collection:** grouped reads provide logging approximately **every 400 ms instead of every 2 seconds — around 5× faster** on the tested setup, over Bluetooth. Actual speed depends on the adapter and connection.
+
+The dashboard also shows RPM, temperatures, ignition advance and fuel trims. Both versions automatically switch between **English and Spanish** according to the device language.
+
+| PC | Android |
+| --- | --- |
+| ![PC dashboard in demo mode](Images/mercedes-obd-desktop.jpg) | ![Android dashboard in demo mode](Images/mercedes-obd-android.jpg) |
+| **[Download Windows EXE](OBD/MercedesDashboard.exe)** · [Python source](OBD/mercedes_dashboard.py) | **[Download Android APK](OBD/MercedesDashboard.apk)** · [Android source](OBD/android/) |
+
+**Tested adapters:** OBDLink, Veepeak and Renolink. Some cheap ELM327 clones lack the required commands and may not work.
+
+*Screenshots show demo mode. The counter tracks observed correction increases, not a validated knock-event count.*
+
 ## Further reading
 
 - [Bosch ME2.0 / ME2.1 boost-limiter discussion and ECU reading/flashing guide](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431).
