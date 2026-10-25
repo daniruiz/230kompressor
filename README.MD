@@ -99,6 +99,12 @@ Not all binaries behave equally, and some of them don't limit at all when you in
 - 9646-230Kompressor_261204527_114.235153.52.BIN
 - 9720-230Kompressor_261204747_114.235404.04.BIN
 
+## Immo off
+
+The project now includes **software-based immo off without a JULIE emulator**. It bypasses the ECU's EZS immobilizer verification.
+
+The [TunerPro patch](Patches/ME21_404_EZS_bypass_EXPERIMENTAL.xdf) is marked **experimental** and targets the exact stock **114.235404.04 (404)** binary only. Keep your original backup; this is not a universal patch for other ME2.1 software versions.
+
 ### The 5,700 rpm limit without ABS
 
 Project testing has linked the reduced rev limit with an unavailable ABS signal to the tables labeled **“Fallback RPM Limiter”**. Editing these tables has restored the normal rev limit on the tested setup. This is an observed result for that configuration, rather than proof that the same edit applies to every ECU version.
@@ -128,6 +134,31 @@ The definitions include ignition correction associated with coolant and intake a
 ### STAGE 3 (~230-250hp)
 - 84mm supercharger pulley
 - 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach ~11.8 AFR at 5,200rpm WOT − near 4.2 Bar with **vacuum line unplugged**)
+
+## OBD dashboard for PC and Android
+
+Live engine monitoring on **PC and Android**, using compatible ELM327 adapters over Bluetooth. Reverse-engineering the Mercedes diagnostic protocol unlocks extra ECU readings beyond standard OBD.
+
+### Extra capabilities
+
+- **Knock control:** monitor ignition corrections and observed increases in real time.
+- **Per-cylinder knock retard:** see the individual correction for each of the four cylinders.
+- **Injection time and injector duty:** monitor estimated injection duration and duty cycle.
+- **Internal engine load:** read the value the ECU uses for its maps, on its full 0–255 scale.
+- **Live ECU RAM readings:** access internal values, including injection corrections.
+- **CSV logging:** save readings for later analysis in MegaLogViewer.
+- **Faster data collection:** grouped reads provide logging approximately **every 400 ms instead of every 2 seconds — around 5× faster** on the tested setup, over Bluetooth. Actual speed depends on the adapter and connection.
+
+The dashboard also shows RPM, temperatures, ignition advance and fuel trims. Both versions automatically switch between **English and Spanish** according to the device language.
+
+| PC | Android |
+| --- | --- |
+| ![PC dashboard in demo mode](Images/mercedes-obd-desktop.jpg) | ![Android dashboard in demo mode](Images/mercedes-obd-android.jpg) |
+| **[Download Windows EXE](OBD/MercedesDashboard.exe)** · [Python source](OBD/mercedes_dashboard.py) | **[Download Android APK](OBD/MercedesDashboard.apk)** · [Android source](OBD/android/) |
+
+**Tested adapters:** OBDLink, Veepeak and Renolink. Some cheap ELM327 clones lack the required commands and may not work.
+
+*Screenshots show demo mode. The counter tracks observed correction increases, not a validated knock-event count.*
 
 ### Eaton M62 supercharger speed and pulley ratios
 
@@ -169,37 +200,6 @@ By installing the **CobraRTP FlashOnline board, you can add real-time tuning cap
 ![Second view of the CobraRTP FlashOnline installation and connections inside the ME2.1 ECU](Images/me2.1-cobraRTP-2.png)
 
 After modifications, the checksum should normally be corrected, but I just found out that the car doesn't care about it. If you tune your ECU live and forget to update the checksum, the next time you start the engine it will work anyway. So the checksum doesn't seem to be relevant for this ECU (it didn't even show a CEL code via OBD).
-
-## Immo off
-
-The project now includes **software-based immo off without a JULIE emulator**. It bypasses the ECU's EZS immobilizer verification.
-
-The [TunerPro patch](Patches/ME21_404_EZS_bypass_EXPERIMENTAL.xdf) is marked **experimental** and targets the exact stock **114.235404.04 (404)** binary only. Keep your original backup; this is not a universal patch for other ME2.1 software versions.
-
-## OBD dashboard for PC and Android
-
-Live engine monitoring on **PC and Android**, using compatible ELM327 adapters over Bluetooth. Reverse-engineering the Mercedes diagnostic protocol unlocks extra ECU readings beyond standard OBD.
-
-### Extra capabilities
-
-- **Knock control:** monitor ignition corrections and observed increases in real time.
-- **Per-cylinder knock retard:** see the individual correction for each of the four cylinders.
-- **Injection time and injector duty:** monitor estimated injection duration and duty cycle.
-- **Internal engine load:** read the value the ECU uses for its maps, on its full 0–255 scale.
-- **Live ECU RAM readings:** access internal values, including injection corrections.
-- **CSV logging:** save readings for later analysis in MegaLogViewer.
-- **Faster data collection:** grouped reads provide logging approximately **every 400 ms instead of every 2 seconds — around 5× faster** on the tested setup, over Bluetooth. Actual speed depends on the adapter and connection.
-
-The dashboard also shows RPM, temperatures, ignition advance and fuel trims. Both versions automatically switch between **English and Spanish** according to the device language.
-
-| PC | Android |
-| --- | --- |
-| ![PC dashboard in demo mode](Images/mercedes-obd-desktop.jpg) | ![Android dashboard in demo mode](Images/mercedes-obd-android.jpg) |
-| **[Download Windows EXE](OBD/MercedesDashboard.exe)** · [Python source](OBD/mercedes_dashboard.py) | **[Download Android APK](OBD/MercedesDashboard.apk)** · [Android source](OBD/android/) |
-
-**Tested adapters:** OBDLink, Veepeak and Renolink. Some cheap ELM327 clones lack the required commands and may not work.
-
-*Screenshots show demo mode. The counter tracks observed correction increases, not a validated knock-event count.*
 
 ## Further reading
 
