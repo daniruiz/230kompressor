@@ -1,0 +1,20 @@
+<!-- Written 10/25/2026 02:41:45 -->
+<XDFFORMAT version="1.80">
+  <XDFHEADER>
+    <flags>0x1</flags>
+    <fileversion>0.1-experi</fileversion>
+    <deftitle>Bosch ME2.1 114.235404.04 - EZS bypass EXPERIMENTAL</deftitle>
+    <description></description>
+    <author>Analisis del binario aportado por Daniel Ruiz de Alegria; Codex</author>
+    <BASEOFFSET offset="0" subtract="0" />
+    <DEFAULTS datasizeinbits="8" sigdigits="2" outputtype="1" signed="0" lsbfirst="1" float="0" />
+    <REGION type="0xFFFFFFFF" startaddress="0x0" size="0x40000" regioncolor="0x0" regionflags="0x0" name="Binary File" desc="Exact original 256 KiB 404 image" />
+  </XDFHEADER>
+  <XDFPATCH uniqueid="0x404">
+    <title>EZS verification bypass - EXPERIMENTAL / exact stock 404 only</title>
+    <XDFPATCHENTRY name="Timeout: clear authorization " address="0x1F4AA" datasize="0x4" patchdata="2E37FE7B" basedata="2F37FF7B" />
+    <XDFPATCHENTRY name="Skip EZS verification paths; " address="0x224A4" datasize="0x2A" patchdata="2E37FE7BCE05AF05BE051E37E112F7F2438D8A3702303F379F378E37AE37BE37CE37DE37EA006E26CC00" basedata="8A7B09108A370760DA00A204F2F02281F6F03A8D6F379A371030F78E8796E7F1AA00F7F188969A370220" />
+    <XDFPATCHENTRY name="Checksum block 7: unsigned LE" address="0x3FFCC" datasize="0x4" patchdata="E7A5F010" basedata="E9A5F010" />
+    <XDFPATCHENTRY name="Checksum block 8: unsigned LE" address="0x3FFD0" datasize="0x4" patchdata="BB1B5010" basedata="0E285410" />
+  </XDFPATCH>
+</XDFFORMAT>
