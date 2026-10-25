@@ -19,10 +19,12 @@ The project focuses on the Bosch ME2.1-equipped M111 Kompressor engines found in
 - Mercedes-Benz **CLK200 Kompressor / CLK230 Kompressor (W208).**
 - Mercedes-Benz **SLK200 Kompressor / SLK230 Kompressor (R170).**
 
+
+> [!IMPORTANT]
+> **Do not flash a different binary version on the ECU.**. It is possible to install a different binary version on your ECU, but the key can stop working for some versions.
+
 > [!IMPORTANT]
 > The supplied tuned binary `230k_ME21.BIN` is a reference calibration, not a universal file to flash. Start with a backup of your own ECU and transfer relevant changes using definitions that match its software.
->
-> It is possible to install a different binary version on your ECU without issues, but it might lack some functionalities.
 
 ## Downloads and repository contents
 
