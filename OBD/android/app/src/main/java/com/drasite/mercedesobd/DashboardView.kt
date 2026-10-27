@@ -723,7 +723,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         )
         drawText(
             canvas,
-            (if (temperaturesPage) tr("Desliza ←: panel principal · ", "Swipe ←: main dashboard · ") else tr("Desliza →: temperaturas · ", "Swipe →: temperatures · ")) +
+            (if (temperaturesPage) tr("Desliza →: panel principal · ", "Swipe →: main dashboard · ") else tr("Desliza ←: temperaturas · ", "Swipe ←: temperatures · ")) +
                 display.status.replace('\r', ' ').replace('\n', ' ').take(180),
             footerCenter,
             49f,
