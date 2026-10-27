@@ -1,0 +1,2 @@
+# Preserve the exact bytes produced by Python's CSV writer for the parity test.
+app/src/test/resources/pc_journal.csv -text

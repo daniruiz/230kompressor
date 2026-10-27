@@ -18,70 +18,14 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
     private val json: java.io.BufferedWriter
     private val csv: java.io.BufferedWriter
     private var flushed = 0L
-    private val fields =
-        listOf(
-            "utc",
-            "demo",
-            "rpm",
-            "load_raw",
-            "F746_raw",
-            "injection_ms_est",
-            "injector_duty_est_pct",
-            "duty_over_100_est",
-            "acquisition_ms",
-            "cycle_ms",
-            "observed_count",
-            "observed_event",
-            "coolant_C",
-            "iat_C",
-            "coolant_raw",
-            "iat_raw",
-            "pairs_raw",
-            "throttle_raw",
-            "throttle_pct",
-            "oxygen_raw",
-            "oxygen_voltage_V",
-            "oxygen_state",
-            "maf_raw",
-            "maf_g_s_est",
-            "maf_saturated",
-            "advance_raw",
-            "advance_deg",
-            "ecu_voltage_raw",
-            "ecu_voltage_V_est",
-            "ecu_voltage_scale_V_per_raw",
-            "ltft_low_raw",
-            "ltft_low_pct",
-            "ltft_high_raw",
-            "ltft_high_pct",
-            "ltft_stored_age_s",
-            "ltft_stored_status",
-        ) +
-            (1..4).flatMap { listOf("knock_channel_${it}_raw", "knock_channel_${it}_deg_est") } +
-            listOf("stft_a_raw", "stft_a_pct", "ltft_a_raw", "ltft_a_pct") +
-            listOf(
-                "injection_cycle_720_ms",
-                "injection_cycle_margin_ms_est",
-                "F8C6_calc_raw",
-                "injector_deadtime_ms_est",
-                "injection_before_deadtime_raw",
-                "injection_before_deadtime_ms_est",
-                "injector_deadtime_fraction_pct",
-                "injection_breakdown_status",
-                "injection_F746_saturated",
-                "ecu_software",
-                "ecu_identification_status",
-                "ltft_low_address",
-                "ltft_high_address",
-            )
 
     init {
         root.mkdirs()
         jsonFile = File(root, "me21_${stamp}_${System.nanoTime()}.jsonl")
         csvFile = File(root, jsonFile.nameWithoutExtension + ".csv")
         json = jsonFile.bufferedWriter()
-        csv = csvFile.bufferedWriter()
-        csv.appendLine(fields.joinToString(","))
+        csv = csvFile.bufferedWriter(Charsets.UTF_8)
+        csv.write(CsvLog.row(CsvLog.fields))
         event(
             "session",
             "demo" to demo,
@@ -113,7 +57,7 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
 
     @Synchronized
     override fun event(type: String, vararg values: Pair<String, Any?>) {
-        val row = JSONObject().put("utc", Instant.now().toString()).put("type", type)
+        val row = JSONObject().put("utc", CsvLog.utc()).put("type", type)
         for ((key, value) in values) row.put(
             key,
             if (value is Collection<*>) JSONArray(value) else value ?: JSONObject.NULL,
@@ -130,7 +74,7 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
     fun sample(s: Sample, d: Display, raised: Boolean) {
         val v =
             linkedMapOf<String, Any?>(
-                "utc" to Instant.now().toString(),
+                "utc" to CsvLog.utc(),
                 "demo" to demo,
                 "rpm" to s.rpm,
                 "load_raw" to s.load,
@@ -176,12 +120,7 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
             v["knock_channel_${i+1}_raw"] = n
             v["knock_channel_${i+1}_deg_est"] = n * .75
         }
-        csv.appendLine(
-            fields.joinToString(",") { key ->
-                val value = v[key]?.toString() ?: ""
-                "\"${value.replace("\"","\"\"")}\""
-            }
-        )
+        csv.write(CsvLog.row(CsvLog.fields.map { v[it] }))
         event("csv_sample", *v.map { it.key to it.value }.toTypedArray())
     }
 
