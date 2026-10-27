@@ -7,23 +7,15 @@ import java.util.Locale
 
 /** Wire format shared with the PC Journal's csv.DictWriter (excel dialect). */
 internal object CsvLog {
+    // Engine plots only; Journal keeps the full sample and diagnostics in JSONL.
+    // Load stays in ECU units because its physical scale is not verified.
     val fields = listOf(
-        "utc", "demo", "rpm", "load_raw", "F746_raw", "injection_ms_est",
-        "injector_duty_est_pct", "duty_over_100_est", "acquisition_ms", "cycle_ms",
-        "observed_count", "observed_event", "coolant_C", "iat_C", "coolant_raw", "iat_raw",
-        "pairs_raw", "throttle_raw", "throttle_pct", "oxygen_raw", "oxygen_voltage_V",
-        "oxygen_state", "maf_raw", "maf_g_s_est", "maf_saturated", "advance_raw", "advance_deg",
-        "ecu_voltage_raw", "ecu_voltage_V_est", "ecu_voltage_scale_V_per_raw",
-        "ltft_low_raw", "ltft_low_pct", "ltft_high_raw", "ltft_high_pct",
-        "ltft_stored_age_s", "ltft_stored_status",
-    ) + (1..4).flatMap { listOf("knock_channel_${it}_raw", "knock_channel_${it}_deg_est") } +
+        "Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s_est",
+        "injection_ms_est", "injector_duty_est_pct", "advance_deg",
+    ) + (1..4).map { "knock_channel_${it}_deg_est" } +
         listOf(
-            "stft_a_raw", "stft_a_pct", "ltft_a_raw", "ltft_a_pct",
-            "injection_cycle_720_ms", "injection_cycle_margin_ms_est", "F8C6_calc_raw",
-            "injector_deadtime_ms_est", "injection_before_deadtime_raw",
-            "injection_before_deadtime_ms_est", "injector_deadtime_fraction_pct",
-            "injection_breakdown_status", "injection_F746_saturated",
-            "ecu_software", "ecu_identification_status", "ltft_low_address", "ltft_high_address",
+            "stft_a_pct", "ltft_a_pct", "ltft_low_pct", "ltft_high_pct",
+            "coolant_C", "iat_C", "oxygen_voltage_V", "ecu_voltage_V_est",
         )
 
     private val utcSeconds = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss", Locale.ROOT)
@@ -34,6 +26,11 @@ internal object CsvLog {
         val micros = instant.nano / 1000
         val fraction = if (micros == 0) "" else "." + micros.toString().padStart(6, '0')
         return utcSeconds.format(instant) + fraction + "+00:00"
+    }
+
+    fun sampleRow(values: Map<String, Any?>, elapsedMillis: Long): String {
+        val seconds = String.format(Locale.ROOT, "%.3f", elapsedMillis / 1000.0)
+        return row(fields.map { if (it == "Time") seconds else values[it] })
     }
 
     fun row(values: Iterable<Any?>): String {

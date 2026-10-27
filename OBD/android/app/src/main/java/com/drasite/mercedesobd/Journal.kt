@@ -18,6 +18,7 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
     private val json: java.io.BufferedWriter
     private val csv: java.io.BufferedWriter
     private var flushed = 0L
+    private var csvStartedAt: Long? = null
 
     init {
         root.mkdirs()
@@ -120,7 +121,9 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
             v["knock_channel_${i+1}_raw"] = n
             v["knock_channel_${i+1}_deg_est"] = n * .75
         }
-        csv.write(CsvLog.row(CsvLog.fields.map { v[it] }))
+        // Sample.at uses the monotonic acquisition clock; each log starts at zero.
+        val start = csvStartedAt ?: s.at.also { csvStartedAt = it }
+        csv.write(CsvLog.sampleRow(v, s.at - start))
         event("csv_sample", *v.map { it.key to it.value }.toTypedArray())
     }
 

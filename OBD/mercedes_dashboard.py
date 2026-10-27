@@ -377,6 +377,7 @@ class Journal:
         self.path = None
         self.csv_path = None
         self.last_flush = 0.0
+        self.csv_started_at = None
         if enabled:
             root.mkdir(parents=True, exist_ok=True)
             self.path = root / dt.datetime.now().strftime('me21_%Y%m%d_%H%M%S_%f.jsonl')
@@ -387,22 +388,13 @@ class Journal:
             except OSError:
                 self.stream.close()
                 raise
-            self.csv_fields = ['utc','demo','rpm','load_raw','F746_raw','injection_ms_est',
-                'injector_duty_est_pct','duty_over_100_est','acquisition_ms','cycle_ms','observed_count','observed_event',
-                'coolant_C','iat_C','coolant_raw','iat_raw','pairs_raw',
-                'throttle_raw','throttle_pct','oxygen_raw','oxygen_voltage_V','oxygen_state',
-                'maf_raw','maf_g_s_est','maf_saturated','advance_raw','advance_deg',
-                'ecu_voltage_raw','ecu_voltage_V_est','ecu_voltage_scale_V_per_raw',
-                'ltft_low_raw','ltft_low_pct','ltft_high_raw','ltft_high_pct',
-                'ltft_stored_age_s','ltft_stored_status']
-            self.csv_fields += [f'knock_channel_{i}_{unit}' for i in range(1,5) for unit in ('raw','deg_est')]
-            self.csv_fields += [f'{name}_{unit}' for name in ('stft_a','ltft_a') for unit in ('raw','pct')]
-            self.csv_fields += ['injection_cycle_720_ms','injection_cycle_margin_ms_est',
-                'F8C6_calc_raw','injector_deadtime_ms_est','injection_before_deadtime_raw',
-                'injection_before_deadtime_ms_est','injector_deadtime_fraction_pct',
-                'injection_breakdown_status','injection_F746_saturated']
-            self.csv_fields += ['ecu_software','ecu_identification_status',
-                                'ltft_low_address','ltft_high_address']
+            # Engine plots only; JSONL retains the complete sample and diagnostics.
+            # Load stays in ECU units because its physical scale is not verified.
+            self.csv_fields = ['Time','utc','rpm','load_raw','throttle_pct','maf_g_s_est',
+                'injection_ms_est','injector_duty_est_pct','advance_deg']
+            self.csv_fields += [f'knock_channel_{i}_deg_est' for i in range(1,5)]
+            self.csv_fields += ['stft_a_pct','ltft_a_pct','ltft_low_pct','ltft_high_pct',
+                                'coolant_C','iat_C','oxygen_voltage_V','ecu_voltage_V_est']
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
@@ -442,14 +434,20 @@ class Journal:
                           ecu_identification_status=model.ecu_identification_status,
                           ltft_low_address=f'0x{profile.ltft_low_address:04X}' if profile else None,
                           ltft_high_address=f'0x{profile.ltft_high_address:04X}' if profile else None)
-        self.write('csv_sample', **values)
+        self.write('csv_sample', csv_sample_at=sample.at, **values)
 
-    def write(self, kind, **values):
+    def write(self, kind, *, csv_sample_at=None, **values):
         if self.stream:
             row = {'utc': dt.datetime.now(dt.timezone.utc).isoformat(), 'type': kind, **values}
             self.stream.write(json.dumps(row, ensure_ascii=False) + '\n')
             if kind == 'csv_sample':
-                self.csv_writer.writerow({k:row.get(k,'') for k in self.csv_fields})
+                # Use acquisition time, independent of wall-clock changes or disk delays.
+                at = time.monotonic() if csv_sample_at is None else csv_sample_at
+                if self.csv_started_at is None:
+                    self.csv_started_at = at
+                csv_row = {k:row.get(k,'') for k in self.csv_fields}
+                csv_row['Time'] = f'{at-self.csv_started_at:.3f}'
+                self.csv_writer.writerow(csv_row)
             now = time.monotonic()
             if now - self.last_flush >= 1:
                 self.stream.flush()
