@@ -567,7 +567,7 @@ class CorrectionsMenu:
                 table.add_row(tr('Corrección aditiva', 'Additive correction'),
                               f'~{self.result.additive_signed * self.tick_us / 1000:+.3f} ms')
                 table.add_row(tr('Aditiva · unidades ECU', 'Additive · ECU units'), f'{self.result.additive_signed:+d}')
-                body.extend([table, '', Text(tr('Tiempo de la aditiva estimado.', 'Additive duration is estimated.'), style=MUTED)])
+                body.extend([table, ''])
             body.extend(['', Text(self.message, style=RED if self.error else CYAN if self.busy else MUTED)])
             content['body'].update(Group(*body))
             actions = Table.grid(expand=True)
@@ -1723,8 +1723,8 @@ def render(model, args, width=110, height=44, now=None):
         bg = '#811c31' if red else BG
         layout = Layout()
         # Keep the menu shortcuts visible at the supported minimum height.
-        layout.split_column(Layout(name='metrics', size=min(14, max(10, height - 19))),
-                            Layout(name='lower', ratio=1, minimum_size=15),
+        layout.split_column(Layout(name='metrics', size=13),
+                            Layout(name='lower', ratio=1, minimum_size=13),
                             Layout(name='foot', size=4))
         layout['lower'].split_row(Layout(name='knock', ratio=2), Layout(name='extras', ratio=1))
         if width < MIN_WIDTH or height < MIN_HEIGHT:
