@@ -60,10 +60,16 @@ try:
     from rich.layout import Layout
     from rich.live import Live
     from rich.panel import Panel
+    from rich.rule import Rule
     from rich.table import Table
     from rich.text import Text
 except ImportError:
     raise SystemExit(tr('Instala la interfaz: python3 -m pip install rich', 'Install the interface: python3 -m pip install rich'))
+
+if __package__:
+    from .dashboard_dialog import DashboardDialog
+else:
+    from dashboard_dialog import DashboardDialog
 
 MIN_WIDTH = 78
 MIN_HEIGHT = 29
@@ -250,6 +256,13 @@ class FaultMenu:
         self.confirm = False
         self.demo = demo
         self.offset = 0
+        self.scroll_limit = 0
+        self.page_size = 1
+        self.focus = 0
+        self.confirm_focus = 0
+        self.faults = None
+        self.result_status = 'idle'
+        self.updated_at = None
         self.message = tr('Pulsa 1 para leer los errores.', 'Press 1 to read faults.')
         self.demo_faults = [dict(code='P0300', status=0, raw='DEMO')]
 
@@ -260,30 +273,49 @@ class FaultMenu:
         if key == 'e':
             self.open = not self.open
             self.confirm = False
+            self.focus = 0
         elif self.open and key in ('\x1b', '0'):
-            self.open = False
+            if not self.confirm or key == '0':
+                self.open = False
             self.confirm = False
-        elif self.open and not self.busy:
+        elif self.open:
             if self.confirm:
-                self.confirm = False
-                if key in ('s', 'y'):
-                    self.request(True)
-            elif key == '1':
-                self.request(False)
-            elif key == '2':
-                self.confirm = True
-            elif key == 'j':
-                self.offset = min(self.offset + 1, max(0, len(self.message.splitlines()) - 1))
-            elif key == 'k':
-                self.offset = max(0, self.offset - 1)
+                if key in ('\t', 'left', 'right'):
+                    self.confirm_focus = 1 - self.confirm_focus
+                elif key in ('n', 's', 'y', '\r', '\n'):
+                    clear = key in ('s', 'y') or (key in ('\r', '\n') and self.confirm_focus == 1)
+                    self.confirm = False
+                    if clear:
+                        self.request(True)
+                return
+            if key in ('\t', 'left', 'right'):
+                self.focus = (self.focus + (-1 if key == 'left' else 1)) % 3
+            elif key in ('\r', '\n'):
+                self.key(('1', '2', '0')[self.focus])
+            elif not self.busy:
+                if key == '1':
+                    self.request(False)
+                elif key == '2':
+                    if self.ready:
+                        self.confirm = True
+                        self.confirm_focus = 0  # Enter alone always cancels a new confirmation.
+                    else:
+                        self.result_status = 'waiting'
+                        self.message = tr('Espera a recibir datos de la ECU.', 'Wait for live ECU data.')
+                elif key in ('j', 'down', 'pagedown'):
+                    self.offset = min(self.offset + (self.page_size if key == 'pagedown' else 1), self.scroll_limit)
+                elif key in ('k', 'up', 'pageup'):
+                    self.offset = max(0, self.offset - (self.page_size if key == 'pageup' else 1))
 
     def request(self, clear):
         if not self.ready:
+            self.result_status = 'waiting'
             self.message = tr('Espera a recibir datos de la ECU.', 'Wait for live ECU data.')
             return
         self.busy = True
         self.offset = 0
-        self.message = tr('Consultando averías…', 'Processing fault request…')
+        self.result_status = 'clearing' if clear else 'reading'
+        self.message = tr('Borrando errores…', 'Clearing faults…') if clear else tr('Leyendo memoria de averías…', 'Reading fault memory…')
         self.requests.put_nowait(clear)
 
     def service(self, elm, journal):
@@ -303,24 +335,103 @@ class FaultMenu:
             else:
                 faults = elm.read_faults()
             if clear:
+                self.faults = None
                 self.message = tr('La ECU ha aceptado el borrado. Pulsa 1 para comprobar si quedan errores.',
                                   'The ECU accepted the clear request. Press 1 to check for remaining faults.')
+                self.result_status = 'cleared'
             else:
+                self.faults = list(faults)
                 self.message = '\n'.join(f'{f["code"]} · {tr("estado", "status")} {f["status"]:02X}' for f in faults) or tr('No hay errores almacenados', 'No stored faults')
+                self.result_status = 'read'
+            self.updated_at = dt.datetime.now().strftime('%H:%M:%S')
         except Exception as exc:
             self.message = str(exc)
+            self.result_status = 'error'
             if isinstance(exc, (LinkTimeout, InterruptedError)):
                 raise
         finally:
             self.busy = False
 
-    def render(self, height=29):
-        message = '\n'.join(self.message.splitlines()[self.offset:self.offset + max(1, height - 7)])
+    def preferred_height(self):
         if self.confirm:
-            message = tr('Se borrarán los errores y sus datos de diagnóstico.\nMotor parado y contacto puesto.\n¿Continuar? S / N',
-                         'Faults and their diagnostic data will be erased.\nEngine stopped, ignition on.\nContinue? Y / N')
-        return Panel(Text(message + '\n\n' + tr('1 Leer · 2 Borrar · J/K Desplazar · 0 Volver', '1 Read · 2 Clear · J/K Scroll · 0 Back')),
-                     title=tr('Errores de la ECU', 'ECU fault codes') + (' · DEMO' if self.demo else ''), border_style=CYAN)
+            return 17
+        if self.result_status == 'error':
+            return 21
+        return max(17, min(21, 14 + len(self.faults or []))) if self.result_status == 'read' else 17
+
+    def render(self, console, width=74, height=21):
+        background = '#0e1b2b'
+        color = RED if self.confirm else CYAN
+        content = Layout()
+        content.split_column(Layout(name='header', size=3), Layout(name='body', ratio=1), Layout(name='actions', size=3))
+        header = Table.grid(expand=True)
+        header.add_column(ratio=1)
+        header.add_column(justify='right')
+        connection = tr('DEMO · datos simulados', 'DEMO · simulated data') if self.demo else tr('ECU conectada', 'ECU connected') if self.ready else tr('Sin conexión', 'Not connected')
+        header.add_row(Text('● ' + connection, style=AMBER if self.demo or not self.ready else GREEN),
+                       Text(self.updated_at or '', style=MUTED))
+        content['header'].update(Group(header, Rule(style='#29405b')))
+        body_height = max(1, height - 10)  # Borders, padding, header and actions.
+        if self.confirm:
+            body = Group(
+                Text(tr('¿Borrar todos los errores?', 'Clear all stored faults?'), style=f'bold {RED}'),
+                '',
+                Text(tr('Se eliminarán también sus datos de diagnóstico.', 'Their diagnostic data will also be erased.'), style='white'),
+                '',
+                Text(tr('Motor parado y contacto puesto.', 'Engine stopped, ignition on.'), style=f'bold {AMBER}'),
+            )
+            buttons = [(tr('[N] Cancelar', '[N] Cancel'), CYAN, True),
+                       (tr('[S] Borrar', '[Y] Clear'), RED, True)]
+            focus = self.confirm_focus
+            help_text = tr('Tab / ← → Elegir · Enter Aceptar · Esc Cancelar', 'Tab / ← → Select · Enter Accept · Esc Cancel')
+        else:
+            if self.result_status == 'read' and self.faults:
+                self.page_size = max(1, body_height - 4)
+                self.scroll_limit = max(0, len(self.faults) - self.page_size)
+                self.offset = min(self.offset, self.scroll_limit)
+                shown = self.faults[self.offset:self.offset + self.page_size]
+                table = Table(box=box.SIMPLE_HEAD, expand=True, padding=(0, 1), show_edge=False,
+                              header_style=MUTED, row_styles=[f'on {background}', 'on #15263a'])
+                table.add_column(tr('Código', 'Code'), style=f'bold {AMBER}', ratio=1)
+                table.add_column(tr('Estado ECU (hex)', 'ECU status (hex)'), justify='right', style='white', ratio=1)
+                for fault in shown:
+                    table.add_row(fault['code'], f'0x{fault["status"]:02X}')
+                count_label = tr('1 error almacenado', '1 stored fault') if len(self.faults) == 1 else tr(f'{len(self.faults)} errores almacenados', f'{len(self.faults)} stored faults')
+                body = Group(Text(count_label, style='bold white'), table,
+                             Text(tr(f'{self.offset + 1}–{self.offset + len(shown)} de {len(self.faults)}',
+                                     f'{self.offset + 1}–{self.offset + len(shown)} of {len(self.faults)}'), style=MUTED, justify='right'))
+            else:
+                labels = {
+                    'idle': (tr('Memoria de averías', 'Fault memory'), CYAN),
+                    'waiting': (tr('Esperando conexión', 'Waiting for connection'), AMBER),
+                    'reading': (tr('Lectura en curso', 'Reading faults'), CYAN),
+                    'clearing': (tr('Borrado en curso', 'Clearing faults'), AMBER),
+                    'read': (tr('Sin errores almacenados', 'No stored faults'), GREEN),
+                    'cleared': (tr('Borrado aceptado', 'Clear request accepted'), GREEN),
+                    'error': (tr('No se pudo completar la operación', 'Could not complete the operation'), RED),
+                }
+                title, tone = labels[self.result_status]
+                message = self.message if self.result_status != 'read' else tr('La ECU no ha devuelto códigos de error.', 'The ECU returned no fault codes.')
+                lines = Text(message, style=MUTED).wrap(console, max(1, width - 6))
+                self.page_size = max(1, body_height - 2)
+                self.scroll_limit = max(0, len(lines) - self.page_size)
+                self.offset = min(self.offset, self.scroll_limit)
+                body = Group(Text(title, style=f'bold {tone}'), '', *lines[self.offset:self.offset + self.page_size])
+            buttons = [(tr('[1] Leer', '[1] Read'), CYAN, self.ready and not self.busy),
+                       (tr('[2] Borrar', '[2] Clear'), RED, self.ready and not self.busy),
+                       (tr('[Esc] Cerrar', '[Esc] Close'), MUTED, True)]
+            focus = self.focus
+            help_text = tr('Tab / ← → Elegir · Enter Aceptar · ↑ ↓ / J K Desplazar',
+                           'Tab / ← → Select · Enter Accept · ↑ ↓ / J K Scroll')
+        content['body'].update(body)
+        actions = Table.grid(expand=True)
+        for _ in buttons:
+            actions.add_column(ratio=1, justify='center')
+        actions.add_row(*[Text(' ' + label + ' ', style=(f'bold #071019 on {tone}' if i == focus and enabled
+                            else f'{tone if enabled else "#53657c"} on #1a2b40')) for i, (label, tone, enabled) in enumerate(buttons)])
+        content['actions'].update(Group(Rule(style='#29405b'), actions, Text(help_text, style=MUTED, justify='center', no_wrap=True, overflow='ellipsis')))
+        return Panel(content, title=Text(tr(' ERRORES DE LA ECU ', ' ECU FAULT CODES '), style=f'bold {color}'),
+                     box=box.ROUNDED, border_style=color, style=f'white on {background}', padding=(1, 2), width=width, height=height)
 
 
 @contextmanager
@@ -337,8 +448,7 @@ def keyboard_reader():
             if key == '\x03':
                 raise KeyboardInterrupt
             if key in ('\x00', '\xe0'):
-                msvcrt.getwch()
-                return ''
+                return {'H': 'up', 'P': 'down', 'K': 'left', 'M': 'right', 'I': 'pageup', 'Q': 'pagedown'}.get(msvcrt.getwch(), '')
             return key
         yield read
     else:
@@ -349,7 +459,19 @@ def keyboard_reader():
         settings = termios.tcgetattr(fd)
         try:
             tty.setcbreak(fd)
-            yield lambda: sys.stdin.read(1) if select.select([sys.stdin], [], [], 0)[0] else ''
+            def read():
+                if not select.select([sys.stdin], [], [], 0)[0]:
+                    return ''
+                key = os.read(fd, 1).decode('ascii', errors='ignore')
+                if key != '\x1b':
+                    return key
+                sequence = ''
+                while len(sequence) < 5 and select.select([sys.stdin], [], [], 0.02)[0]:
+                    sequence += os.read(fd, 1).decode('ascii', errors='ignore')
+                    if sequence[-1:] in 'ABCD~':
+                        break
+                return {'[A': 'up', '[B': 'down', '[C': 'right', '[D': 'left', '[5~': 'pageup', '[6~': 'pagedown'}.get(sequence, '\x1b')
+            yield read
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, settings)
 
@@ -1706,7 +1828,8 @@ def main(argv=None):
         with keyboard_reader() as read_key, Live(console=console,screen=True,auto_refresh=False,vertical_overflow='crop') as live:
             while not args.seconds or time.monotonic()-started < args.seconds:
                 faults.key(read_key())
-                live.update(faults.render(console.height) if faults.open else render(model,args,console.width,console.height),refresh=True)
+                dashboard = render(model,args,console.width,console.height)
+                live.update(DashboardDialog(dashboard, faults) if faults.open else dashboard, refresh=True)
                 if model.fatal:
                     stop.wait(1)
                     break
