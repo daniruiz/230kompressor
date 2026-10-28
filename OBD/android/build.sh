@@ -9,7 +9,7 @@ sdk_tools_version=11076708
 
 if command -v pacman > /dev/null; then
   sudo pacman -S --noconfirm jdk21-openjdk curl unzip
-elif command -v apt-get; then
+elif command -v apt-get > /dev/null; then
   sudo apt-get update
   sudo apt-get install -y openjdk-21-jdk-headless ca-certificates curl unzip
 else
