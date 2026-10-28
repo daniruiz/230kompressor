@@ -526,7 +526,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawText(
             canvas,
             if (valid) formatValue(tr("Retardo %.2f°", "Retard %.2f°"), sample!!.retard) else tr("Retardo —", "Retard —"),
-            if (compact) center else 340f,
+            center,
             valueY,
             if (compact) 23f else 27f,
             purple,
