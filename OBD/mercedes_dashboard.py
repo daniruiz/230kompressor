@@ -1730,13 +1730,11 @@ def render(model, args, width=110, height=44, now=None):
                                                     vertical='middle'),
             title=Text(tr('AVANCE DE ENCENDIDO', 'IGNITION ADVANCE'), style=f'bold {CYAN}'), border_style=CYAN,
             box=box.ROUNDED, style=f'on {bg}', padding=(0,1)))
-        hz = ((len(model.times)-1)/(model.times[-1]-model.times[0])) if len(model.times)>1 and model.times[-1]>model.times[0] else 0
-        interval = tr(f'{s.interval_ms:.0f} ms/ciclo', f'{s.interval_ms:.0f} ms/cycle') if s and s.interval_ms is not None else tr('primer ciclo', 'first cycle')
-        perf = tr(f'{hz:.1f} Hz · {interval} · adquisición {s.duration_ms:.0f} ms', f'{hz:.1f} Hz · {interval} · acquisition {s.duration_ms:.0f} ms') if s else tr('Esperando primera muestra', 'Waiting for first sample')
-        if s:
-            perf += tr(f'  ·  edad {age:.1f} s', f'  ·  age {age:.1f} s')
-        footer = Text(perf + tr(f'  ·  errores {model.errors}  ·  ', f'  ·  errors {model.errors}  ·  '), style=MUTED,
-                      no_wrap=True, overflow='ellipsis')
+        # Full sample-to-sample cycle includes adapter waits and auxiliary reads.
+        # The first sample only has its own acquisition duration available.
+        cycle_ms = (s.interval_ms if s.interval_ms is not None else s.duration_ms) if s else None
+        perf = tr(f'{cycle_ms:.0f} ms/ciclo', f'{cycle_ms:.0f} ms/cycle') if cycle_ms is not None else tr('— ms/ciclo', '— ms/cycle')
+        footer = Text(perf + '  ·  ', style=MUTED, no_wrap=True, overflow='ellipsis')
         footer.append('E', style=f'bold {SHORTCUT_GREEN}')
         footer.append(tr(': averías  ·  ', ': faults  ·  '))
         footer.append('Ctrl+C', style=f'bold {SHORTCUT_GREEN}')
