@@ -99,7 +99,6 @@ MUTED = '#9aaec8'
 CYAN = '#57d8ed'
 RED = '#ff2222'
 GREEN = '#45edcb'
-SHORTCUT_GREEN = '#70ed8d'
 AMBER = '#ffd27a'
 MAGENTA = '#8738fc'
 
@@ -110,13 +109,6 @@ PEAK_COLORS = {
     GREEN: '#02d7fa',
     RED: '#ff7540',
 }
-
-
-def shortcut_text(value, style=MUTED, **kwargs):
-    text = Text(value, style=style, **kwargs)
-    text.highlight_regex(r'\[[^\]]+\]|\b(?:Tab|Enter|Esc|Ctrl\+C)\b|[←→↑↓]|\b[JK]\b|(?<=Pulsa )1|(?<=Press )1',
-                         style=f'bold {SHORTCUT_GREEN}')
-    return text
 
 
 class DiagnosticError(RuntimeError):
@@ -420,7 +412,7 @@ class FaultMenu:
                 }
                 title, tone = labels[self.result_status]
                 message = self.message if self.result_status != 'read' else tr('La ECU no ha devuelto códigos de error.', 'The ECU returned no fault codes.')
-                lines = shortcut_text(message).wrap(console, max(1, width - 6))
+                lines = Text(message).wrap(console, max(1, width - 6))
                 self.page_size = max(1, body_height - 2)
                 self.scroll_limit = max(0, len(lines) - self.page_size)
                 self.offset = min(self.offset, self.scroll_limit)
@@ -435,9 +427,9 @@ class FaultMenu:
         actions = Table.grid(expand=True)
         for _ in buttons:
             actions.add_column(ratio=1, justify='center')
-        actions.add_row(*[shortcut_text(' ' + label + ' ', style=(f'bold {tone} on #24414a' if i == focus and enabled
+        actions.add_row(*[Text(' ' + label + ' ', style=(f'bold {tone} on #24414a' if i == focus and enabled
                             else f'{tone if enabled else "dim #53657c"} on #1a2b40')) for i, (label, tone, enabled) in enumerate(buttons)])
-        content['actions'].update(Group(Rule(style='#29405b'), actions, shortcut_text(help_text, justify='center', no_wrap=True, overflow='ellipsis')))
+        content['actions'].update(Group(Rule(style='#29405b'), actions, Text(help_text, justify='center', no_wrap=True, overflow='ellipsis')))
         return Panel(content, title=Text(tr(' ERRORES DE LA ECU ', ' ECU FAULT CODES '), style=f'bold {color}'),
                      box=box.ROUNDED, border_style=color, style=f'white on {background}', padding=(1, 2), width=width, height=height)
 
@@ -1735,9 +1727,9 @@ def render(model, args, width=110, height=44, now=None):
         cycle_ms = (s.interval_ms if s.interval_ms is not None else s.duration_ms) if s else None
         perf = tr(f'{cycle_ms:.0f} ms/ciclo', f'{cycle_ms:.0f} ms/cycle') if cycle_ms is not None else tr('— ms/ciclo', '— ms/cycle')
         footer = Text(perf + '  ·  ', style=MUTED, no_wrap=True, overflow='ellipsis')
-        footer.append('E', style=f'bold {SHORTCUT_GREEN}')
+        footer.append('E', style=f'bold {GREEN}')
         footer.append(tr(': averías  ·  ', ': faults  ·  '))
-        footer.append('Ctrl+C', style=f'bold {SHORTCUT_GREEN}')
+        footer.append('Ctrl+C', style=f'bold {GREEN}')
         footer.append(tr(' salir', ' exit'))
         mode_label = tr('DEMO · SIN COCHE', 'DEMO · NO CAR') if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
         voltage = ecu_voltage_est(s.voltage_raw, args.voltage_scale) if shown else None
