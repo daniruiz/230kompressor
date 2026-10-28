@@ -23,10 +23,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.PopupMenu
-import android.text.format.Formatter
 import java.io.File
-import java.text.DateFormat
-import java.util.Date
 
 class MainActivity : Activity() {
     private companion object {
@@ -149,6 +146,7 @@ class MainActivity : Activity() {
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
 
     private var faultDialog: Dialog? = null
+    private var logsDialog: Dialog? = null
 
     private fun faultsMenu() {
         if (faultDialog?.isShowing == true) return
@@ -354,54 +352,12 @@ class MainActivity : Activity() {
     }
 
     private fun logsMenu() {
-        if (!logsAvailable()) return
-        val files = logFiles.list()
-        if (files.isEmpty()) {
-            AlertDialog.Builder(this).setTitle(tr("Registros", "Logs"))
-                .setMessage(tr("Todavía no hay registros", "No logs yet"))
-                .setPositiveButton(tr("Cerrar", "Close"), null).show()
-            return
-        }
-        val selected = BooleanArray(files.size)
-        val dates = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-        val labels = files.map { "${it.name}\n${dates.format(Date(it.lastModified()))} · ${Formatter.formatFileSize(this, it.length())}" }.toTypedArray()
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(tr("Registros · selecciona archivos", "Logs · select files"))
-            .setMultiChoiceItems(labels, selected) { _, i, checked -> selected[i] = checked }
-            .setPositiveButton(tr("Acciones", "Actions"), null)
-            .setNeutralButton(tr("Todos", "All"), null)
-            .setNegativeButton(tr("Cerrar", "Close"), null).create()
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                val check = !selected.all { it }
-                selected.indices.forEach { selected[it] = check; dialog.listView.setItemChecked(it, check) }
-            }
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val names = files.filterIndexed { i, _ -> selected[i] }.map { it.name }
-                if (names.isNotEmpty()) {
-                    dialog.dismiss()
-                    logActions(names)
-                }
-            }
-        }
-        dialog.show()
-    }
-
-    private fun logActions(names: List<String>) {
-        AlertDialog.Builder(this)
-            .setTitle(tr("${names.size} archivo(s)", "${names.size} file(s)"))
-            .setItems(arrayOf(tr("Exportar", "Export"), tr("Compartir", "Share"), tr("Borrar…", "Delete…"))) { _, action ->
-                when (action) {
-                    0 -> prepareLogs(names, false)
-                    1 -> prepareLogs(names, true)
-                    else -> AlertDialog.Builder(this)
-                        .setTitle(tr("¿Borrar ${names.size} archivo(s)?", "Delete ${names.size} file(s)?"))
-                        .setMessage(names.joinToString("\n"))
-                        .setPositiveButton(tr("Borrar", "Delete")) { _, _ -> deleteLogs(names) }
-                        .setNegativeButton(tr("Cancelar", "Cancel"), null).show()
-                }
-            }
-            .setNegativeButton(tr("Volver", "Back")) { _, _ -> logsMenu() }.show()
+        if (!logsAvailable() || logsDialog?.isShowing == true) return
+        logsDialog = LogsDialog(this, logFiles.list(),
+            export = { prepareLogs(it, false) },
+            share = { prepareLogs(it, true) },
+            delete = ::deleteLogs,
+        ).show()
     }
 
     private fun deleteLogs(names: List<String>) {
@@ -524,6 +480,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         faultDialog?.dismiss()
+        logsDialog?.dismiss()
         session.stop()
         cancelSound()
         handler.removeCallbacksAndMessages(null)
