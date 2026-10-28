@@ -147,6 +147,7 @@ Live engine monitoring on **PC and Android**, using compatible ELM327 adapters o
 - **Internal engine load:** read the value the ECU uses for its maps, on its full 0–255 scale.
 - **Live ECU RAM readings:** access internal values, including injection corrections.
 - **CSV logging:** save readings for later analysis in MegaLogViewer.
+- **ECU fault codes:** read and clear stored faults from the menu (press **E** on PC). Clearing requires confirmation and a stopped engine with the ignition on.
 - **Faster data collection:** grouped reads provide logging approximately **every 400 ms instead of every 2 seconds — around 5× faster** on the tested setup, over Bluetooth. Actual speed depends on the adapter and connection.
 
 The dashboard also shows RPM, temperatures, ignition advance and fuel trims. Both versions automatically switch between **English and Spanish** according to the device language.

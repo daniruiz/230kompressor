@@ -45,6 +45,7 @@ import statistics
 import sys
 import threading
 import time
+from contextlib import contextmanager
 
 if __package__:
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
@@ -209,6 +210,148 @@ def positive(reply: str, service: int, prefix: bytes, length: int) -> bytes:
     if negative:
         raise NegativeResponse(service, negative[0][2])
     raise DiagnosticError(tr('Respuesta inválida o incompleta: ', 'Invalid or incomplete response: ') + repr(reply[:160]))
+
+
+def decode_faults(reply):
+    """SW404 03B37C..03B448: A1 returns 58-byte E1 records, then E1 FF FF count."""
+    faults, complete = [], False
+    for line in reply.replace('>', ' ').replace('\r', '\n').splitlines():
+        text = re.sub(r'\s+', '', line).upper()
+        if not text:
+            continue
+        if not re.fullmatch(r'(?:[0-9A-F]{2})+', text):
+            raise DiagnosticError(tr('Respuesta de averías inválida: ', 'Invalid fault response: ') + text)
+        f = bytes.fromhex(text)
+        if len(f) == 3 and f[:2] == b'\x7f\xa1':
+            raise NegativeResponse(0xa1, f[2])
+        if complete or f[0] != 0xe1:
+            raise DiagnosticError(tr('Secuencia de averías inválida', 'Invalid fault sequence'))
+        if len(f) == 4 and f[1:3] == b'\xff\xff':
+            if f[3] != len(faults):
+                raise DiagnosticError(tr('Lectura de averías incompleta', 'Incomplete fault read'))
+            complete = True
+        else:
+            if len(f) != 58 or len(faults) >= 255:
+                raise DiagnosticError(tr('Registro de avería incompleto', 'Incomplete fault record'))
+            code = f'{"PCBU"[f[1] >> 6]}{(f[1] >> 4) & 3:X}{f[1] & 15:X}{f[2]:02X}'
+            faults.append(dict(code=code, status=f[3], raw=text))
+    if not complete:
+        raise DiagnosticError(tr('Falta el final de la lista de averías', 'Missing end of fault list'))
+    return faults
+
+
+class FaultMenu:
+    """The acquisition thread alone owns the adapter; the UI queues requests."""
+    def __init__(self, demo=False):
+        self.requests = queue.Queue(maxsize=1)
+        self.ready = False
+        self.busy = False
+        self.open = False
+        self.confirm = False
+        self.demo = demo
+        self.offset = 0
+        self.message = tr('Pulsa 1 para leer los errores.', 'Press 1 to read faults.')
+        self.demo_faults = [dict(code='P0300', status=0, raw='DEMO')]
+
+    def key(self, key):
+        if not key:
+            return
+        key = key.lower()
+        if key == 'e':
+            self.open = not self.open
+            self.confirm = False
+        elif self.open and key in ('\x1b', '0'):
+            self.open = False
+            self.confirm = False
+        elif self.open and not self.busy:
+            if self.confirm:
+                self.confirm = False
+                if key in ('s', 'y'):
+                    self.request(True)
+            elif key == '1':
+                self.request(False)
+            elif key == '2':
+                self.confirm = True
+            elif key == 'j':
+                self.offset = min(self.offset + 1, max(0, len(self.message.splitlines()) - 1))
+            elif key == 'k':
+                self.offset = max(0, self.offset - 1)
+
+    def request(self, clear):
+        if not self.ready:
+            self.message = tr('Espera a recibir datos de la ECU.', 'Wait for live ECU data.')
+            return
+        self.busy = True
+        self.offset = 0
+        self.message = tr('Consultando averías…', 'Processing fault request…')
+        self.requests.put_nowait(clear)
+
+    def service(self, elm, journal):
+        try:
+            clear = self.requests.get_nowait()
+        except queue.Empty:
+            return
+        try:
+            if elm is None:
+                if clear:
+                    self.demo_faults.clear()
+                faults = self.demo_faults
+                journal.write('dtc_demo', clear=clear)
+            elif clear:
+                elm.clear_faults()
+                faults = []
+            else:
+                faults = elm.read_faults()
+            if clear:
+                self.message = tr('La ECU ha aceptado el borrado. Pulsa 1 para comprobar si quedan errores.',
+                                  'The ECU accepted the clear request. Press 1 to check for remaining faults.')
+            else:
+                self.message = '\n'.join(f'{f["code"]} · {tr("estado", "status")} {f["status"]:02X}' for f in faults) or tr('No hay errores almacenados', 'No stored faults')
+        except Exception as exc:
+            self.message = str(exc)
+            if isinstance(exc, (LinkTimeout, InterruptedError)):
+                raise
+        finally:
+            self.busy = False
+
+    def render(self, height=29):
+        message = '\n'.join(self.message.splitlines()[self.offset:self.offset + max(1, height - 7)])
+        if self.confirm:
+            message = tr('Se borrarán los errores y sus datos de diagnóstico.\nMotor parado y contacto puesto.\n¿Continuar? S / N',
+                         'Faults and their diagnostic data will be erased.\nEngine stopped, ignition on.\nContinue? Y / N')
+        return Panel(Text(message + '\n\n' + tr('1 Leer · 2 Borrar · J/K Desplazar · 0 Volver', '1 Read · 2 Clear · J/K Scroll · 0 Back')),
+                     title=tr('Errores de la ECU', 'ECU fault codes') + (' · DEMO' if self.demo else ''), border_style=CYAN)
+
+
+@contextmanager
+def keyboard_reader():
+    """Nonblocking keys, with POSIX terminal state restored on every exit."""
+    if not sys.stdin.isatty():
+        yield lambda: ''
+    elif sys.platform == 'win32':
+        import msvcrt
+        def read():
+            if not msvcrt.kbhit():
+                return ''
+            key = msvcrt.getwch()
+            if key == '\x03':
+                raise KeyboardInterrupt
+            if key in ('\x00', '\xe0'):
+                msvcrt.getwch()
+                return ''
+            return key
+        yield read
+    else:
+        import select
+        import termios
+        import tty
+        fd = sys.stdin.fileno()
+        settings = termios.tcgetattr(fd)
+        try:
+            tty.setcbreak(fd)
+            yield lambda: sys.stdin.read(1) if select.select([sys.stdin], [], [], 0)[0] else ''
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, settings)
 
 
 def definition(slot: int, ident: int, clear: bool = False) -> str:
@@ -595,6 +738,23 @@ class ELM:
             self.journal.write('recovery_complete', fast=self.fast,
                                adaptive=self.adaptive, repeat=self.repeat)
         return reply
+
+    def read_faults(self):
+        self.restore_transport('DTC')
+        # All frames, no response-count suffix and no repeat-by-CR.
+        faults = decode_faults(self.command('A1', timeout=30, allow_repeat=False))
+        self.journal.write('dtc_read', codes=[f['code'] for f in faults], records=[f['raw'] for f in faults])
+        return faults
+
+    def clear_faults(self):
+        self.restore_transport('DTC')
+        rpm_frame = positive(self.query('221104', optimized=False, allow_repeat=False), 0x22, b'\x62\x11\x04', 5)
+        if int.from_bytes(rpm_frame[3:], 'little') != 0:
+            raise DiagnosticError(tr('Para borrar averías, apaga el motor y deja el contacto puesto',
+                                     'To clear faults, stop the engine and leave the ignition on'))
+        # SW404 03AB02: bare 14 -> 54, sent exactly once.
+        positive(self.command('14', allow_repeat=False), 0x14, b'\x54', 1)
+        self.journal.write('dtc_clear', acknowledged=True)
 
     def setup(self, notice, adaptive):
         self.adaptive = adaptive if self.fast else '0'
@@ -1122,16 +1282,20 @@ def poll_stored_trims(elm, model, journal, now=None):
     model.next_ltft = time.monotonic() + LTFT_INTERVAL
 
 
-def worker(args, model, stop, journal):
+def worker(args, model, stop, journal, faults=None):
     elm = None
     try:
         if args.demo:
+            if faults:
+                faults.ready = True
             model.mode = 'DEMO'
             model.ecu_identification_status = 'demo'
             model.notice(tr('Simulación · eventos programados cada 8 segundos', 'Simulation · events scheduled every 8 seconds'))
             started = time.monotonic()
             prev_at = started
             while not stop.is_set():
+                if faults:
+                    faults.service(None, journal)
                 now = time.monotonic()
                 t = now-started
                 phase = t % 8
@@ -1193,7 +1357,11 @@ def worker(args, model, stop, journal):
         model.mode = mode
         model.adapter_profile = elm.adapter_profile
         consecutive = 0
+        if faults:
+            faults.ready = True
         while not stop.is_set():
+            if faults:
+                faults.service(elm, journal)
             try:
                 sample = elm.acquire(mode)
                 model.adapter_profile = elm.adapter_profile
@@ -1231,6 +1399,8 @@ def worker(args, model, stop, journal):
             model.status = f'{type(exc).__name__}: {exc}'
         journal.write('fatal', error=str(exc))
     finally:
+        if faults:
+            faults.ready = False
         if elm:
             elm.close()
         journal.close()
@@ -1435,7 +1605,7 @@ def render(model, args, width=110, height=44, now=None):
         perf = tr(f'{hz:.1f} Hz · {interval} · adquisición {s.duration_ms:.0f} ms', f'{hz:.1f} Hz · {interval} · acquisition {s.duration_ms:.0f} ms') if s else tr('Esperando primera muestra', 'Waiting for first sample')
         if s:
             perf += tr(f'  ·  edad {age:.1f} s', f'  ·  age {age:.1f} s')
-        footer = Text(perf + tr(f'  ·  errores {model.errors}  ·  Ctrl+C salir', f'  ·  errors {model.errors}  ·  Ctrl+C to exit'), style=MUTED,
+        footer = Text(perf + tr(f'  ·  errores {model.errors}  ·  E: averías · Ctrl+C salir', f'  ·  errors {model.errors}  ·  E: faults · Ctrl+C to exit'), style=MUTED,
                       no_wrap=True, overflow='ellipsis')
         mode_label = tr('DEMO · SIN COCHE', 'DEMO · NO CAR') if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
         voltage = ecu_voltage_est(s.voltage_raw, args.voltage_scale) if shown else None
@@ -1525,16 +1695,18 @@ def main(argv=None):
                   elm_timing_probe=args.elm_timing_probe and not args.no_adapter_tuning and not args.conservative,
                   exchange_timing_basis='host_receive_batches_not_kline',
                   detector='observed_correction_increase_NOT_ECU_knock_counter')
-    thread=threading.Thread(target=worker,args=(args,model,stop,journal),daemon=True)
+    faults = FaultMenu(args.demo)
+    thread=threading.Thread(target=worker,args=(args,model,stop,journal,faults),daemon=True)
     thread.start()
     started=time.monotonic()
     if console.width < MIN_WIDTH or console.height < MIN_HEIGHT:
         sys.__stdout__.write(f"\033[8;{MIN_HEIGHT};{MIN_WIDTH}t")
         sys.__stdout__.flush()
     try:
-        with Live(console=console,screen=True,auto_refresh=False,vertical_overflow='crop') as live:
+        with keyboard_reader() as read_key, Live(console=console,screen=True,auto_refresh=False,vertical_overflow='crop') as live:
             while not args.seconds or time.monotonic()-started < args.seconds:
-                live.update(render(model,args,console.width,console.height),refresh=True)
+                faults.key(read_key())
+                live.update(faults.render(console.height) if faults.open else render(model,args,console.width,console.height),refresh=True)
                 if model.fatal:
                     stop.wait(1)
                     break

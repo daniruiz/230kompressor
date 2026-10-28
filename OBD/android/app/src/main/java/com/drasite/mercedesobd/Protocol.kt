@@ -277,6 +277,23 @@ class Elm(
         Decoder.positive(query("221104", false), 0x22, "621104", 5)
     }
 
+    fun readFaults(): List<FaultCode> {
+        rollback("DTC")
+        // No single-response suffix: A1 returns one frame per fault and a terminator.
+        val faults = FaultCodes.decode(command("A1", 30000))
+        log.event("dtc_read", "codes" to faults.map { it.code }, "records" to faults.map { it.raw })
+        return faults
+    }
+
+    fun clearFaults() {
+        rollback("DTC")
+        val rpm = Decoder.word(Decoder.positive(query("221104", false), 0x22, "621104", 5), 3)
+        if (rpm != 0) throw DiagnosticException(tr("Para borrar averías, apaga el motor y deja el contacto puesto", "To clear faults, stop the engine and leave the ignition on"))
+        // SW404 03AB02: bare service 14, positive response 54. Never retry a clear.
+        Decoder.positive(query("14", false), 0x14, "54", 1)
+        log.event("dtc_clear", "acknowledged" to true)
+    }
+
     fun defineGroup(): Sample {
         Decoder.ids.forEachIndexed { i, id ->
             // Send each definition explicitly; only read services may retry NO DATA.

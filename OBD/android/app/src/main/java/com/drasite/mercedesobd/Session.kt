@@ -7,6 +7,7 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.ArrayBlockingQueue
 import kotlin.math.cos
 import kotlin.math.round
 import kotlin.math.sin
@@ -15,6 +16,9 @@ class Session(private val root: File, val model: Model, private val alert: () ->
     @Volatile private var thread: Thread? = null
     @Volatile private var socket: BluetoothSocket? = null
     @Volatile private var stopped = false
+    @Volatile private var diagnosticsReady = false
+    private data class FaultRequest(val clear: Boolean, val done: (Result<List<FaultCode>>) -> Unit)
+    private val faultRequests = ArrayBlockingQueue<FaultRequest>(1)
     val running: Boolean
         get() = thread?.isAlive == true
 
@@ -23,6 +27,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
         if (running) return false
         model.clear()
         stopped = false
+        diagnosticsReady = false
         thread =
             Thread({ run(demo, address, adapterTuning) }, "MercedesOBD acquisition").also {
                 it.start()
@@ -38,6 +43,27 @@ class Session(private val root: File, val model: Model, private val alert: () ->
         } catch (_: Exception) {}
     }
 
+    @Synchronized
+    fun faults(clear: Boolean, done: (Result<List<FaultCode>>) -> Unit): Boolean =
+        running && !stopped && diagnosticsReady && faultRequests.offer(FaultRequest(clear, done))
+
+    private fun serviceFaults(elm: Elm?, journal: Journal, demoFaults: MutableList<FaultCode>) {
+        val request = faultRequests.poll() ?: return
+        try {
+            if (elm == null) {
+                if (request.clear) demoFaults.clear()
+                journal.event("dtc_demo", "clear" to request.clear)
+                request.done(Result.success(demoFaults.toList()))
+            } else {
+                val result = if (request.clear) { elm.clearFaults(); emptyList() } else elm.readFaults()
+                request.done(Result.success(result))
+            }
+        } catch (e: Exception) {
+            request.done(Result.failure(e))
+            if (e is LinkTimeout || e is InterruptedException) throw e
+        }
+    }
+
     @SuppressLint("MissingPermission")
     private fun run(demo: Boolean, address: String?, adapterTuning: Boolean) {
         var journal: Journal? = null
@@ -46,6 +72,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             val j = Journal(root, demo, adapterTuning)
             journal = j
             val temperatureAlerts = TemperatureAlerts()
+            val demoFaults = mutableListOf(FaultCode("P0300", 0, "DEMO"))
             fun publish(s: Sample) {
                 val (sample, raised) = model.accept(s)
                 j.sample(sample, model.snapshot(0), raised)
@@ -53,12 +80,14 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 if (raised || temperatureRaised) alert()
             }
             if (demo) {
+                diagnosticsReady = true
                 model.mode("DEMO · SIN COCHE")
                 model.setEcu(null, null, "demo")
                 val start = monoMs()
                 var last = start
                 var nextTrim = 0L
                 while (!stopped) {
+                    serviceFaults(null, j, demoFaults)
                     val now = monoMs()
                     val t = (now - start) / 1000.0
                     val phase = t % 8
@@ -155,11 +184,13 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 group = false
             }
             if (adapterTuning) elm.optimize(group, ::publish, model::notice)
+            diagnosticsReady = true
             var consecutive = 0
             var nextTrim = 0L
             var pendingLow: Pair<Int, Long>? = null
             var trimDisabled = ecuProfile == null
             while (!stopped) {
+                serviceFaults(elm, j, demoFaults)
                 try {
                     model.mode(if (group) "AGRUPADO" else "INDIVIDUAL", elm.profile)
                     publish(elm.acquire(group))
@@ -225,6 +256,11 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 } catch (_: Exception) {}
             }
         } finally {
+            diagnosticsReady = false
+            while (true) {
+                val request = faultRequests.poll() ?: break
+                request.done(Result.failure(DiagnosticException(tr("Sesión finalizada", "Session ended"))))
+            }
             try {
                 wire?.close()
             } catch (_: Exception) {}
