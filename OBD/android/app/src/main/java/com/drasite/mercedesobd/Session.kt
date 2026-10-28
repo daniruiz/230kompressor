@@ -8,7 +8,6 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.ArrayBlockingQueue
-import kotlin.math.cos
 import kotlin.math.round
 import kotlin.math.sin
 
@@ -19,6 +18,8 @@ class Session(private val root: File, val model: Model, private val alert: () ->
     @Volatile private var diagnosticsReady = false
     private data class FaultRequest(val clear: Boolean, val done: (Result<List<FaultCode>>) -> Unit)
     private val faultRequests = ArrayBlockingQueue<FaultRequest>(1)
+    private data class CorrectionRequest(val active: () -> Boolean, val done: (Result<FuelCorrections>) -> Unit)
+    private val correctionRequests = ArrayBlockingQueue<CorrectionRequest>(1)
     val running: Boolean
         get() = thread?.isAlive == true
 
@@ -46,6 +47,31 @@ class Session(private val root: File, val model: Model, private val alert: () ->
     @Synchronized
     fun faults(clear: Boolean, done: (Result<List<FaultCode>>) -> Unit): Boolean =
         running && !stopped && diagnosticsReady && faultRequests.offer(FaultRequest(clear, done))
+
+    @Synchronized
+    fun corrections(active: () -> Boolean, done: (Result<FuelCorrections>) -> Unit): Boolean =
+        running && !stopped && diagnosticsReady && correctionRequests.offer(CorrectionRequest(active, done))
+
+    private fun serviceCorrections(elm: Elm?, journal: Journal) {
+        val request = correctionRequests.poll() ?: return
+        if (!request.active()) return
+        try {
+            // All adapter access stays on the acquisition thread, between samples.
+            val result = elm?.readFuelCorrections() ?: FuelCorrections(33768, 35168, 45)
+            val profile = elm?.ecuProfile
+            journal.event("fuel_corrections", "demo" to (elm == null),
+                "software" to profile?.software,
+                "ltft_low_address" to profile?.let { addressHex(it.ltftLowAddress) },
+                "ltft_high_address" to profile?.let { addressHex(it.ltftHighAddress) },
+                "additive_address" to profile?.let { addressHex(it.additiveAddress) },
+                *result.logValues())
+            request.done(Result.success(result))
+        } catch (e: Exception) {
+            journal.event("fuel_corrections_error", "error" to e.toString())
+            request.done(Result.failure(e))
+            if (e is LinkTimeout || e is InterruptedException) throw e
+        }
+    }
 
     private fun serviceFaults(elm: Elm?, journal: Journal, demoFaults: MutableList<FaultCode>) {
         val request = faultRequests.poll() ?: return
@@ -85,9 +111,9 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 model.setEcu(null, null, "demo")
                 val start = monoMs()
                 var last = start
-                var nextTrim = 0L
                 while (!stopped) {
                     serviceFaults(null, j, demoFaults)
+                    serviceCorrections(null, j)
                     val now = monoMs()
                     val t = (now - start) / 1000.0
                     val phase = t % 8
@@ -97,14 +123,6 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                     val voltage = round((14 + .2 * sin(t / 5)) / Decoder.VOLT_SCALE).toInt().coerceIn(0, 255)
                     val injection = requireNotNull(Injection.deadtimeTicks(voltage)) +
                         Injection.calibration.minimumTicks + round(7500 * (.5 + .5 * sin(t / 3 - 1))).toInt()
-                    if (now >= nextTrim) {
-                        model.trims(
-                            (32768 + 1000 * sin(t / 12)).toInt(),
-                            (32768 + 2400 * cos(t / 17)).toInt(),
-                            now,
-                        )
-                        nextTrim = now + 30000
-                    }
                     publish(
                         Sample(
                             rpm,
@@ -186,52 +204,13 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             if (adapterTuning) elm.optimize(group, ::publish, model::notice)
             diagnosticsReady = true
             var consecutive = 0
-            var nextTrim = 0L
-            var pendingLow: Pair<Int, Long>? = null
-            var trimDisabled = ecuProfile == null
             while (!stopped) {
                 serviceFaults(elm, j, demoFaults)
+                serviceCorrections(elm, j)
                 try {
                     model.mode(if (group) "AGRUPADO" else "INDIVIDUAL", elm.profile)
                     publish(elm.acquire(group))
                     consecutive = 0
-                    if (!trimDisabled && ecuProfile != null && monoMs() >= nextTrim) {
-                        try {
-                            val low = pendingLow
-                            if (low == null) pendingLow = elm.storedTrim(ecuProfile.ltftLowAddress) to monoMs()
-                            else {
-                                val high = elm.storedTrim(ecuProfile.ltftHighAddress)
-                                model.trims(low.first, high, low.second)
-                                j.event(
-                                    "ltft_stored",
-                                    "low_raw" to low.first,
-                                    "high_raw" to high,
-                                    "software" to ecuProfile.software,
-                                    "low_address" to addressHex(ecuProfile.ltftLowAddress),
-                                    "high_address" to addressHex(ecuProfile.ltftHighAddress),
-                                    "low_pct" to Decoder.trim(low.first),
-                                    "high_pct" to Decoder.trim(high),
-                                    "pair_span_s" to (monoMs() - low.second) / 1000.0,
-                                )
-                                pendingLow = null
-                                nextTrim = monoMs() + 30000
-                            }
-                        } catch (e: LinkTimeout) {
-                            throw e
-                        } catch (e: DiagnosticException) {
-                            trimDisabled =
-                                e is NegativeResponse && e.code in listOf(0x11, 0x12, 0x31, 0x33)
-                            model.trimError(if (trimDisabled) "no disponible" else "error")
-                            j.event(
-                                "ltft_stored_error",
-                                "error" to e.toString(),
-                                "disabled" to trimDisabled,
-                            )
-                            elm.rollback("LTFT: ${e.message}")
-                            pendingLow = null
-                            nextTrim = monoMs() + 30000
-                        }
-                    }
                 } catch (e: LinkTimeout) {
                     throw e
                 } catch (e: DiagnosticException) {
@@ -257,6 +236,10 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             }
         } finally {
             diagnosticsReady = false
+            while (true) {
+                val request = correctionRequests.poll() ?: break
+                request.done(Result.failure(DiagnosticException(tr("Sesión finalizada", "Session ended"))))
+            }
             while (true) {
                 val request = faultRequests.poll() ?: break
                 request.done(Result.failure(DiagnosticException(tr("Sesión finalizada", "Session ended"))))

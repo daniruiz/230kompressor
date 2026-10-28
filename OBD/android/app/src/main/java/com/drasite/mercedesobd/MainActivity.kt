@@ -131,6 +131,7 @@ class MainActivity : Activity() {
                 "Demo" to { start(true, null) },
                 tr("Parar", "Stop") to { stop() },
                 tr("Errores de la ECU", "ECU fault codes") to { faultsMenu() },
+                tr("Lectura de correcciones", "Correction readings") to { correctionsMenu() },
                 tr("Registros", "Logs") to { logsMenu() },
                 tr("Ajustes", "Settings") to { settings() },
             )
@@ -146,11 +147,17 @@ class MainActivity : Activity() {
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
 
     private var faultDialog: Dialog? = null
+    private var correctionsDialog: Dialog? = null
     private var logsDialog: Dialog? = null
 
     private fun faultsMenu() {
         if (faultDialog?.isShowing == true) return
         faultDialog = FaultsDialog(this, session, demoMode).show()
+    }
+
+    private fun correctionsMenu() {
+        if (correctionsDialog?.isShowing == true) return
+        correctionsDialog = CorrectionsDialog(this, session, demoMode).show()
     }
 
     private fun permitted() =
@@ -480,6 +487,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         faultDialog?.dismiss()
+        correctionsDialog?.dismiss()
         logsDialog?.dismiss()
         session.stop()
         cancelSound()

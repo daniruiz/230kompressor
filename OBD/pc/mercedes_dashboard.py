@@ -17,12 +17,13 @@ RPM, injection, load, coarse calculated MAF, ignition advance, throttle, narrowb
 STN/OBDLink: adapter-managed P3 and measured P4 trial with automatic rollback.
 ELM clones: automatically benchmark shorter host-side waits on grouped reads.
 Use --no-adapter-tuning to disable automatic timing optimisation. Supply voltage scale remains provisional.
-Stored LTFT endpoints are read every 30 s via service 23, one per fast cycle.
+Stored LTFT endpoints and learned additive adaptation are read only on demand
+in the Corrections menu (C), via three service 23 requests.
 At connection, read the software reference directly from the six known ROM
 locations and select its LTFT addresses. Ten analysed profiles are supported.
-Unknown/unverified software disables only stored LTFT low/high RAM polling.
+Unknown/unverified software disables only the on-demand correction readings.
 Identification runs once, before grouping/timing optimisation; no extra fast IDs.
-This is a polling policy, not a verified ECU adaptation time.
+This on-demand policy does not change the ECU's adaptation timing.
 Oxygen sensor voltage follows the stock PID 14 conversion, NOT wideband lambda/AFR.
 MAF is the ECU calculated airflow (also available in substitute operation),
 quantized to approximately 1.1108 g/s per F74C count; 255 is saturated.
@@ -83,7 +84,6 @@ IDS = (0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x07, 0x0B, 0x0A, 0x1F, 0x10)
 # F734 is an ADC-derived byte; ROM 42A2 substitutes 149 below threshold 47.
 # 149 * 3/32 = 13.97 V is plausible, but is not proof of the divider ratio.
 VOLTAGE_V_PER_RAW_EST = 3 / 32
-LTFT_INTERVAL = 30.0
 # SW404 bank 1. Both stock and the analysed 230k_ME21 tune have this curve.
 # 47CA: pointer F734, offset 0, shift 4, count 17; data at 47D0..47E0.
 DEADTIME_NODES_404 = (112,112,112,112,112,63,43,33,26,21,21,21,21,21,21,21,21)
@@ -131,6 +131,7 @@ class ECUProfile:
     software_address: int  # Thirteen ASCII characters, in directly mapped ROM.
     ltft_low_address: int = 0x900C
     ltft_high_address: int = 0x9014
+    additive_address: int = 0x9020
 
 
 # Matched to code and ROM in the ten supplied original binaries, not to values
@@ -146,9 +147,27 @@ ECU_PROFILES = (
     ECUProfile('114.235819.20', 0xE49E),
     ECUProfile('114.236338.39', 0xE4C6),
     ECUProfile('114.236438.40', 0xE4C6),
-    ECUProfile('114.236643.43', 0xD4DC, 0x920C, 0x9214),
+    ECUProfile('114.236643.43', 0xD4DC, 0x920C, 0x9214, 0x9220),
 )
 ECU_PROFILES_BY_SOFTWARE = {p.software: p for p in ECU_PROFILES}
+
+
+@dataclass(frozen=True)
+class FuelCorrections:
+    low: int
+    high: int
+    additive: int
+
+    @property
+    def additive_signed(self):
+        return self.additive - 65536 if self.additive & 0x8000 else self.additive
+
+    def log_values(self, tick_us):
+        return dict(ltft_low_raw=self.low, ltft_high_raw=self.high,
+                    ltft_low_pct=trim_percent(self.low), ltft_high_pct=trim_percent(self.high),
+                    additive_raw=self.additive, additive_signed_raw=self.additive_signed,
+                    additive_ms_est=self.additive_signed * tick_us / 1000,
+                    additive_tick_us_assumed=tick_us)
 
 
 class KnockSound:
@@ -434,6 +453,135 @@ class FaultMenu:
                      box=box.ROUNDED, border_style=color, style=f'white on {background}', padding=(1, 2), width=width, height=height)
 
 
+class CorrectionsMenu:
+    """Queue one snapshot per open/refresh; never poll while the menu is idle."""
+    def __init__(self, demo=False, tick_us=8/3):
+        self.demo, self.tick_us = demo, tick_us
+        self.requests = queue.Queue(maxsize=1)
+        self.lock = threading.RLock()
+        self.ready = self.busy = self.open = False
+        self.generation = 0
+        self.result = None
+        self.updated_at = None
+        self.focus = 0
+        self.message = ''
+        self.error = False
+
+    def show(self):
+        with self.lock:
+            self.open = True
+            self.focus = 0
+            self.request()
+
+    def close(self):
+        with self.lock:
+            self.open = self.busy = False
+            self.generation += 1
+            try:
+                self.requests.get_nowait()
+            except queue.Empty:
+                pass
+
+    def key(self, key):
+        if key.lower() in ('c', '\x1b', '0'):
+            self.close()
+        elif key in ('\t', 'left', 'right'):
+            self.focus = 1 - self.focus
+        elif key in ('\r', '\n'):
+            self.close() if self.focus else self.request()
+        elif key.lower() in ('r', '1'):
+            self.request()
+
+    def request(self):
+        with self.lock:
+            if self.busy or not self.open:
+                return
+            self.result = self.updated_at = None
+            self.error = False
+            if not self.ready:
+                self.message = tr('Espera a recibir datos y pulsa Actualizar.', 'Wait for live data, then select Refresh.')
+                return
+            self.busy = True
+            self.message = tr('Leyendo LTFT low, high y corrección aditiva…', 'Reading LTFT low, high and additive correction…')
+            self.requests.put_nowait(self.generation)
+
+    def service(self, elm, journal):
+        try:
+            generation = self.requests.get_nowait()
+        except queue.Empty:
+            return
+        with self.lock:
+            if not self.open or generation != self.generation:
+                return
+        try:
+            result = elm.read_fuel_corrections() if elm is not None else FuelCorrections(33768, 35168, 45)
+            profile = elm.ecu_profile if elm is not None else None
+            journal.write('fuel_corrections', demo=elm is None,
+                          software=profile.software if profile else None,
+                          ltft_low_address=f'0x{profile.ltft_low_address:04X}' if profile else None,
+                          ltft_high_address=f'0x{profile.ltft_high_address:04X}' if profile else None,
+                          additive_address=f'0x{profile.additive_address:04X}' if profile else None,
+                          **result.log_values(self.tick_us))
+            with self.lock:
+                if self.open and generation == self.generation:
+                    self.result = result
+                    self.updated_at = dt.datetime.now().strftime('%H:%M:%S')
+                    self.message = tr('Lectura puntual · Actualiza para volver a consultar.', 'Snapshot · Refresh to read again.')
+        except Exception as exc:
+            journal.write('fuel_corrections_error', error=str(exc))
+            with self.lock:
+                if self.open and generation == self.generation:
+                    self.error = True
+                    self.message = str(exc)
+            if isinstance(exc, (LinkTimeout, InterruptedError)):
+                raise
+        finally:
+            with self.lock:
+                if generation == self.generation:
+                    self.busy = False
+
+    def finish(self):
+        with self.lock:
+            self.ready = self.busy = False
+            self.generation += 1
+            self.message = tr('Sesión finalizada', 'Session ended')
+
+    def preferred_height(self):
+        return 19
+
+    def render(self, console, width=74, height=19):
+        with self.lock:
+            content = Layout()
+            content.split_column(Layout(name='header', size=2), Layout(name='body', ratio=1), Layout(name='actions', size=3))
+            label = tr('DEMO · datos simulados', 'DEMO · simulated data') if self.demo else tr('Adaptaciones aprendidas', 'Learned adaptations')
+            if self.updated_at:
+                label += ' · ' + self.updated_at
+            content['header'].update(Group(Text(label, style=AMBER if self.demo else CYAN), Rule(style='#29405b')))
+            body = []
+            if self.result is not None:
+                table = Table.grid(expand=True, padding=(0, 1))
+                table.add_column(style=MUTED, ratio=1)
+                table.add_column(justify='right', style=f'bold {GREEN}')
+                table.add_row('LTFT low', f'{trim_percent(self.result.low):+.2f} %')
+                table.add_row('LTFT high', f'{trim_percent(self.result.high):+.2f} %')
+                table.add_row(tr('Corrección aditiva', 'Additive correction'),
+                              f'~{self.result.additive_signed * self.tick_us / 1000:+.3f} ms')
+                table.add_row(tr('Aditiva · unidades ECU', 'Additive · ECU units'), f'{self.result.additive_signed:+d}')
+                body.extend([table, '', Text(tr('Tiempo de la aditiva estimado.', 'Additive duration is estimated.'), style=MUTED)])
+            body.extend(['', Text(self.message, style=RED if self.error else CYAN if self.busy else MUTED)])
+            content['body'].update(Group(*body))
+            actions = Table.grid(expand=True)
+            actions.add_column(ratio=1, justify='center')
+            actions.add_column(ratio=1, justify='center')
+            actions.add_row(*[Text(label, style=f'bold {CYAN if i == 0 else MUTED} on {"#24414a" if i == self.focus else "#1a2b40"}')
+                             for i, label in enumerate((tr('[R] Actualizar', '[R] Refresh'), tr('[Esc] Cerrar', '[Esc] Close')))])
+            content['actions'].update(Group(Rule(style='#29405b'), actions,
+                                           Text(tr('Tab / ← → Elegir · Enter Aceptar', 'Tab / ← → Select · Enter Accept'), style=MUTED, justify='center')))
+            return Panel(content, title=tr(' LECTURA DE CORRECCIONES ', ' CORRECTION READINGS '),
+                         width=width, height=height, box=box.ROUNDED, border_style=CYAN,
+                         style='white on #0e1b2b', padding=(1, 2))
+
+
 @contextmanager
 def keyboard_reader():
     """Nonblocking keys, with POSIX terminal state restored on every exit."""
@@ -658,7 +806,7 @@ class Journal:
             self.csv_fields = ['Time','utc','rpm','load_raw','throttle_pct','maf_g_s_est',
                 'injection_ms_est','injector_duty_est_pct','advance_deg']
             self.csv_fields += [f'knock_channel_{i}_deg_est' for i in range(1,5)]
-            self.csv_fields += ['stft_a_pct','ltft_a_pct','ltft_low_pct','ltft_high_pct',
+            self.csv_fields += ['stft_a_pct','ltft_a_pct',
                                 'coolant_C','iat_C','oxygen_voltage_V','ecu_voltage_V_est']
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
@@ -689,11 +837,6 @@ class Journal:
                       advance_raw=sample.advance_raw,
                       advance_deg=advance_degrees(sample.advance_raw) if sample.advance_raw is not None else None)
         with model.lock:
-            for label, raw in (('low', model.ltft_low), ('high', model.ltft_high)):
-                values[f'ltft_{label}_raw'] = raw
-                values[f'ltft_{label}_pct'] = trim_percent(raw) if raw is not None else None
-            values['ltft_stored_age_s'] = max(0, sample.at-model.ltft_at) if model.ltft_at is not None else None
-            values['ltft_stored_status'] = model.ltft_status
             profile = model.ecu_profile
             values.update(ecu_software=model.ecu_software,
                           ecu_identification_status=model.ecu_identification_status,
@@ -1160,8 +1303,10 @@ class ELM:
                     software_address=f'0x{address:04X}',
                     ltft_low_address=f'0x{profile.ltft_low_address:04X}',
                     ltft_high_address=f'0x{profile.ltft_high_address:04X}',
-                    stored_ltft_enabled=True)
-                notice(tr(f'ECU {profile.software} · perfil LTFT seleccionado', f'ECU {profile.software} · LTFT profile selected'))
+                    stored_corrections_available=True,
+                    additive_address=f'0x{profile.additive_address:04X}',
+                    corrections_read_policy='on_demand')
+                notice(tr(f'ECU {profile.software} · perfil de correcciones seleccionado', f'ECU {profile.software} · correction profile selected'))
                 return profile
             except LinkTimeout:
                 raise
@@ -1177,17 +1322,20 @@ class ELM:
         self.journal.write('ecu_identification', software=self.ecu_software,
             status=self.ecu_identification_status, reason=reason,
             method='ROM',
-            stored_ltft_enabled=False)
-        notice(tr('ECU sin perfil verificado · LTFT low/high no disponibles', 'ECU profile unverified · stored LTFT low/high unavailable'))
+            stored_corrections_available=False)
+        notice(tr('ECU sin perfil verificado · lectura de correcciones no disponible', 'ECU profile unverified · correction readings unavailable'))
         return None
 
-    def read_stored_trim(self, address):
+    def read_fuel_corrections(self):
         profile = self.ecu_profile
         if profile is None:
-            raise DiagnosticError(tr('LTFT de RAM desactivado: software ECU sin verificar', 'Stored LTFT disabled: unverified ECU software'))
-        if address not in (profile.ltft_low_address, profile.ltft_high_address):
-            raise ValueError(tr('Dirección LTFT no pertenece al software identificado', 'LTFT address does not belong to identified software'))
-        return self._read_memory_word(address)
+            raise DiagnosticError(tr('Lectura de correcciones no disponible: software ECU sin verificar',
+                                     'Correction readings unavailable: unverified ECU software'))
+        # Learned signed additive adaptation: SW404 025942..025AC8 (9020),
+        # SW643 9220. Only the three addresses of a verified profile are read.
+        return FuelCorrections(self._read_memory_word(profile.ltft_low_address),
+                               self._read_memory_word(profile.ltft_high_address),
+                               self._read_memory_word(profile.additive_address))
 
     def close(self):
         self.serial.close()
@@ -1287,15 +1435,9 @@ class Model:
         self.sound = sound
         self.lock = threading.RLock()
         self.sample = None
-        self.ltft_low = self.ltft_high = None
-        self.ltft_at = None
-        self.ltft_status = 'pendiente'
-        self.ltft_disabled = True  # Enabled only after ROM/profile verification.
         self.ecu_profile = None
         self.ecu_software = None
         self.ecu_identification_status = 'pending'
-        self.next_ltft = 0.0
-        self.ltft_pending = None
         self.previous = None
         self.count = 0
         self.alert_until = 0.0
@@ -1316,16 +1458,6 @@ class Model:
             self.ecu_profile = elm.ecu_profile
             self.ecu_software = elm.ecu_software
             self.ecu_identification_status = elm.ecu_identification_status
-            self.ltft_disabled = elm.ecu_profile is None
-            self.ltft_low = self.ltft_high = self.ltft_at = self.ltft_pending = None
-            self.next_ltft = 0.0
-            self.ltft_status = 'software sin verificar' if self.ltft_disabled else 'pendiente'
-
-    def stored_trims(self, low, high, at=None):
-        with self.lock:
-            self.ltft_low, self.ltft_high = low, high
-            self.ltft_at = time.monotonic() if at is None else at
-            self.ltft_status = 'ok'
 
     def notice(self, message):
         with self.lock:
@@ -1371,45 +1503,14 @@ class Model:
             return bool(raised)
 
 
-def poll_stored_trims(elm, model, journal, now=None):
-    """One optional request per fast cycle; publish a complete cached pair."""
-    now = time.monotonic() if now is None else now
-    profile = model.ecu_profile
-    if model.ltft_disabled or profile is None or now < model.next_ltft:
-        return
-    try:
-        if model.ltft_pending is None:
-            low = elm.read_stored_trim(profile.ltft_low_address)
-            model.ltft_pending = (low, time.monotonic())
-            return  # Next worker iteration reads the fast group before high.
-        low, low_at = model.ltft_pending
-        high = elm.read_stored_trim(profile.ltft_high_address)
-        model.stored_trims(low, high, low_at)
-        journal.write('ltft_stored', low_raw=low, high_raw=high,
-                      software=profile.software,
-                      low_address=f'0x{profile.ltft_low_address:04X}',
-                      high_address=f'0x{profile.ltft_high_address:04X}',
-                      low_pct=trim_percent(low), high_pct=trim_percent(high),
-                      pair_span_s=time.monotonic()-low_at)
-    except LinkTimeout:
-        raise
-    except DiagnosticError as exc:
-        elm.restore_transport(tr('Lectura LTFT: ', 'LTFT read: ') + str(exc))
-        disabled = isinstance(exc, NegativeResponse) and exc.code in (0x11, 0x12, 0x31, 0x33)
-        with model.lock:
-            model.ltft_disabled = disabled
-            model.ltft_status = 'no disponible' if disabled else 'error de lectura'
-        journal.write('ltft_stored_error', error=str(exc), disabled=disabled)
-    model.ltft_pending = None
-    model.next_ltft = time.monotonic() + LTFT_INTERVAL
-
-
-def worker(args, model, stop, journal, faults=None):
+def worker(args, model, stop, journal, faults=None, corrections=None):
     elm = None
     try:
         if args.demo:
             if faults:
                 faults.ready = True
+            if corrections:
+                corrections.ready = True
             model.mode = 'DEMO'
             model.ecu_identification_status = 'demo'
             model.notice(tr('Simulación · eventos programados cada 8 segundos', 'Simulation · events scheduled every 8 seconds'))
@@ -1418,14 +1519,16 @@ def worker(args, model, stop, journal, faults=None):
             while not stop.is_set():
                 if faults:
                     faults.service(None, journal)
+                if corrections:
+                    corrections.service(None, journal)
                 now = time.monotonic()
                 t = now-started
                 phase = t % 8
                 load = int(60 + 175 * (0.5 + 0.5*math.sin(t/2.2)))
                 rpm = int(900 + 5200*(0.5 + 0.5*math.sin(t/3-1.5)))
                 correction = max(0, 8-int((phase-2)*2)) if phase >= 2 else 0
-                corrections = (correction, max(0, correction-2), 0, 0)
-                sample = Sample(rpm, int(1100 + load*18), load, corrections,
+                knock_corrections = (correction, max(0, correction-2), 0, 0)
+                sample = Sample(rpm, int(1100 + load*18), load, knock_corrections,
                                 (now-prev_at)*1000, now)
                 sample.throttle_raw = round(255*(0.5+0.5*math.sin(t/3)))
                 sample.oxygen_raw = round(O2_SWITCH_RAW*(1+0.7*math.sin(t*4)))
@@ -1436,17 +1539,13 @@ def worker(args, model, stop, journal, faults=None):
                                     + args.injector_calibration.minimum_ticks
                                     + round(7500*(0.5+0.5*math.sin(t/3-1))))
                 sample.advance_raw = round((-15 + 20*math.sin(t/4) + 66)/0.75)
-                if now >= model.next_ltft:
-                    model.stored_trims(int(32768+1000*math.sin(t/12)),
-                                       int(32768+2400*math.cos(t/17)), now)
-                    model.next_ltft = now + LTFT_INTERVAL
                 sample.temperatures = (130, 78)
                 sample.trims = (int(32768+2500*math.sin(t)),34000)
                 prev_at = now
                 event = model.accept(sample, args.tick_us)
                 journal.sample(sample, args, model, event)
                 journal.write('sample', demo=True, rpm=rpm, **injection_metrics(sample, args),
-                              load_raw=load, correction_raw=corrections, observed_event=event,
+                              load_raw=load, correction_raw=knock_corrections, observed_event=event,
                               observed_count=model.count, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms)
                 if stop.wait(0.125):
                     break
@@ -1481,9 +1580,13 @@ def worker(args, model, stop, journal, faults=None):
         consecutive = 0
         if faults:
             faults.ready = True
+        if corrections:
+            corrections.ready = True
         while not stop.is_set():
             if faults:
                 faults.service(elm, journal)
+            if corrections:
+                corrections.service(elm, journal)
             try:
                 sample = elm.acquire(mode)
                 model.adapter_profile = elm.adapter_profile
@@ -1495,7 +1598,6 @@ def worker(args, model, stop, journal, faults=None):
                               correction_raw=sample.corrections, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms,
                               observed_event=event, observed_count=model.count,
                               correction_deg_nominal=[n*0.75 for n in sample.corrections])
-                poll_stored_trims(elm, model, journal)
             except LinkTimeout:
                 raise
             except DiagnosticError as exc:
@@ -1523,6 +1625,8 @@ def worker(args, model, stop, journal, faults=None):
     finally:
         if faults:
             faults.ready = False
+        if corrections:
+            corrections.finish()
         if elm:
             elm.close()
         journal.close()
@@ -1618,7 +1722,8 @@ def render(model, args, width=110, height=44, now=None):
         red = flashing and not args.no_flash and int(now*2)%2 == 0
         bg = '#811c31' if red else BG
         layout = Layout()
-        layout.split_column(Layout(name='metrics', size=14),
+        # Keep the menu shortcuts visible at the supported minimum height.
+        layout.split_column(Layout(name='metrics', size=min(14, max(10, height - 19))),
                             Layout(name='lower', ratio=1, minimum_size=15),
                             Layout(name='foot', size=4))
         layout['lower'].split_row(Layout(name='knock', ratio=2), Layout(name='extras', ratio=1))
@@ -1691,11 +1796,6 @@ def render(model, args, width=110, height=44, now=None):
         for label,raw in zip(('STFT','LTFT'),s.trims if s else (32768,)*2):
             mixture.add_row(label, Text(f'{trim_percent(raw):+.2f} %' if shown else '—',
                                         style=f'bold {GREEN}'))
-        stored_age = now-model.ltft_at if model.ltft_at is not None else math.inf
-        for label,raw in ((tr('LTFT baja', 'LTFT low'),model.ltft_low), (tr('LTFT alta', 'LTFT high'),model.ltft_high)):
-            valid = raw is not None and stored_age <= LTFT_INTERVAL + 5 and model.ltft_status == 'ok'
-            value = f'{trim_percent(raw):+.2f} %' if valid else '—'
-            mixture.add_row(label, Text(value, style=f'bold {GREEN if valid else MUTED}'))
         maf = f'{s.maf_raw*MAF_GS_PER_RAW:.1f} g/s' if shown and s.maf_raw is not None else '—'
         mixture.add_row(tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
         oxygen_label = tr('rico', 'rich') if shown and s.oxygen_raw is not None and s.oxygen_raw > O2_SWITCH_RAW else tr('pobre', 'lean')
@@ -1706,7 +1806,7 @@ def render(model, args, width=110, height=44, now=None):
         temperatures.add_column(justify='right')
         for label,raw in zip((tr('ADMISIÓN', 'INTAKE'),tr('REFRIGERANTE', 'COOLANT')),reversed(s.temperatures if s else (40,40))):
             temperatures.add_row(label, Text(f'{raw-40} °C' if shown else '—', style=f'bold {AMBER}'))
-        layout['extras'].split_column(Layout(name='mixture',size=8), Layout(name='temps',size=4), Layout(name='advance',minimum_size=3))
+        layout['extras'].split_column(Layout(name='mixture',size=6), Layout(name='temps',size=4), Layout(name='advance',minimum_size=3))
         layout['mixture'].update(Panel(mixture, title=tr('MEZCLA', 'MIXTURE'), border_style=GREEN,
                                        box=box.ROUNDED, style=f'on {bg}'))
         layout['temps'].update(Panel(temperatures, title=tr('TEMPERATURAS', 'TEMPERATURES'), border_style=AMBER,
@@ -1729,6 +1829,8 @@ def render(model, args, width=110, height=44, now=None):
         footer = Text(perf + '  ·  ', style=MUTED, no_wrap=True, overflow='ellipsis')
         footer.append('E', style=f'bold {GREEN}')
         footer.append(tr(': averías  ·  ', ': faults  ·  '))
+        footer.append('C', style=f'bold {GREEN}')
+        footer.append(tr(': correcciones  ·  ', ': corrections  ·  '))
         footer.append('Ctrl+C', style=f'bold {GREEN}')
         footer.append(tr(' salir', ' exit'))
         mode_label = tr('DEMO · SIN COCHE', 'DEMO · NO CAR') if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
@@ -1737,8 +1839,6 @@ def render(model, args, width=110, height=44, now=None):
         if not args.demo:
             software_label = model.ecu_software or tr('no identificada', 'unidentified')
             footer.append(' · SW '+software_label, style=f'bold {CYAN}')
-            if model.ecu_profile is None:
-                footer.append(tr(' · LTFT RAM desactivado', ' · stored LTFT disabled'), style=AMBER)
         footer.append(' · '+mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
         layout['foot'].update(Panel(footer, border_style='#334d6d', box=box.ROUNDED, style=f'on {bg}'))
         return layout
@@ -1820,7 +1920,8 @@ def main(argv=None):
                   exchange_timing_basis='host_receive_batches_not_kline',
                   detector='observed_correction_increase_NOT_ECU_knock_counter')
     faults = FaultMenu(args.demo)
-    thread=threading.Thread(target=worker,args=(args,model,stop,journal,faults),daemon=True)
+    corrections = CorrectionsMenu(args.demo, args.tick_us)
+    thread=threading.Thread(target=worker,args=(args,model,stop,journal,faults,corrections),daemon=True)
     thread.start()
     started=time.monotonic()
     if console.width < MIN_WIDTH or console.height < MIN_HEIGHT:
@@ -1829,9 +1930,16 @@ def main(argv=None):
     try:
         with keyboard_reader() as read_key, Live(console=console,screen=True,auto_refresh=False,vertical_overflow='crop') as live:
             while not args.seconds or time.monotonic()-started < args.seconds:
-                faults.key(read_key())
+                key = read_key()
+                if corrections.open:
+                    corrections.key(key)
+                elif not faults.open and key.lower() == 'c':
+                    corrections.show()
+                else:
+                    faults.key(key)
                 dashboard = render(model,args,console.width,console.height)
-                live.update(DashboardDialog(dashboard, faults) if faults.open else dashboard, refresh=True)
+                menu = corrections if corrections.open else faults if faults.open else None
+                live.update(DashboardDialog(dashboard, menu) if menu else dashboard, refresh=True)
                 if model.fatal:
                     stop.wait(1)
                     break

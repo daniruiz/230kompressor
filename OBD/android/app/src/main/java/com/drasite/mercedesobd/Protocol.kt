@@ -329,7 +329,7 @@ class Elm(
 
     private fun readMemoryWord(address: Int): Int {
         // Service 23 reads one LE word from an even, logical 16-bit address;
-        // there is no length byte. Only known ROM cells and verified LTFT use it.
+        // there is no length byte. Only known ROM cells and verified corrections use it.
         require(address in 0..0xFFFE && (address and 1) == 0) { tr("Dirección de palabra inválida", "Invalid word address") }
         val suffix = "00%04X".format(address)
         val frame = Decoder.positive(query("23$suffix"), 0x23, "63$suffix", 6)
@@ -376,9 +376,11 @@ class Elm(
                     "software_address" to addressHex(address),
                     "ltft_low_address" to addressHex(selected.ltftLowAddress),
                     "ltft_high_address" to addressHex(selected.ltftHighAddress),
-                    "stored_ltft_enabled" to true,
+                    "stored_corrections_available" to true,
+                    "additive_address" to addressHex(selected.additiveAddress),
+                    "corrections_read_policy" to "on_demand",
                 )
-                notice(tr("ECU ${selected.software} · perfil LTFT seleccionado", "ECU ${selected.software} · LTFT profile selected"))
+                notice(tr("ECU ${selected.software} · perfil de correcciones seleccionado", "ECU ${selected.software} · correction profile selected"))
                 return selected
             } catch (e: LinkTimeout) {
                 throw e
@@ -400,19 +402,21 @@ class Elm(
             "status" to ecuIdentificationStatus,
             "reason" to reason,
             "method" to "ROM",
-            "stored_ltft_enabled" to false,
+            "stored_corrections_available" to false,
         )
-        notice(tr("ECU sin perfil verificado · LTFT low/high no disponibles", "ECU profile unverified · stored LTFT low/high unavailable"))
+        notice(tr("ECU sin perfil verificado · lectura de correcciones no disponible", "ECU profile unverified · correction readings unavailable"))
         return null
     }
 
-    fun storedTrim(address: Int): Int {
+    fun readFuelCorrections(): FuelCorrections {
         val selected = ecuProfile
-            ?: throw DiagnosticException(tr("LTFT de RAM desactivado: software ECU sin verificar", "Stored LTFT disabled: unverified ECU software"))
-        require(address == selected.ltftLowAddress || address == selected.ltftHighAddress) {
-            tr("Dirección LTFT no pertenece al software identificado", "LTFT address does not belong to identified software")
-        }
-        return readMemoryWord(address)
+            ?: throw DiagnosticException(tr("Lectura de correcciones no disponible: software ECU sin verificar",
+                "Correction readings unavailable: unverified ECU software"))
+        return FuelCorrections(
+            readMemoryWord(selected.ltftLowAddress),
+            readMemoryWord(selected.ltftHighAddress),
+            readMemoryWord(selected.additiveAddress),
+        )
     }
 
     fun optimize(group: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) {

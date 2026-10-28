@@ -146,6 +146,7 @@ Live engine monitoring on **PC and Android**, using compatible ELM327 adapters o
 - **Injection time and injector duty:** monitor estimated injection duration and duty cycle.
 - **Internal engine load:** read the value the ECU uses for its maps, on its full 0–255 scale.
 - **Live ECU RAM readings:** access internal values, including injection corrections.
+- **Correction readings:** read stored LTFT low/high and learned additive correction from a separate menu (**C** on PC). Reads run only when opening or refreshing the menu, keeping them out of the normal dashboard cycle; snapshots are saved in JSONL.
 - **CSV logging:** save readings for later analysis in MegaLogViewer.
 - **Android log manager:** select CSV/JSONL files to delete, export or share; multiple files are packed into a ZIP.
 - **ECU fault codes:** read and clear stored faults from the menu (press **E** on PC). Clearing requires confirmation and a stopped engine with the ignition on.
@@ -156,7 +157,7 @@ The dashboard also shows RPM, temperatures, ignition advance and fuel trims. Bot
 | PC | Android |
 | --- | --- |
 | ![PC dashboard in demo mode](Images/mercedes-obd-desktop.jpg) | ![Android dashboard in demo mode](Images/mercedes-obd-android.jpg) |
-| **[Download Windows EXE](OBD/MercedesDashboard.exe)** · [Python source](OBD/mercedes_dashboard.py) | **[Download Android APK](OBD/MercedesDashboard.apk)** · [Android source](OBD/android/) |
+| **[Download Windows EXE](OBD/MercedesDashboard.exe)** · [Python source](OBD/pc/mercedes_dashboard.py) | **[Download Android APK](OBD/MercedesDashboard.apk)** · [Android source](OBD/android/) |
 
 **Tested adapters:** OBDLink, Veepeak and Renolink. Some cheap ELM327 clones lack the required commands and may not work.
 

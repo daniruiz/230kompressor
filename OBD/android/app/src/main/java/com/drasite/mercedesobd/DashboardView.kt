@@ -387,7 +387,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         } else {
             drawMetrics(canvas, display, sample, valid)
             drawKnock(canvas, display, sample, valid, now)
-            drawMixture(canvas, display, sample, valid, now)
+            drawMixture(canvas, sample, valid)
             drawTemperaturesAndAdvance(canvas, sample, valid)
         }
         canvas.restore()
@@ -592,10 +592,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
 
     private fun drawMixture(
         canvas: Canvas,
-        display: Display,
         sample: Sample?,
         valid: Boolean,
-        now: Long,
     ) {
         drawCard(canvas, RectF(803f, 272f, 1192f, 435f), tr("MEZCLA", "MIXTURE"), green)
         fun row(label: String, value: String, y: Float, color: Int = green) {
@@ -611,22 +609,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                     Decoder.trim(sample.ltft),
                 )
             else "—",
-            320f,
-        )
-        val trimFresh =
-            display.trimsAt != null &&
-                now - display.trimsAt <= STORED_TRIM_MAX_AGE_MS &&
-                display.trimsStatus == "ok"
-        row(
-            tr("LTFT baja / alta", "LTFT low / high"),
-            if (trimFresh && display.low != null && display.high != null)
-                formatValue(
-                    "%+.2f / %+.2f %%",
-                    Decoder.trim(display.low),
-                    Decoder.trim(display.high),
-                )
-            else "—",
-            350f,
+            325f,
         )
         row(
             tr("Caudalímetro", "Airflow"),
@@ -637,7 +620,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                     sample.maf * Decoder.MAF_SCALE,
                 )
             else "—",
-            380f,
+            365f,
             cyan,
         )
         row(
@@ -649,7 +632,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                     if (sample.oxygen > 0x2456) tr("rico", "rich") else tr("pobre", "lean"),
                 )
             else "—",
-            410f,
+            405f,
             amber,
         )
     }
@@ -708,8 +691,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val volts =
             if (valid) formatValue("~%.2f V", sample!!.voltage * Decoder.VOLT_SCALE) else "— V"
         val software = if (display.ecuIdentificationStatus == "demo") "" else
-            tr(" · SW ${display.ecuSoftware ?: "no identificada"}", " · SW ${display.ecuSoftware ?: "unidentified"}") +
-                if (display.ecuProfile == null) tr(" · LTFT RAM desactivado", " · stored LTFT disabled") else ""
+            tr(" · SW ${display.ecuSoftware ?: "no identificada"}", " · SW ${display.ecuSoftware ?: "unidentified"}")
         val perf =
             tr("${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software", "${sample?.cycleMs?:"—"} ms/cycle · ECU $volts$software") +
                 " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
@@ -740,6 +722,5 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
 
     private companion object {
         const val SAMPLE_MAX_AGE_MS = 2_000L
-        const val STORED_TRIM_MAX_AGE_MS = 35_000L
     }
 }

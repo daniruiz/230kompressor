@@ -7,10 +7,11 @@ data class EcuProfile(
     val softwareAddress: Int,
     val ltftLowAddress: Int = 0x900C,
     val ltftHighAddress: Int = 0x9014,
+    val additiveAddress: Int = 0x9020,
 )
 
 /** References and RAM layouts verified in the ten analysed original binaries.
- * A calibration edit may retain the software reference. This selects only LTFT
+ * A calibration edit may retain the software reference. This selects correction
  * addresses, not a different injection calibration or timer scale.
  */
 object EcuProfiles {
@@ -24,7 +25,7 @@ object EcuProfiles {
         EcuProfile("114.235819.20", 0xE49E),
         EcuProfile("114.236338.39", 0xE4C6),
         EcuProfile("114.236438.40", 0xE4C6),
-        EcuProfile("114.236643.43", 0xD4DC, 0x920C, 0x9214),
+        EcuProfile("114.236643.43", 0xD4DC, 0x920C, 0x9214, 0x9220),
     )
     val bySoftware = all.associateBy { it.software }
 }

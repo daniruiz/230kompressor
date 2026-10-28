@@ -14,10 +14,6 @@ data class Display(
     val profile: String,
     val errors: Int,
     val failed: Boolean,
-    val low: Int?,
-    val high: Int?,
-    val trimsAt: Long?,
-    val trimsStatus: String,
     val ecuProfile: EcuProfile?,
     val ecuSoftware: String?,
     val ecuIdentificationStatus: String,
@@ -40,10 +36,6 @@ class Model {
     private var profile = ""
     private var errors = 0
     private var failed = false
-    private var low: Int? = null
-    private var high: Int? = null
-    private var trimsAt: Long? = null
-    private var trimsStatus = "pendiente"
     private var ecuProfile: EcuProfile? = null
     private var ecuSoftware: String? = null
     private var ecuIdentificationStatus = "pending"
@@ -66,10 +58,6 @@ class Model {
         profile = ""
         errors = 0
         failed = false
-        low = null
-        high = null
-        trimsAt = null
-        trimsStatus = "pendiente"
         ecuProfile = null
         ecuSoftware = null
         ecuIdentificationStatus = "pending"
@@ -112,23 +100,6 @@ class Model {
         ecuProfile = selected
         ecuSoftware = software
         ecuIdentificationStatus = identificationStatus
-        low = null
-        high = null
-        trimsAt = null
-        trimsStatus = if (selected == null && identificationStatus != "demo") "software sin verificar" else "pendiente"
-    }
-
-    @Synchronized
-    fun trims(l: Int, h: Int, at: Long) {
-        low = l
-        high = h
-        trimsAt = at
-        trimsStatus = "ok"
-    }
-
-    @Synchronized
-    fun trimError(s: String) {
-        trimsStatus = s
     }
 
     @Synchronized
@@ -190,10 +161,6 @@ class Model {
             profile,
             errors,
             failed,
-            low,
-            high,
-            trimsAt,
-            trimsStatus,
             ecuProfile,
             ecuSoftware,
             ecuIdentificationStatus,

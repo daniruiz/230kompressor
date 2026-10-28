@@ -14,7 +14,7 @@ internal object CsvLog {
         "injection_ms_est", "injector_duty_est_pct", "advance_deg",
     ) + (1..4).map { "knock_channel_${it}_deg_est" } +
         listOf(
-            "stft_a_pct", "ltft_a_pct", "ltft_low_pct", "ltft_high_pct",
+            "stft_a_pct", "ltft_a_pct",
             "coolant_C", "iat_C", "oxygen_voltage_V", "ecu_voltage_V_est",
         )
 
