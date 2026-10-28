@@ -168,15 +168,16 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         title: String,
         color: Int,
         flash: Boolean = false,
+        cornerRadius: Float = 12f,
     ) {
         paint.shader = null
         paint.style = Paint.Style.FILL
         paint.color = if (flash) Color.rgb(105, 8, 25) else Color.rgb(7, 14, 23)
-        canvas.drawRoundRect(bounds, 12f, 12f, paint)
+        canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, paint)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 1.2f
         paint.color = if (flash) red else color
-        canvas.drawRoundRect(bounds, 12f, 12f, paint)
+        canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, paint)
         drawText(
             canvas,
             title,
@@ -476,7 +477,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val hot = temperature != null && temperature > limit
         val flash = hot && flashEnabled && (now / 250) % 2 == 0L
         val gaugeColor = if (hot) red else color
-        drawCard(canvas, bounds, title, gaugeColor, flash)
+        drawCard(canvas, bounds, title, gaugeColor, flash, cornerRadius = 24f)
         val cx = bounds.centerX()
         val cy = bounds.top + 208f
         // Keep the dial and its labels proportional inside the responsive card.
@@ -488,6 +489,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         paint.shader = null
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 16f
+        val previousCap = paint.strokeCap
+        paint.strokeCap = Paint.Cap.ROUND
         paint.color = Color.rgb(36, 49, 65)
         canvas.drawArc(dial, 135f, 270f, false, paint)
         paint.color = red
@@ -499,6 +502,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             paint.color = gaugeColor
             canvas.drawArc(dial, 135f, 270f * (temperature.toFloat() / maximum).coerceIn(0f, 1f), false, paint)
         }
+        paint.strokeCap = previousCap
         drawText(canvas, temperature?.let { "$it" } ?: "—", cx, bounds.top + 230f,
             76f, gaugeColor, true, bounds.width() - 40f, Paint.Align.CENTER)
         drawText(canvas, "0", cx - 116f, bounds.top + 342f, 16f, muted, width = 65f, align = Paint.Align.CENTER)
