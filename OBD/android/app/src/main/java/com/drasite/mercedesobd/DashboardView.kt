@@ -711,8 +711,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             tr(" · SW ${display.ecuSoftware ?: "no identificada"}", " · SW ${display.ecuSoftware ?: "unidentified"}") +
                 if (display.ecuProfile == null) tr(" · LTFT RAM desactivado", " · stored LTFT disabled") else ""
         val perf =
-            formatValue("%.1f Hz", display.hz) +
-                tr(" · ${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software · errores ${display.errors}", " · ${sample?.cycleMs?:"—"} ms/cycle · ECU $volts$software · errors ${display.errors}") +
+            tr("${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software", "${sample?.cycleMs?:"—"} ms/cycle · ECU $volts$software") +
                 " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
         drawText(
             canvas,
