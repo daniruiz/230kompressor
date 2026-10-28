@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.Dialog
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.ClipData
@@ -147,48 +148,11 @@ class MainActivity : Activity() {
 
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
 
-    private var faultBusy = false
+    private var faultDialog: Dialog? = null
 
     private fun faultsMenu() {
-        AlertDialog.Builder(this)
-            .setTitle(tr("Errores de la ECU", "ECU fault codes") + if (demoMode) " · DEMO" else "")
-            .setItems(arrayOf(tr("Leer errores", "Read faults"), tr("Borrar errores…", "Clear faults…"))) { _, item ->
-                if (item == 0) requestFaults(false)
-                else AlertDialog.Builder(this)
-                    .setTitle(tr("¿Borrar errores de la ECU?", "Clear ECU faults?"))
-                    .setMessage(tr("Se borrarán los errores y sus datos de diagnóstico. Motor parado y contacto puesto.", "Faults and their diagnostic data will be erased. Engine stopped, ignition on."))
-                    .setPositiveButton(tr("Borrar", "Clear")) { _, _ -> requestFaults(true) }
-                    .setNegativeButton(tr("Cancelar", "Cancel"), null).show()
-            }
-            .setNegativeButton(tr("Cerrar", "Close"), null).show()
-    }
-
-    private fun requestFaults(clear: Boolean) {
-        if (faultBusy) return
-        faultBusy = true
-        val accepted = session.faults(clear) { result ->
-            handler.post {
-                faultBusy = false
-                if (isFinishing || isDestroyed) return@post
-                val message = result.fold(
-                    onSuccess = { codes ->
-                        when {
-                            clear -> tr("La ECU ha aceptado el borrado. Vuelve a leer para comprobar si quedan errores.", "The ECU accepted the clear request. Read again to check for remaining faults.")
-                            codes.isEmpty() -> tr("No hay errores almacenados", "No stored faults")
-                            else -> codes.joinToString("\n") { it.label() }
-                        }
-                    },
-                    onFailure = { it.message ?: it.toString() },
-                )
-                AlertDialog.Builder(this)
-                    .setTitle(tr("Errores de la ECU", "ECU fault codes") + if (demoMode) " · DEMO" else "")
-                    .setMessage(message).setPositiveButton(tr("Cerrar", "Close"), null).show()
-            }
-        }
-        if (!accepted) {
-            faultBusy = false
-            model.notice(tr("Conecta la ECU o inicia Demo y espera a recibir datos", "Connect the ECU or start Demo and wait for live data"))
-        } else model.notice(tr("Consultando averías…", "Processing fault request…"))
+        if (faultDialog?.isShowing == true) return
+        faultDialog = FaultsDialog(this, session, demoMode).show()
     }
 
     private fun permitted() =
@@ -559,6 +523,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        faultDialog?.dismiss()
         session.stop()
         cancelSound()
         handler.removeCallbacksAndMessages(null)
