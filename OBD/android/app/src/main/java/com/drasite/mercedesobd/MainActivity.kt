@@ -6,10 +6,12 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
+import android.content.ClipData
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -21,9 +23,10 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.PopupMenu
+import android.text.format.Formatter
 import java.io.File
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
+import java.text.DateFormat
+import java.util.Date
 
 class MainActivity : Activity() {
     private companion object {
@@ -42,6 +45,8 @@ class MainActivity : Activity() {
     private var resumed = false
     private var wasRunning = false
     private var exporting = false
+    private var pendingExport: File? = null
+    private val logFiles by lazy { LogFiles(File(filesDir, "logs"), File(cacheDir, "log_exports")) }
     private var pendingAdapterAddress: String? = null
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     private val ticker =
@@ -68,7 +73,11 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         session = Session(File(filesDir, "logs"), model) { handler.post { beepBurst() } }
         setContentView(createContentView())
-        if (intent.getBooleanExtra("demo", false)) start(true, null)
+        savedInstanceState?.getStringArrayList("pending_export")?.let {
+            pendingExport = runCatching { LogFiles.exportedFile(File(cacheDir, "log_exports"), it) }.getOrNull()
+            exporting = pendingExport != null
+        }
+        if (savedInstanceState == null && intent.getBooleanExtra("demo", false)) start(true, null)
     }
 
     private fun createContentView(): View {
@@ -116,7 +125,7 @@ class MainActivity : Activity() {
                 "Demo" to { start(true, null) },
                 tr("Parar", "Stop") to { stop() },
                 tr("Errores de la ECU", "ECU fault codes") to { faultsMenu() },
-                tr("Exportar", "Export") to { export() },
+                tr("Registros", "Logs") to { logsMenu() },
                 tr("Ajustes", "Settings") to { settings() },
             )
         actions.forEach { (label, action) ->
@@ -370,41 +379,113 @@ class MainActivity : Activity() {
             .show()
     }
 
-    private fun export() {
+    private fun logsAvailable(): Boolean {
         if (session.running) {
-            model.notice(tr("Pulsa Parar y espera al cierre antes de exportar", "Tap Stop and wait for the session to end before exporting"))
+            model.notice(tr("Pulsa Parar y espera al cierre para gestionar los registros", "Tap Stop and wait for the session to end to manage logs"))
+            return false
+        }
+        return !exporting
+    }
+
+    private fun logsMenu() {
+        if (!logsAvailable()) return
+        val files = logFiles.list()
+        if (files.isEmpty()) {
+            AlertDialog.Builder(this).setTitle(tr("Registros", "Logs"))
+                .setMessage(tr("Todavía no hay registros", "No logs yet"))
+                .setPositiveButton(tr("Cerrar", "Close"), null).show()
             return
         }
-        if (exporting) return
+        val selected = BooleanArray(files.size)
+        val dates = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+        val labels = files.map { "${it.name}\n${dates.format(Date(it.lastModified()))} · ${Formatter.formatFileSize(this, it.length())}" }.toTypedArray()
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(tr("Registros · selecciona archivos", "Logs · select files"))
+            .setMultiChoiceItems(labels, selected) { _, i, checked -> selected[i] = checked }
+            .setPositiveButton(tr("Acciones", "Actions"), null)
+            .setNeutralButton(tr("Todos", "All"), null)
+            .setNegativeButton(tr("Cerrar", "Close"), null).create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                val check = !selected.all { it }
+                selected.indices.forEach { selected[it] = check; dialog.listView.setItemChecked(it, check) }
+            }
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val names = files.filterIndexed { i, _ -> selected[i] }.map { it.name }
+                if (names.isNotEmpty()) {
+                    dialog.dismiss()
+                    logActions(names)
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun logActions(names: List<String>) {
+        AlertDialog.Builder(this)
+            .setTitle(tr("${names.size} archivo(s)", "${names.size} file(s)"))
+            .setItems(arrayOf(tr("Exportar", "Export"), tr("Compartir", "Share"), tr("Borrar…", "Delete…"))) { _, action ->
+                when (action) {
+                    0 -> prepareLogs(names, false)
+                    1 -> prepareLogs(names, true)
+                    else -> AlertDialog.Builder(this)
+                        .setTitle(tr("¿Borrar ${names.size} archivo(s)?", "Delete ${names.size} file(s)?"))
+                        .setMessage(names.joinToString("\n"))
+                        .setPositiveButton(tr("Borrar", "Delete")) { _, _ -> deleteLogs(names) }
+                        .setNegativeButton(tr("Cancelar", "Cancel"), null).show()
+                }
+            }
+            .setNegativeButton(tr("Volver", "Back")) { _, _ -> logsMenu() }.show()
+    }
+
+    private fun deleteLogs(names: List<String>) {
+        if (!logsAvailable()) return
         exporting = true
-        model.notice(tr("Preparando ZIP de registros…", "Preparing log ZIP…"))
+        Thread {
+            val result = runCatching { logFiles.delete(names) }
+            runOnUiThread {
+                exporting = false
+                model.notice(result.fold(
+                    onSuccess = { failed -> if (failed.isEmpty()) tr("Registros borrados", "Logs deleted")
+                        else tr("No se pudieron borrar: ", "Could not delete: ") + failed.joinToString(", ") },
+                    onFailure = { it.message ?: it.toString() },
+                ))
+                if (!isFinishing && !isDestroyed) logsMenu()
+            }
+        }.start()
+    }
+
+    private fun prepareLogs(names: List<String>, share: Boolean) {
+        if (!logsAvailable()) return
+        exporting = true
+        model.notice(tr("Preparando registros…", "Preparing logs…"))
         Thread {
                 try {
-                    val files =
-                        File(filesDir, "logs").listFiles()?.filter {
-                            it.extension in listOf("csv", "jsonl")
-                        } ?: emptyList()
-                    require(files.isNotEmpty()) { tr("Todavía no hay registros", "No logs yet") }
-                    ZipOutputStream(File(cacheDir, "me21_logs.zip").outputStream()).use { z ->
-                        files.forEach { f ->
-                            z.putNextEntry(ZipEntry(f.name))
-                            f.inputStream().use { it.copyTo(z) }
-                            z.closeEntry()
-                        }
-                    }
+                    val file = logFiles.prepare(names)
                     runOnUiThread {
                         if (isFinishing || isDestroyed) {
                             exporting = false
                             return@runOnUiThread
                         }
-                        val intent =
-                            Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                .addCategory(Intent.CATEGORY_OPENABLE)
-                                .setType("application/zip")
-                                .putExtra(Intent.EXTRA_TITLE, "me21_logs.zip")
                         try {
-                            startActivityForResult(intent, EXPORT_LOGS_REQUEST)
+                            if (share) {
+                                val uri = Uri.Builder().scheme("content").authority("$packageName.logs")
+                                    .appendPath(file.parentFile!!.name).appendPath(file.name).build()
+                                val intent = Intent(Intent.ACTION_SEND).setType(LogFiles.mime(file))
+                                    .putExtra(Intent.EXTRA_STREAM, uri)
+                                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                intent.clipData = ClipData.newRawUri(file.name, uri)
+                                startActivity(Intent.createChooser(intent, tr("Compartir registros", "Share logs")))
+                                exporting = false
+                            } else {
+                                pendingExport = file
+                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                                    .addCategory(Intent.CATEGORY_OPENABLE)
+                                    .setType(LogFiles.mime(file)).putExtra(Intent.EXTRA_TITLE, file.name)
+                                startActivityForResult(intent, EXPORT_LOGS_REQUEST)
+                            }
                         } catch (e: Exception) {
+                            pendingExport = null
                             exporting = false
                             model.notice(tr("No se pudo abrir el selector: ${e.message}", "Could not open file picker: ${e.message}"))
                         }
@@ -424,16 +505,23 @@ class MainActivity : Activity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != EXPORT_LOGS_REQUEST) return
         val uri = data?.data
+        val file = pendingExport
+        pendingExport = null
         if (resultCode != RESULT_OK || uri == null) {
             exporting = false
             model.notice(tr("Exportación cancelada", "Export cancelled"))
+            return
+        }
+        if (file == null) {
+            exporting = false
+            model.notice(tr("Exportación no disponible; selecciona de nuevo los registros", "Export unavailable; select the logs again"))
             return
         }
         Thread {
                 try {
                     contentResolver.openOutputStream(uri, "wt").use { out ->
                         requireNotNull(out)
-                        File(cacheDir, "me21_logs.zip").inputStream().use { it.copyTo(out) }
+                        file.inputStream().use { it.copyTo(out) }
                     }
                     model.notice(tr("Registros exportados", "Logs exported"))
                 } catch (e: Exception) {
@@ -443,6 +531,11 @@ class MainActivity : Activity() {
                 }
             }
             .start()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        pendingExport?.let { outState.putStringArrayList("pending_export", arrayListOf(it.parentFile!!.name, it.name)) }
+        super.onSaveInstanceState(outState)
     }
 
     override fun onResume() {
