@@ -10,7 +10,6 @@ import android.content.ClipData
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.AudioManager
-import android.media.ToneGenerator
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -37,11 +36,18 @@ class MainActivity : Activity() {
     private lateinit var session: Session
     private lateinit var dashboard: DashboardView
     private val handler = Handler(Looper.getMainLooper())
-    private var tone: ToneGenerator? = null
+    private var tone: AlertTone? = null
     private var soundGeneration = 0
     private var nextBurst = 0L
     private var demoMode = false
-    private var volumeBeforeAlert: Int? = null
+    private val alertVolume by lazy {
+        val audio = getSystemService(AudioManager::class.java)
+        AlertVolume(
+            { audio.getStreamVolume(AudioManager.STREAM_MUSIC) },
+            { audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC) },
+            { audio.setStreamVolume(AudioManager.STREAM_MUSIC, it, 0) },
+        )
+    }
     private var resumed = false
     private var wasRunning = false
     private var exporting = false
@@ -71,6 +77,8 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Hardware volume keys adjust the same stream used by demo alerts.
+        volumeControlStream = AudioManager.STREAM_MUSIC
         session = Session(File(filesDir, "logs"), model) { handler.post { beepBurst() } }
         setContentView(createContentView())
         savedInstanceState?.getStringArrayList("pending_export")?.let {
@@ -285,8 +293,9 @@ class MainActivity : Activity() {
         if (!prefs.getBoolean("sound", true) || !session.running || !resumed) return
         if (tone == null)
             try {
-                tone = ToneGenerator(AudioManager.STREAM_MUSIC, ToneGenerator.MAX_VOLUME)
-            } catch (_: Exception) {
+                tone = AlertTone()
+            } catch (e: Exception) {
+                model.notice(tr("No se pudo iniciar el sonido: ${e.message}", "Could not start audio: ${e.message}"))
                 return
             }
         val gen = soundGeneration
@@ -298,11 +307,12 @@ class MainActivity : Activity() {
                     if (
                         gen == soundGeneration && resumed && session.running && prefs.getBoolean("sound", true)
                     ) {
-                        if (!demoMode) maximizeAlertVolume()
+                        prepareAlertVolume()
                         try {
-                            tone?.startTone(ToneGenerator.TONE_CDMA_HIGH_L, 65)
-                        } catch (_: RuntimeException) {
+                            tone?.play()
+                        } catch (e: RuntimeException) {
                             cancelSound()
+                            model.notice(tr("No se pudo reproducir el aviso: ${e.message}", "Could not play alert: ${e.message}"))
                         }
                     }
                 },
@@ -319,27 +329,17 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun maximizeAlertVolume() {
-        if (volumeBeforeAlert != null) return
-        val audio = getSystemService(AudioManager::class.java)
+    private fun prepareAlertVolume() {
         try {
-            volumeBeforeAlert = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
-            audio.setStreamVolume(
-                AudioManager.STREAM_MUSIC,
-                audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
-                0,
-            )
+            alertVolume.begin(demoMode)
         } catch (_: SecurityException) {
             model.notice(tr("Android no permite ajustar el volumen de los avisos", "Android does not allow changing alert volume"))
         }
     }
 
     private fun restoreAlertVolume() {
-        val volume = volumeBeforeAlert ?: return
         try {
-            getSystemService(AudioManager::class.java)
-                .setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
-            volumeBeforeAlert = null
+            alertVolume.restore()
         } catch (_: SecurityException) {
             model.notice(tr("Android no permite restaurar el volumen anterior", "Android does not allow restoring the previous volume"))
         }
@@ -349,7 +349,9 @@ class MainActivity : Activity() {
         soundGeneration++
         nextBurst = 0
         try {
-            tone?.stopTone()
+            tone?.stop()
+        } catch (_: IllegalStateException) {
+            // A lost audio track must not prevent restoring the media volume.
         } finally {
             restoreAlertVolume()
         }
