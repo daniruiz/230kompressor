@@ -1,0 +1,19 @@
+/* Keep the optimized image discoverable without changing the original framing. */
+.hero { background-image: none; background-color: #111a28; }
+.hero-photo { position: absolute; inset: 0; display: block; z-index: 0; pointer-events: none; }
+.hero-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 62%; }
+.hero::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg,rgba(12,20,31,.92) 0%,rgba(12,20,31,.76) 30%,rgba(12,20,31,.2) 62%,rgba(12,20,31,.06) 100%); }
+.hero h1 { font-size: clamp(44px,5vw,72px); }
+.contact-section { background-image: linear-gradient(100deg,rgba(10,20,33,.93),rgba(10,20,33,.54)),url('assets/clk-on-track-1920.webp'); }
+@media(max-width:1100px) {
+  .hero-photo img { object-position: 58% 62%; }
+}
+@media(max-width:650px) {
+  .hero-photo { top: auto; height: 420px; }
+  .hero-photo img { object-position: 54% bottom; }
+  .hero::after { background: linear-gradient(180deg,#111a28 0%,#111a28 44%,rgba(17,26,40,.85) 56%,rgba(17,26,40,.06) 76%); }
+  .hero h1 { font-size: clamp(34px,9vw,52px); }
+  .contact-section { background-image: linear-gradient(100deg,rgba(10,20,33,.93),rgba(10,20,33,.54)),url('assets/clk-on-track-960.webp'); }
+}
+
+.contact-honeypot{position:absolute!important;left:-10000px!important;width:1px;height:1px;overflow:hidden}.consultation-form button:disabled{opacity:.65;cursor:wait}
