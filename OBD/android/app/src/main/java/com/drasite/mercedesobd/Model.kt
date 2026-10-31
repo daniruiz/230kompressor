@@ -92,7 +92,8 @@ class Model {
         failed = true
         previous = null
         mode = "PARADO"
-        status = tr("Sesión detenida · registros guardados", "Session stopped · logs saved")
+        status = if (ecuIdentificationStatus == "demo") tr("Demo detenida", "Demo stopped")
+            else tr("Sesión detenida · registros guardados", "Session stopped · logs saved")
     }
 
     @Synchronized

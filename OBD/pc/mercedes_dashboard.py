@@ -818,6 +818,8 @@ class Journal:
             self.csv_writer.writeheader()
 
     def sample(self, sample, args, model, event):
+        if self.stream is None:
+            return
         values = dict(demo=args.demo, rpm=sample.rpm, load_raw=sample.load,
             **injection_metrics(sample, args),
             cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms, observed_count=model.count, observed_event=event,
@@ -1947,7 +1949,7 @@ def main(argv=None):
     sound = KnockSound()
     model=Model(sound=sound)
     try:
-        journal=Journal(args.log_dir, not args.no_log)
+        journal=Journal(args.log_dir, not args.no_log and not args.demo)
     except OSError as exc:
         sound.close()
         console.print(Text(tr('No se puede crear el registro: ', 'Cannot create log: ')+str(exc),style='red'))

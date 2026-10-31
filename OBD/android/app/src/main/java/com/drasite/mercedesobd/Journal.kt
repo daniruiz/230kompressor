@@ -13,20 +13,18 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
         DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS")
             .withZone(ZoneOffset.UTC)
             .format(Instant.now())
-    val jsonFile: File
-    val csvFile: File
-    private val json: java.io.BufferedWriter
-    private val csv: java.io.BufferedWriter
+    val jsonFile: File? = if (demo) null else File(root, "me21_${stamp}_${System.nanoTime()}.jsonl")
+    val csvFile: File? = jsonFile?.let { File(root, it.nameWithoutExtension + ".csv") }
+    private val json: java.io.BufferedWriter?
+    private val csv: java.io.BufferedWriter?
     private var flushed = 0L
     private var csvStartedAt: Long? = null
 
     init {
-        root.mkdirs()
-        jsonFile = File(root, "me21_${stamp}_${System.nanoTime()}.jsonl")
-        csvFile = File(root, jsonFile.nameWithoutExtension + ".csv")
-        json = jsonFile.bufferedWriter()
-        csv = csvFile.bufferedWriter(Charsets.UTF_8)
-        csv.write(CsvLog.row(CsvLog.fields))
+        if (!demo) root.mkdirs()
+        json = jsonFile?.bufferedWriter()
+        csv = csvFile?.bufferedWriter(Charsets.UTF_8)
+        csv?.write(CsvLog.row(CsvLog.fields))
         event(
             "session",
             "demo" to demo,
@@ -58,21 +56,23 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
 
     @Synchronized
     override fun event(type: String, vararg values: Pair<String, Any?>) {
+        val jsonWriter = json ?: return
         val row = JSONObject().put("utc", CsvLog.utc()).put("type", type)
         for ((key, value) in values) row.put(
             key,
             if (value is Collection<*>) JSONArray(value) else value ?: JSONObject.NULL,
         )
-        json.appendLine(row.toString())
+        jsonWriter.appendLine(row.toString())
         if (monoMs() - flushed > 1000) {
-            json.flush()
-            csv.flush()
+            jsonWriter.flush()
+            csv?.flush()
             flushed = monoMs()
         }
     }
 
     @Synchronized
     fun sample(s: Sample, d: Display, raised: Boolean) {
+        val csvWriter = csv ?: return
         val v =
             linkedMapOf<String, Any?>(
                 "utc" to CsvLog.utc(),
@@ -117,16 +117,16 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
         }
         // Sample.at uses the monotonic acquisition clock; each log starts at zero.
         val start = csvStartedAt ?: s.at.also { csvStartedAt = it }
-        csv.write(CsvLog.sampleRow(v, s.at - start))
+        csvWriter.write(CsvLog.sampleRow(v, s.at - start))
         event("csv_sample", *v.map { it.key to it.value }.toTypedArray())
     }
 
     @Synchronized
     override fun close() {
         try {
-            csv.close()
+            csv?.close()
         } finally {
-            json.close()
+            json?.close()
         }
     }
 }
