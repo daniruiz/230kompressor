@@ -878,6 +878,7 @@ class ELM:
         self.serial = serial.serial_for_url(port, baudrate=baud, timeout=0.02, write_timeout=2)
         self.port, self.baud = port, baud
         self.port_metadata = None
+        self.adapter_identity = None
         self.journal, self.stop = journal, stop
         self.fast, self.repeat = fast, repeat
         self.adaptive = '0'
@@ -1023,8 +1024,11 @@ class ELM:
 
     def setup(self, notice, adaptive):
         self.adaptive = adaptive if self.fast else '0'
-        self.at('ATE0')
-        identity = self.command('ATI').strip()
+        # Automatic discovery already verified these commands on this open port.
+        if self.adapter_identity is None:
+            self.at('ATE0')
+            self.adapter_identity = self.command('ATI').strip()
+        identity = self.adapter_identity
         notice(tr('Adaptador listo · ', 'Adapter ready · ') + identity)
         # Detect actual ST command support, not merely the serial port name.
         firmware = self.command('STI', timeout=2).strip()
@@ -1057,12 +1061,11 @@ class ELM:
             notice(tr('Inicializando diagnosis Mercedes · dirección 01', 'Starting Mercedes diagnostics · address 01'))
             try:
                 init = self.command('ATSI', timeout=20)
-                kw = self.command('ATKW').strip()
-                self.command('ATDP')
                 if any(s in init.upper() for s in ('ERROR', 'UNABLE', 'BUS BUSY')):
                     raise DiagnosticError(tr('Inicialización fallida: ', 'Initialization failed: ') + init.strip())
-                # Read one known identifier with the conservative response wait first.
-                positive(self.query('221104', optimized=False), 0x22, b'\x62\x11\x04', 5)
+                kw = self.command('ATKW').strip()
+                self._read_single_frame('221104',
+                    lambda reply: positive(reply, 0x22, b'\x62\x11\x04', 5))
             except (LinkTimeout, NegativeResponse):
                 # A missing prompt loses framing; a negative ECU reply already
                 # confirms communication. Neither calls for repeating slow init.
@@ -1243,6 +1246,25 @@ class ELM:
                                disabled=self.elm_timing_probe_disabled)
         notice(profile_text(self.adapter_profile) + tr(' · lectura preparada', ' · ready to read'))
 
+    def _read_single_frame(self, payload, decode):
+        """Known single-frame reads may finish without the ELM's final timeout.
+
+        Validate the entire positive frame. A clone returning a malformed reply
+        gets one conservative read path; no retries after losing the prompt or
+        receiving a negative ECU response. Never use this for writes or DTCs.
+        """
+        try:
+            return decode(self.query(payload, allow_repeat=False))
+        except (LinkTimeout, NegativeResponse):
+            raise
+        except DiagnosticError as exc:
+            if not self.fast:
+                raise
+            self.restore_transport(str(exc))
+            self.fast = self.repeat = False
+            self.journal.write('single_response_disabled', payload=payload, reason=str(exc))
+            return decode(self.query(payload, optimized=False, allow_repeat=False))
+
     def define_group(self):
         # Define active slots. Clear remaining slots so frame layout is exact,
         # regardless of any diagnostic client previously connected.
@@ -1252,8 +1274,8 @@ class ELM:
             cmd = definition(slot, ident, clear)
             expected = bytes([0x6C, 0x01, 0xD0 if clear else 0xD2])
             positive(self.query(cmd, optimized=True, allow_repeat=False), 0x2C, expected, 3)
-        # Learn/verify one complete single response BEFORE the '1' shortcut.
-        return grouped(self.query('2A0101', optimized=False))
+        # This configured group returns one frame; still verify all twelve pairs.
+        return self._read_single_frame('2A0101', grouped)
 
     def acquire(self, mode):
         start = time.monotonic()
@@ -1429,6 +1451,7 @@ def connect_adapter(args, journal, stop, notice):
                 if not re.search(r'ELM|OBDLINK|STN|OBDII|OBD-II', identity, re.I):
                     raise DiagnosticError(tr('Identidad no reconocida: ', 'Unrecognized identity: ') + identity)
                 args.port, args.baud = port, baud
+                elm.adapter_identity = identity
                 elm.port_metadata = adapter_port_metadata(port)
                 journal.write('adapter', port=port, baud=baud, identity=identity,
                                **elm.port_metadata)

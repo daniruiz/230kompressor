@@ -270,10 +270,9 @@ class Elm(
             notice(tr("Inicializando Mercedes · dirección 01", "Starting Mercedes diagnostics · address 01"))
             try {
                 val init = command("ATSI", 20000)
-                val keywords = command("ATKW").trim()
-                command("ATDP")
                 if (listOf("ERROR", "UNABLE", "BUS BUSY").any { init.contains(it, true) })
                     throw DiagnosticException(tr("Inicialización fallida: $init", "Initialization failed: $init"))
+                val keywords = command("ATKW").trim()
                 verifyLink()
                 log.event(
                     "ecu_link_verified",
@@ -297,7 +296,7 @@ class Elm(
     }
 
     fun verifyLink() {
-        Decoder.positive(query("221104", false), 0x22, "621104", 5)
+        readSingleFrame("221104") { Decoder.positive(it, 0x22, "621104", 5) }
     }
 
     fun readFaults(): List<FaultCode> {
@@ -317,13 +316,34 @@ class Elm(
         log.event("dtc_clear", "acknowledged" to true)
     }
 
+    /** Known single-frame reads can skip the adapter's final response timeout.
+     * Validate the full positive reply and fall back for incompatible clones.
+     * A lost prompt or a negative ECU response is never retried here.
+     * Only read services belong here, never writes or multi-frame DTC reads.
+     */
+    private fun <T> readSingleFrame(payload: String, decode: (String) -> T): T {
+        try {
+            return decode(query(payload))
+        } catch (e: LinkTimeout) {
+            throw e
+        } catch (e: NegativeResponse) {
+            throw e
+        } catch (e: DiagnosticException) {
+            if (!fast) throw e
+            rollback(e.message ?: e.toString())
+            fast = false
+            log.event("single_response_disabled", "payload" to payload, "reason" to e.toString())
+            return decode(query(payload, false))
+        }
+    }
+
     fun defineGroup(): Sample {
         Decoder.ids.forEachIndexed { i, id ->
             // Send each definition explicitly; only read services may retry NO DATA.
             Decoder.positive(query(Decoder.definition(i + 1, id)), 0x2C, "6C01D2", 3)
         }
-        // Verify a full response before applying the one-response shortcut to reads.
-        return Decoder.grouped(query("2A0101", false))
+        // One frame contains this group's twelve pairs; validate its full length.
+        return readSingleFrame("2A0101", Decoder::grouped)
     }
 
     fun acquire(group: Boolean): Sample {
