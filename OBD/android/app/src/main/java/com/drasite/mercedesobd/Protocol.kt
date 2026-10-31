@@ -235,8 +235,6 @@ class Elm(
             "hardware" to hardware,
         )
         at("ATPC")
-        notice(tr("Cerrando sesión anterior · 6 s", "Closing previous session · 6 s"))
-        pause(6000)
         for (cmd in
             listOf(
                 "ATD",
@@ -259,18 +257,43 @@ class Elm(
         }
         log.event("keyword_check", "disabled_acknowledged" to kwDisabled)
         at("ATAL", true)
-        notice(tr("Inicializando Mercedes · dirección 01", "Starting Mercedes diagnostics · address 01"))
-        val init = command("ATSI", 20000)
-        val keywords = command("ATKW").trim()
-        command("ATDP")
-        if (listOf("ERROR", "UNABLE", "BUS BUSY").any { init.contains(it, true) })
-            throw DiagnosticException(tr("Inicialización fallida: $init", "Initialization failed: $init"))
-        verifyLink()
-        log.event(
-            "ecu_link_verified",
-            "keywords" to keywords,
-            "keyword_disable_acknowledged" to kwDisabled,
-        )
+        // Try a fresh session immediately; reserve the idle period for one
+        // retry after an init/read failure with the adapter prompt intact.
+        for (attempt in 0..1) {
+            if (attempt > 0) {
+                at("ATPC")
+                lastBus = null
+                notice(tr("Reintentando · cerrando sesión anterior · 6 s",
+                    "Retrying · closing previous session · 6 s"))
+                pause(6000)
+            }
+            notice(tr("Inicializando Mercedes · dirección 01", "Starting Mercedes diagnostics · address 01"))
+            try {
+                val init = command("ATSI", 20000)
+                val keywords = command("ATKW").trim()
+                command("ATDP")
+                if (listOf("ERROR", "UNABLE", "BUS BUSY").any { init.contains(it, true) })
+                    throw DiagnosticException(tr("Inicialización fallida: $init", "Initialization failed: $init"))
+                verifyLink()
+                log.event(
+                    "ecu_link_verified",
+                    "keywords" to keywords,
+                    "keyword_disable_acknowledged" to kwDisabled,
+                    "attempts" to attempt + 1,
+                    "startup_wait_ms" to attempt * 6000,
+                )
+                return
+            } catch (e: LinkTimeout) {
+                // Do not send another command after losing adapter framing.
+                throw e
+            } catch (e: NegativeResponse) {
+                // The ECU is already communicating; waiting cannot fix rejection.
+                throw e
+            } catch (e: DiagnosticException) {
+                if (attempt > 0) throw e
+                log.event("connection_retry", "reason" to e.toString(), "wait_ms" to 6000)
+            }
+        }
     }
 
     fun verifyLink() {

@@ -1037,24 +1037,45 @@ class ELM:
                            group_ids=[f'11{x:02X}' for x in IDS],
                            decoder_revision='12_ids_load_from_1107_voltage_1110_v2')
         self.at('ATPC')
-        notice(tr('Cerrando sesión anterior · 6 s', 'Closing previous session · 6 s'))
-        if self.stop.wait(6):
-            raise InterruptedError
         for cmd in ('ATD', 'ATE0', 'ATL0', 'ATS0', 'ATH0', 'ATM0', 'ATSP4',
                     'ATIIA01', 'ATSH8101F1', 'ATKW0', 'ATSW00',
                     'ATAT'+self.adaptive, 'ATST'+self.response_timeout):
             self.at(cmd)
         # Group packets exceed the 7-byte limit of some ELM implementations.
         self.at('ATAL', optional=True)
-        notice(tr('Inicializando diagnosis Mercedes · dirección 01', 'Starting Mercedes diagnostics · address 01'))
-        init = self.command('ATSI', timeout=20)
-        kw = self.command('ATKW').strip()
-        self.command('ATDP')
-        if any(s in init.upper() for s in ('ERROR', 'UNABLE', 'BUS BUSY')):
-            raise DiagnosticError(tr('Inicialización fallida: ', 'Initialization failed: ') + init.strip())
-        notice(tr('Sesión lista · palabras clave ', 'Session ready · keywords ') + kw)
-        # Read one known identifier with the conservative response wait first.
-        positive(self.query('221104', optimized=False), 0x22, b'\x62\x11\x04', 5)
+        # A fresh ECU may accept slow init immediately. Only let an old session
+        # expire if the first init/read fails with the adapter prompt intact.
+        for attempt in range(2):
+            if attempt:
+                self.at('ATPC')
+                self.last_bus_reply = None
+                self.last_command = None
+                notice(tr('Reintentando · cerrando sesión anterior · 6 s',
+                          'Retrying · closing previous session · 6 s'))
+                if self.stop.wait(6):
+                    raise InterruptedError
+            notice(tr('Inicializando diagnosis Mercedes · dirección 01', 'Starting Mercedes diagnostics · address 01'))
+            try:
+                init = self.command('ATSI', timeout=20)
+                kw = self.command('ATKW').strip()
+                self.command('ATDP')
+                if any(s in init.upper() for s in ('ERROR', 'UNABLE', 'BUS BUSY')):
+                    raise DiagnosticError(tr('Inicialización fallida: ', 'Initialization failed: ') + init.strip())
+                # Read one known identifier with the conservative response wait first.
+                positive(self.query('221104', optimized=False), 0x22, b'\x62\x11\x04', 5)
+            except (LinkTimeout, NegativeResponse):
+                # A missing prompt loses framing; a negative ECU reply already
+                # confirms communication. Neither calls for repeating slow init.
+                raise
+            except DiagnosticError as exc:
+                if attempt:
+                    raise
+                self.journal.write('connection_retry', reason=str(exc), wait_ms=6000)
+            else:
+                self.journal.write('ecu_link_verified', keywords=kw, attempts=attempt+1,
+                                   startup_wait_ms=attempt*6000)
+                notice(tr('Sesión lista · palabras clave ', 'Session ready · keywords ') + kw)
+                return
 
     def restore_transport(self, reason):
         """Rollback once; never repeatedly retest a timing that failed this session."""
