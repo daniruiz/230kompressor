@@ -649,6 +649,7 @@ nav > a:hover {
 .stage-notes strong {
   color: var(--ink);
 }
+.stage-card li a,
 .stage-notes a {
   display: inline-block;
   color: var(--accent);

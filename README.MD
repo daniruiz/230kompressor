@@ -122,7 +122,7 @@ The definitions include ignition correction associated with coolant and intake a
 - Cold air intake
 - Exhaust
 - CAT delete (optional)
-- ECU tune
+- 98 RON fuel (recommended)
 
 ### STAGE 2 (~220-230hp)
 - [Ported supercharger](https://www.benzworld.org/threads/home-port-job-of-the-eaton-m62-s-c.1516156/)
@@ -130,12 +130,12 @@ The definitions include ignition correction associated with coolant and intake a
 - Remove the MAF and throttle body screens
 - Wideband oxygen sensor
 - 320cc Bosch Red injectors 0280155759
-- BOSCH FR6DC spark plugs
-- ECU tune
+- BOSCH FR5DC spark plugs
 
 ### STAGE 3 (~230-250hp)
 - 84mm supercharger pulley
 - 1-6 Bar adjustable fuel pressure regulator (adjust pressure to reach ~11.8 AFR at 5,200rpm WOT − near 4.2 Bar with **vacuum line unplugged**)
+- 98 RON fuel
 
 ## OBD dashboard for PC and Android
 
