@@ -14,7 +14,7 @@ function reply($status, $ok, $message, $details = [])
 {
     http_response_code($status);
     echo json_encode(
-        array_merge(["ok" => $ok, "message" => $message], $details),
+        array_merge(["ok" => $ok, "message" => $message], $details)
     );
     exit();
 }
@@ -23,6 +23,10 @@ function reply($status, $ok, $message, $details = [])
 function mailFailure($code, $detail)
 {
     $reference = bin2hex(random_bytes(4));
+    $jsonFlags = JSON_UNESCAPED_SLASHES;
+    if (defined("JSON_INVALID_UTF8_SUBSTITUTE")) {
+        $jsonFlags |= JSON_INVALID_UTF8_SUBSTITUTE;
+    }
     error_log(
         "[M111 contact " .
             $reference .
@@ -35,11 +39,11 @@ function mailFailure($code, $detail)
                         trim((string) ini_get("sendmail_path")) !== "",
                     "forced_mail_parameters" =>
                         trim(
-                            (string) ini_get("mail.force_extra_parameters"),
+                            (string) ini_get("mail.force_extra_parameters")
                         ) !== "",
                 ],
-                JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE,
-            ),
+                $jsonFlags
+            )
     );
     $message =
         $code === "mail_unavailable"
@@ -52,7 +56,7 @@ function mailFailure($code, $detail)
             " Please email daniel@drasite.com directly. Reference: " .
             $reference .
             ".",
-        ["code" => $code, "reference" => $reference],
+        ["code" => $code, "reference" => $reference]
     );
 }
 
@@ -81,11 +85,24 @@ if ((int) ($_SERVER["CONTENT_LENGTH"] ?? 0) > 20000) {
 session_name("M111CONTACT");
 ini_set("session.use_strict_mode", "1");
 ini_set("session.use_only_cookies", "1");
-session_set_cookie_params([
-    "httponly" => true,
-    "samesite" => "Lax",
-    "secure" => !empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off",
-]);
+$secureCookie = !empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off";
+if (PHP_VERSION_ID >= 70300) {
+    session_set_cookie_params([
+        "httponly" => true,
+        "samesite" => "Lax",
+        "secure" => $secureCookie,
+    ]);
+} else {
+    // PHP 7.0–7.2 requiere argumentos separados y SameSite dentro de la ruta.
+    $cookieParams = session_get_cookie_params();
+    session_set_cookie_params(
+        $cookieParams["lifetime"],
+        $cookieParams["path"] . "; SameSite=Lax",
+        $cookieParams["domain"],
+        $secureCookie,
+        true
+    );
+}
 if (!session_start()) {
     reply(503, false, "Please email daniel@drasite.com directly.");
 }
@@ -125,7 +142,7 @@ if (
     reply(
         422,
         false,
-        "Please complete all fields with a valid email and a message of at least 10 characters.",
+        "Please complete all fields with a valid email and a message of at least 10 characters."
     );
 }
 if (time() - ($_SESSION["last_attempt"] ?? 0) < 30) {
@@ -137,7 +154,7 @@ $_SESSION["last_attempt"] = time();
 if (!function_exists("mail")) {
     mailFailure(
         "mail_unavailable",
-        "PHP mail() is disabled or unavailable on this hosting account.",
+        "PHP mail() is disabled or unavailable on this hosting account."
     );
 }
 // El remitente es configuración fija, nunca un dato del formulario.
@@ -149,7 +166,7 @@ if (
 ) {
     mailFailure(
         "mail_configuration",
-        "Invalid fixed recipient or sender address in contact.php.",
+        "Invalid fixed recipient or sender address in contact.php."
     );
 }
 
@@ -176,7 +193,7 @@ try {
         "M111 Kompressor - Contact form",
         chunk_split(base64_encode($body)),
         $headers,
-        "-f" . $from,
+        "-f" . $from
     );
 } catch (Throwable $error) {
     $warnings[] = $error->getMessage();
@@ -188,7 +205,7 @@ if (!$sent) {
         "mail_rejected",
         $warnings
             ? implode(" | ", $warnings)
-            : "mail() returned false without a PHP warning. Check the hosting Sendmail service, authorised sender and sending limits.",
+            : "mail() returned false without a PHP warning. Check the hosting Sendmail service, authorised sender and sending limits."
     );
 }
 
@@ -196,5 +213,5 @@ unset($_SESSION["contact_token"]);
 reply(
     200,
     true,
-    "Your enquiry has been submitted. Daniel will reply by email.",
+    "Your enquiry has been submitted. Daniel will reply by email."
 );
