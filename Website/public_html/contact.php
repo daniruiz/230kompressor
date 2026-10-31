@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 // mail() usa Sendmail del alojamiento; no admite usuario/contraseña SMTP.
 // Hostinger debe permitir enviar desde esta dirección de tu dominio.
 $to = "daniel@drasite.com";
@@ -10,23 +12,23 @@ header("Content-Type: application/json; charset=utf-8");
 header("Cache-Control: no-store");
 header("X-Robots-Tag: noindex");
 
-function reply($status, $ok, $message, $details = [])
-{
+function reply(
+    int $status,
+    bool $ok,
+    string $message,
+    array $details = [],
+): never {
     http_response_code($status);
     echo json_encode(
-        array_merge(["ok" => $ok, "message" => $message], $details)
+        array_merge(["ok" => $ok, "message" => $message], $details),
     );
     exit();
 }
 
 // El detalle técnico queda en el log de PHP, no en la página pública.
-function mailFailure($code, $detail)
+function mailFailure(string $code, string $detail): never
 {
     $reference = bin2hex(random_bytes(4));
-    $jsonFlags = JSON_UNESCAPED_SLASHES;
-    if (defined("JSON_INVALID_UTF8_SUBSTITUTE")) {
-        $jsonFlags |= JSON_INVALID_UTF8_SUBSTITUTE;
-    }
     error_log(
         "[M111 contact " .
             $reference .
@@ -39,11 +41,11 @@ function mailFailure($code, $detail)
                         trim((string) ini_get("sendmail_path")) !== "",
                     "forced_mail_parameters" =>
                         trim(
-                            (string) ini_get("mail.force_extra_parameters")
+                            (string) ini_get("mail.force_extra_parameters"),
                         ) !== "",
                 ],
-                $jsonFlags
-            )
+                JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE,
+            ),
     );
     $message =
         $code === "mail_unavailable"
@@ -56,11 +58,11 @@ function mailFailure($code, $detail)
             " Please email daniel@drasite.com directly. Reference: " .
             $reference .
             ".",
-        ["code" => $code, "reference" => $reference]
+        ["code" => $code, "reference" => $reference],
     );
 }
 
-function input($key, $max)
+function input(string $key, int $max): string
 {
     $value = $_POST[$key] ?? "";
     if (
@@ -85,32 +87,18 @@ if ((int) ($_SERVER["CONTENT_LENGTH"] ?? 0) > 20000) {
 session_name("M111CONTACT");
 ini_set("session.use_strict_mode", "1");
 ini_set("session.use_only_cookies", "1");
-$secureCookie = !empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off";
-if (PHP_VERSION_ID >= 70300) {
-    session_set_cookie_params([
-        "httponly" => true,
-        "samesite" => "Lax",
-        "secure" => $secureCookie,
-    ]);
-} else {
-    // PHP 7.0–7.2 requiere argumentos separados y SameSite dentro de la ruta.
-    $cookieParams = session_get_cookie_params();
-    session_set_cookie_params(
-        $cookieParams["lifetime"],
-        $cookieParams["path"] . "; SameSite=Lax",
-        $cookieParams["domain"],
-        $secureCookie,
-        true
-    );
-}
+session_set_cookie_params([
+    "httponly" => true,
+    "samesite" => "Lax",
+    "secure" => !empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off",
+]);
 if (!session_start()) {
     reply(503, false, "Please email daniel@drasite.com directly.");
 }
 
 // El formulario actual pide este token antes de enviar los datos.
 if ($method === "GET") {
-    $_SESSION["contact_token"] =
-        $_SESSION["contact_token"] ?? bin2hex(random_bytes(32));
+    $_SESSION["contact_token"] ??= bin2hex(random_bytes(32));
     echo json_encode(["token" => $_SESSION["contact_token"]]);
     exit();
 }
@@ -142,7 +130,7 @@ if (
     reply(
         422,
         false,
-        "Please complete all fields with a valid email and a message of at least 10 characters."
+        "Please complete all fields with a valid email and a message of at least 10 characters.",
     );
 }
 if (time() - ($_SESSION["last_attempt"] ?? 0) < 30) {
@@ -154,7 +142,7 @@ $_SESSION["last_attempt"] = time();
 if (!function_exists("mail")) {
     mailFailure(
         "mail_unavailable",
-        "PHP mail() is disabled or unavailable on this hosting account."
+        "PHP mail() is disabled or unavailable on this hosting account.",
     );
 }
 // El remitente es configuración fija, nunca un dato del formulario.
@@ -166,7 +154,7 @@ if (
 ) {
     mailFailure(
         "mail_configuration",
-        "Invalid fixed recipient or sender address in contact.php."
+        "Invalid fixed recipient or sender address in contact.php.",
     );
 }
 
@@ -180,7 +168,9 @@ $headers = implode("\r\n", [
     "Content-Transfer-Encoding: base64",
 ]);
 $warnings = [];
-set_error_handler(function ($severity, $warning) use (&$warnings) {
+set_error_handler(static function (int $severity, string $warning) use (
+    &$warnings,
+): bool {
     $warnings[] = $warning;
     return true;
 });
@@ -193,7 +183,7 @@ try {
         "M111 Kompressor - Contact form",
         chunk_split(base64_encode($body)),
         $headers,
-        "-f" . $from
+        "-f" . $from,
     );
 } catch (Throwable $error) {
     $warnings[] = $error->getMessage();
@@ -205,7 +195,7 @@ if (!$sent) {
         "mail_rejected",
         $warnings
             ? implode(" | ", $warnings)
-            : "mail() returned false without a PHP warning. Check the hosting Sendmail service, authorised sender and sending limits."
+            : "mail() returned false without a PHP warning. Check the hosting Sendmail service, authorised sender and sending limits.",
     );
 }
 
@@ -213,5 +203,5 @@ unset($_SESSION["contact_token"]);
 reply(
     200,
     true,
-    "Your enquiry has been submitted. Daniel will reply by email."
+    "Your enquiry has been submitted. Daniel will reply by email.",
 );

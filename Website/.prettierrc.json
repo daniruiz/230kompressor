@@ -4,7 +4,7 @@
     {
       "files": "*.php",
       "options": {
-        "phpVersion": "7.0"
+        "phpVersion": "8.5"
       }
     }
   ]
