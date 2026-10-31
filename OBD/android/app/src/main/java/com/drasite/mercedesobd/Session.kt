@@ -103,7 +103,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                 val (sample, raised) = model.accept(s)
                 j.sample(sample, model.snapshot(0), raised)
                 val temperatureRaised = temperatureAlerts.accept(sample)
-                if (raised || temperatureRaised) alert()
+                if ((raised && sample.highRetard) || temperatureRaised) alert()
             }
             if (demo) {
                 diagnosticsReady = true

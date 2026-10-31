@@ -112,6 +112,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val cyan = Color.rgb(87, 216, 237)
     private val amber = Color.rgb(255, 210, 122)
+    private val orange = Color.rgb(255, 159, 67)
     private val green = Color.rgb(69, 237, 203)
     private val purple = Color.rgb(135, 56, 252)
     private val red = Color.rgb(255, 34, 34)
@@ -169,14 +170,17 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         color: Int,
         flash: Boolean = false,
         cornerRadius: Float = 12f,
+        flashColor: Int = red,
     ) {
         paint.shader = null
         paint.style = Paint.Style.FILL
-        paint.color = if (flash) Color.rgb(105, 8, 25) else Color.rgb(7, 14, 23)
+        paint.color = if (flash) {
+            if (flashColor == orange) Color.rgb(125, 67, 21) else Color.rgb(105, 8, 25)
+        } else Color.rgb(7, 14, 23)
         canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, paint)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 1.2f
-        paint.color = if (flash) red else color
+        paint.color = if (flash) flashColor else color
         canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, paint)
         drawText(
             canvas,
@@ -522,11 +526,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         compact: Boolean = false,
     ) {
         val flash = flashEnabled && now < display.alertUntil && (now / 250) % 2 == 0L
+        val alertColor = if (sample?.highRetard == true) red else orange
         val kr = if (compact) RectF(8f, 417f, 1192f, 621f) else RectF(8f, 272f, 795f, 621f)
         val center = kr.centerX()
         val valueY = if (compact) 470f else 339f
         val channelY = if (compact) 497f else 377f
-        drawCard(canvas, kr, tr("CONTROL DE PICADO", "KNOCK CONTROL"), purple, flash)
+        drawCard(canvas, kr, tr("CONTROL DE PICADO", "KNOCK CONTROL"), purple, flash, flashColor = alertColor)
         drawText(
             canvas,
             if (valid) formatValue(tr("Retardo %.2f°", "Retard %.2f°"), sample!!.retard) else tr("Retardo —", "Retard —"),
@@ -542,7 +547,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             paint.shader = null
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 2f
-            paint.color = red
+            paint.color = alertColor
             canvas.drawRoundRect(RectF(kr.right - 122f, valueY - 32f, kr.right - 13f, valueY + 13f), 4f, 4f, paint)
             drawText(
                 canvas,
@@ -550,7 +555,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                 kr.right - 67f,
                 valueY,
                 29f,
-                red,
+                alertColor,
                 true,
                 95f,
                 Paint.Align.CENTER,

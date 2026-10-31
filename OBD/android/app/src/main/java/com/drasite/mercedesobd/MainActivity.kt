@@ -329,8 +329,8 @@ class MainActivity : Activity() {
     private fun settings() {
         val names =
             arrayOf(
-                tr("Seis pitidos por aumento observado", "Six beeps per observed increase"),
-                tr("Parpadeo rojo durante 3 segundos", "Red flash for 3 seconds"),
+                tr("Sonido: retardo > 3° o temperatura alta", "Sound: retard > 3° or high temperature"),
+                tr("Parpadeo de avisos durante 3 segundos", "Alert flash for 3 seconds"),
                 tr("Optimizar tiempos del adaptador (próxima conexión)", "Optimize adapter timings (next connection)"),
             )
         val keys = arrayOf("sound", "flash", "adapter_tuning")

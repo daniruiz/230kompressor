@@ -23,6 +23,7 @@ object Decoder {
     const val TICK_US = 8.0 / 3
     const val VOLT_SCALE = 3.0 / 32
     const val MAF_SCALE = 1.1108
+    const val KNOCK_ALERT_THRESHOLD_DEG = 3.0
 
     fun word(b: ByteArray, i: Int) = b[i].u() or (b[i + 1].u() shl 8)
 
@@ -106,6 +107,9 @@ data class Sample(
 
     val retard
         get() = (corrections.maxOrNull() ?: 0) * .75
+
+    val highRetard
+        get() = retard > Decoder.KNOCK_ALERT_THRESHOLD_DEG
 }
 
 data class ExchangeTiming(val totalStart: Long = monoMs(), val hostGapWaitMs: Long = 0)

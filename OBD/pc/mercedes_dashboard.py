@@ -3,7 +3,7 @@
 Demo: python3 mercedes_dashboard.py --demo
 Car:  python3 mercedes_dashboard.py /dev/ttyUSB0
 
-The red alert counts observed rises in candidate knock corrections, NOT a
+The alert counter tracks observed rises in candidate knock corrections, NOT a
 validated ECU knock counter. F746 is the common requested injection duration,
 not a measured electrical pulse. Milliseconds use a provisional timer scale.
 SW404 bank 1: reconstruct dead-time compensation from the already-read F734
@@ -94,12 +94,14 @@ O2_SWITCH_RAW = 0x2456
 # 0x1108C: F74C=floor(F8C0/40), clamped 255.
 # 0x3A3CE: OBD MAF raw=floor(F8C0*2777/1000), OBD units 0.01 g/s.
 MAF_GS_PER_RAW = 40 * 2777 / 100000
+KNOCK_ALERT_THRESHOLD_DEG = 3.0
 BG = '#000000'
 MUTED = '#9aaec8'
 CYAN = '#57d8ed'
 RED = '#ff2222'
 GREEN = '#45edcb'
 AMBER = '#ffd27a'
+ORANGE = '#ff9f43'
 MAGENTA = '#8738fc'
 
 PEAK_COLORS = {
@@ -649,6 +651,10 @@ class Sample:
     throttle_raw: int | None = None
     oxygen_raw: int | None = None
     voltage_raw: int | None = None
+
+    @property
+    def high_retard(self):
+        return max(self.corrections, default=0) * 0.75 > KNOCK_ALERT_THRESHOLD_DEG
 
 
 def from_pairs(pairs: list[bytes]) -> Sample:
@@ -1527,7 +1533,7 @@ class Model:
                 raised = [i for i,(a,b) in enumerate(zip(old.corrections[:4], sample.corrections[:4])) if b > a]
             if raised:
                 self.count += 1  # one observed update, NOT number of combustion knocks
-                if self.sound is not None:
+                if self.sound is not None and sample.high_retard:
                     self.sound.notify()
                 self.alert_until = sample.at + 3.0
                 slots = ','.join(str(i+1) for i in raised)
@@ -1763,8 +1769,10 @@ def render(model, args, width=110, height=44, now=None):
         age = now-s.at if s else math.inf
         stale = model.failed or age > 2
         flashing = now < model.alert_until
-        red = flashing and not args.no_flash and int(now*2)%2 == 0
-        bg = '#811c31' if red else BG
+        flash = flashing and not args.no_flash and int(now*2)%2 == 0
+        high_retard = s is not None and s.high_retard
+        alert_color = RED if high_retard else ORANGE
+        bg = ('#811c31' if high_retard else '#7d4315') if flash else BG
         layout = Layout()
         # Keep the menu shortcuts visible at the supported minimum height.
         layout.split_column(Layout(name='metrics', size=13),
@@ -1814,8 +1822,8 @@ def render(model, args, width=110, height=44, now=None):
         indices.add_row(*row)
         if model.count > 0:
             table.add_column(width=max(12,len(str(model.count))+4), justify='right')
-            counter = Text(f'{model.count:04d}', style='bold bright_red', justify='center')
-            counter_box = Panel(counter, border_style='bold bright_red',
+            counter = Text(f'{model.count:04d}', style=f'bold {alert_color}', justify='center')
+            counter_box = Panel(counter, border_style=f'bold {alert_color}',
                                 box=box.HEAVY, padding=(0,1))
             table.add_row(indices, counter_box)
         else:
@@ -1832,7 +1840,7 @@ def render(model, args, width=110, height=44, now=None):
             at,message=model.events[0]
             body.append(Text(tr(f'\nÚltimo aviso hace {max(0,now-at):.1f} s · {message}', f'\nLast alert {max(0,now-at):.1f} s ago · {message}'),style=MUTED))
         layout['knock'].update(Panel(Group(*body), title=Text(tr(' CONTROL DE PICADO ', ' KNOCK CONTROL '), style=f'bold {MAGENTA}'),
-            box=box.HEAVY if flashing else box.ROUNDED, border_style=RED if flashing else MAGENTA,
+            box=box.HEAVY if flashing else box.ROUNDED, border_style=alert_color if flashing else MAGENTA,
             style=f'on {bg}', padding=(0,2)))
         mixture = Table.grid(expand=True, padding=(0,1))
         mixture.add_column(style=MUTED)
