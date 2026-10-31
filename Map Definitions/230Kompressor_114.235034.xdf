@@ -1375,6 +1375,135 @@
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
+  <XDFTABLE uniqueid="0x0025" flags="0x0">
+    <title>MAF reading upper limit</title>
+    <description>Upper MAF reading threshold for airflow plausibility diagnosis. If an excess is confirmed, the ECU can substitute measured airflow with the Engine Load Model. MAF [g/s] ~= corrected raw model byte x RPM x 0.00015561, including intake-air-temperature and learned adaptation corrections. The comparison uses quantized airflow and diagnostic enabling conditions, not an instantaneous airflow clamp.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c8f" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4d8b" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle (normalized) (%)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x591d" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>g/s</units>
+      <decimalpl>2</decimalpl>
+      <min>0</min>
+      <max>453.20640</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*1.77728">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x0026" flags="0x0">
+    <title>Engine Load Model (supercharger OFF)</title>
+    <description>RPM/throttle-based engine load model. Displayed values are stored bytes x 32 (base internal load), before intake-air-temperature and learned adaptation corrections. Used for MAF fallback and other control/diagnostic functions. MAF [g/s] ~= corrected internal load x RPM x 0.00000486283556, before filtering and load limits. Used for fallback when the supercharger clutch command is OFF, and as a reference for supercharger diagnostics even with the clutch ON.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c8f" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4d8b" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle (normalized) (%)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x54b5" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>load units</units>
+      <decimalpl>0</decimalpl>
+      <min>0</min>
+      <max>8160</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*32">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x0027" flags="0x0">
+    <title>Engine Load Model (supercharger ON)</title>
+    <description>RPM/throttle-based engine load model. Displayed values are stored bytes x 32 (base internal load), before intake-air-temperature and learned adaptation corrections. Used for MAF fallback and other control/diagnostic functions. MAF [g/s] ~= corrected internal load x RPM x 0.00000486283556, before filtering and load limits. Selected when the supercharger clutch command is ON.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4c8f" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4d8b" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle (normalized) (%)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x54f5" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>load units</units>
+      <decimalpl>0</decimalpl>
+      <min>0</min>
+      <max>8160</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*32">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
   <XDFTABLE uniqueid="0x0010" flags="0x0">
     <title>======= BANK 2 =======</title>
 
@@ -2115,6 +2244,135 @@
       <max>125.25</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.75-66">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x0028" flags="0x0">
+    <title>MAF reading upper limit</title>
+    <description>Upper MAF reading threshold for airflow plausibility diagnosis. If an excess is confirmed, the ECU can substitute measured airflow with the Engine Load Model. MAF [g/s] ~= corrected raw model byte x RPM x 0.00015561, including intake-air-temperature and learned adaptation corrections. The comparison uses quantized airflow and diagnostic enabling conditions, not an instantaneous airflow clamp.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c8f" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30d8b" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle (normalized) (%)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x3191d" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>g/s</units>
+      <decimalpl>2</decimalpl>
+      <min>0</min>
+      <max>453.20640</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*1.77728">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x0029" flags="0x0">
+    <title>Engine Load Model (supercharger OFF)</title>
+    <description>RPM/throttle-based engine load model. Displayed values are stored bytes x 32 (base internal load), before intake-air-temperature and learned adaptation corrections. Used for MAF fallback and other control/diagnostic functions. MAF [g/s] ~= corrected internal load x RPM x 0.00000486283556, before filtering and load limits. Used for fallback when the supercharger clutch command is OFF, and as a reference for supercharger diagnostics even with the clutch ON.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c8f" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30d8b" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle (normalized) (%)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x314b5" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>load units</units>
+      <decimalpl>0</decimalpl>
+      <min>0</min>
+      <max>8160</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*32">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x002A" flags="0x0">
+    <title>Engine Load Model (supercharger ON)</title>
+    <description>RPM/throttle-based engine load model. Displayed values are stored bytes x 32 (base internal load), before intake-air-temperature and learned adaptation corrections. Used for MAF fallback and other control/diagnostic functions. MAF [g/s] ~= corrected internal load x RPM x 0.00000486283556, before filtering and load limits. Selected when the supercharger clutch command is ON.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30c8f" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30d8b" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle (normalized) (%)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x314f5" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>load units</units>
+      <decimalpl>0</decimalpl>
+      <min>0</min>
+      <max>8160</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*32">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
