@@ -2,3 +2,5 @@
 .gradle
 build
 logs
+__pycache__
+Analysis
