@@ -1,20 +1,20 @@
 <?php
 // mail() usa Sendmail del alojamiento; no admite usuario/contraseña SMTP.
 // Hostinger debe permitir enviar desde esta dirección de tu dominio.
-$to = 'daniel@drasite.com';
-$from = 'daniel@drasite.com';
+$to = "daniel@drasite.com";
+$from = "daniel@drasite.com";
 
-ini_set('display_errors', '0');
-ini_set('log_errors', '1');
-header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: no-store');
-header('X-Robots-Tag: noindex');
+ini_set("display_errors", "0");
+ini_set("log_errors", "1");
+header("Content-Type: application/json; charset=utf-8");
+header("Cache-Control: no-store");
+header("X-Robots-Tag: noindex");
 
 function reply($status, $ok, $message, $details = [])
 {
     http_response_code($status);
     echo json_encode(
-        array_merge(['ok' => $ok, 'message' => $message], $details),
+        array_merge(["ok" => $ok, "message" => $message], $details),
     );
     exit();
 }
@@ -24,120 +24,120 @@ function mailFailure($code, $detail)
 {
     $reference = bin2hex(random_bytes(4));
     error_log(
-        '[M111 contact ' .
+        "[M111 contact " .
             $reference .
-            '] ' .
+            "] " .
             json_encode(
                 [
-                    'code' => $code,
-                    'detail' => $detail,
-                    'sendmail_configured' =>
-                        trim((string) ini_get('sendmail_path')) !== '',
-                    'forced_mail_parameters' =>
+                    "code" => $code,
+                    "detail" => $detail,
+                    "sendmail_configured" =>
+                        trim((string) ini_get("sendmail_path")) !== "",
+                    "forced_mail_parameters" =>
                         trim(
-                            (string) ini_get('mail.force_extra_parameters'),
-                        ) !== '',
+                            (string) ini_get("mail.force_extra_parameters"),
+                        ) !== "",
                 ],
                 JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE,
             ),
     );
     $message =
-        $code === 'mail_unavailable'
-            ? 'Email delivery is disabled on this server.'
-            : 'The server could not accept your enquiry for sending.';
+        $code === "mail_unavailable"
+            ? "Email delivery is disabled on this server."
+            : "The server could not accept your enquiry for sending.";
     reply(
-        $code === 'mail_rejected' ? 502 : 503,
+        $code === "mail_rejected" ? 502 : 503,
         false,
         $message .
-            ' Please email daniel@drasite.com directly. Reference: ' .
+            " Please email daniel@drasite.com directly. Reference: " .
             $reference .
-            '.',
-        ['code' => $code, 'reference' => $reference],
+            ".",
+        ["code" => $code, "reference" => $reference],
     );
 }
 
 function input($key, $max)
 {
-    $value = $_POST[$key] ?? '';
+    $value = $_POST[$key] ?? "";
     if (
         !is_string($value) ||
         strlen($value) > $max * 4 ||
-        !preg_match('//u', $value) ||
-        preg_match_all('/./us', $value) > $max
+        !preg_match("//u", $value) ||
+        preg_match_all("/./us", $value) > $max
     ) {
-        reply(422, false, 'Please check the form fields.');
+        reply(422, false, "Please check the form fields.");
     }
     return trim($value);
 }
 
-$method = $_SERVER['REQUEST_METHOD'] ?? '';
-if (!in_array($method, ['GET', 'POST'], true)) {
-    header('Allow: GET, POST');
-    reply(405, false, 'Method not allowed.');
+$method = $_SERVER["REQUEST_METHOD"] ?? "";
+if (!in_array($method, ["GET", "POST"], true)) {
+    header("Allow: GET, POST");
+    reply(405, false, "Method not allowed.");
 }
-if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 20000) {
-    reply(413, false, 'The enquiry is too large.');
+if ((int) ($_SERVER["CONTENT_LENGTH"] ?? 0) > 20000) {
+    reply(413, false, "The enquiry is too large.");
 }
-session_name('M111CONTACT');
-ini_set('session.use_strict_mode', '1');
-ini_set('session.use_only_cookies', '1');
+session_name("M111CONTACT");
+ini_set("session.use_strict_mode", "1");
+ini_set("session.use_only_cookies", "1");
 session_set_cookie_params([
-    'httponly' => true,
-    'samesite' => 'Lax',
-    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    "httponly" => true,
+    "samesite" => "Lax",
+    "secure" => !empty($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off",
 ]);
 if (!session_start()) {
-    reply(503, false, 'Please email daniel@drasite.com directly.');
+    reply(503, false, "Please email daniel@drasite.com directly.");
 }
 
 // El formulario actual pide este token antes de enviar los datos.
-if ($method === 'GET') {
-    $_SESSION['contact_token'] =
-        $_SESSION['contact_token'] ?? bin2hex(random_bytes(32));
-    echo json_encode(['token' => $_SESSION['contact_token']]);
+if ($method === "GET") {
+    $_SESSION["contact_token"] =
+        $_SESSION["contact_token"] ?? bin2hex(random_bytes(32));
+    echo json_encode(["token" => $_SESSION["contact_token"]]);
     exit();
 }
 if (
-    empty($_SESSION['contact_token']) ||
-    !hash_equals($_SESSION['contact_token'], input('token', 64))
+    empty($_SESSION["contact_token"]) ||
+    !hash_equals($_SESSION["contact_token"], input("token", 64))
 ) {
-    reply(403, false, 'Please try sending the form again.');
+    reply(403, false, "Please try sending the form again.");
 }
-if (input('website', 200) !== '') {
-    reply(200, true, 'Thank you for your enquiry.');
+if (input("website", 200) !== "") {
+    reply(200, true, "Thank you for your enquiry.");
 }
 
-$name = input('name', 100);
-$email = input('email', 254);
-$model = input('model', 100);
-$engine = input('engine', 50);
-$configuration = input('configuration', 20);
-$message = input('message', 2500);
+$name = input("name", 100);
+$email = input("email", 254);
+$model = input("model", 100);
+$engine = input("engine", 50);
+$configuration = input("configuration", 20);
+$message = input("message", 2500);
 if (
-    $name === '' ||
-    $model === '' ||
-    $engine === '' ||
-    $configuration === '' ||
+    $name === "" ||
+    $model === "" ||
+    $engine === "" ||
+    $configuration === "" ||
     !filter_var($email, FILTER_VALIDATE_EMAIL) ||
     preg_match('/[\r\n]/', $email) ||
-    preg_match_all('/./us', $message) < 10
+    preg_match_all("/./us", $message) < 10
 ) {
     reply(
         422,
         false,
-        'Please complete all fields with a valid email and a message of at least 10 characters.',
+        "Please complete all fields with a valid email and a message of at least 10 characters.",
     );
 }
-if (time() - ($_SESSION['last_attempt'] ?? 0) < 30) {
-    header('Retry-After: 30');
-    reply(429, false, 'Please wait 30 seconds before sending another enquiry.');
+if (time() - ($_SESSION["last_attempt"] ?? 0) < 30) {
+    header("Retry-After: 30");
+    reply(429, false, "Please wait 30 seconds before sending another enquiry.");
 }
-$_SESSION['last_attempt'] = time();
+$_SESSION["last_attempt"] = time();
 
-if (!function_exists('mail')) {
+if (!function_exists("mail")) {
     mailFailure(
-        'mail_unavailable',
-        'PHP mail() is disabled or unavailable on this hosting account.',
+        "mail_unavailable",
+        "PHP mail() is disabled or unavailable on this hosting account.",
     );
 }
 // El remitente es configuración fija, nunca un dato del formulario.
@@ -145,11 +145,11 @@ if (!function_exists('mail')) {
 if (
     !filter_var($to, FILTER_VALIDATE_EMAIL) ||
     !filter_var($from, FILTER_VALIDATE_EMAIL) ||
-    !preg_match('/\A[a-z0-9._+\-]+@[a-z0-9.\-]+\z/i', $from)
+    !preg_match("/\A[a-z0-9._+\-]+@[a-z0-9.\-]+\z/i", $from)
 ) {
     mailFailure(
-        'mail_configuration',
-        'Invalid fixed recipient or sender address in contact.php.',
+        "mail_configuration",
+        "Invalid fixed recipient or sender address in contact.php.",
     );
 }
 
@@ -158,9 +158,9 @@ $body = "Name: $name\nEmail: $email\nModel: $model\nEngine: $engine\nConfigurati
 $headers = implode("\r\n", [
     "From: M111Kompressor <$from>",
     "Reply-To: $email",
-    'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: base64',
+    "MIME-Version: 1.0",
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: base64",
 ]);
 $warnings = [];
 set_error_handler(function ($severity, $warning) use (&$warnings) {
@@ -173,10 +173,10 @@ try {
     // No inicia sesión. En Windows, el transporte nativo usa la cabecera From.
     $sent = mail(
         $to,
-        'M111 Kompressor - Contact form',
+        "M111 Kompressor - Contact form",
         chunk_split(base64_encode($body)),
         $headers,
-        '-f' . $from,
+        "-f" . $from,
     );
 } catch (Throwable $error) {
     $warnings[] = $error->getMessage();
@@ -185,16 +185,16 @@ try {
 }
 if (!$sent) {
     mailFailure(
-        'mail_rejected',
+        "mail_rejected",
         $warnings
-            ? implode(' | ', $warnings)
-            : 'mail() returned false without a PHP warning. Check the hosting Sendmail service, authorised sender and sending limits.',
+            ? implode(" | ", $warnings)
+            : "mail() returned false without a PHP warning. Check the hosting Sendmail service, authorised sender and sending limits.",
     );
 }
 
-unset($_SESSION['contact_token']);
+unset($_SESSION["contact_token"]);
 reply(
     200,
     true,
-    'Your enquiry has been submitted. Daniel will reply by email.',
+    "Your enquiry has been submitted. Daniel will reply by email.",
 );

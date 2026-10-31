@@ -1,0 +1,13 @@
+{
+  "name": "m111-kompressor-website",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write \"public_html/*.{html,css,js,php,xml,svg}\"",
+    "format:check": "prettier --check \"public_html/*.{html,css,js,php,xml,svg}\""
+  },
+  "devDependencies": {
+    "@prettier/plugin-php": "0.26.0",
+    "@prettier/plugin-xml": "3.4.2",
+    "prettier": "3.9.10"
+  }
+}

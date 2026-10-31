@@ -6,8 +6,8 @@
   --ink: #303641;
   --muted: #485361;
   --line: #b8c0cb;
-  --mono: 'IBM Plex Mono', monospace;
-  --sans: 'Manrope', Arial, sans-serif;
+  --mono: "IBM Plex Mono", monospace;
+  --sans: "Manrope", Arial, sans-serif;
   --brush: repeating-linear-gradient(
     0deg,
     #fff2 0px,
@@ -613,7 +613,7 @@ nav > a:hover {
   margin-bottom: 10px;
 }
 .stage-hardware li::before {
-  content: '+';
+  content: "+";
   position: absolute;
   left: 0;
   color: var(--accent);
@@ -2336,7 +2336,7 @@ nav {
       rgba(12, 20, 31, 0.2) 62%,
       rgba(12, 20, 31, 0.06) 100%
     ),
-    url('assets/clk-on-track.png');
+    url("assets/clk-on-track.png");
   background-size: cover;
   background-position: center 62%;
   color: #fff;
@@ -2719,7 +2719,7 @@ nav {
   padding: 50px;
   background-image:
     linear-gradient(100deg, rgba(10, 20, 33, 0.93), rgba(10, 20, 33, 0.54)),
-    url('assets/clk-on-track.png');
+    url("assets/clk-on-track.png");
   background-size: cover;
   background-position: 50% 60%;
   border-color: #68778a;
@@ -2904,7 +2904,7 @@ nav {
         rgba(17, 26, 40, 0.85) 56%,
         rgba(17, 26, 40, 0.06) 76%
       ),
-      url('assets/clk-on-track.png');
+      url("assets/clk-on-track.png");
     background-size:
       cover,
       auto 420px;
@@ -3291,7 +3291,7 @@ nav {
   cursor: default;
 }
 .map-option::before {
-  content: '•';
+  content: "•";
   color: var(--accent);
   font-size: 24px;
   line-height: 1.1;
@@ -3299,7 +3299,7 @@ nav {
   margin-top: 3px;
 }
 .stage-hardware li::before {
-  content: '•';
+  content: "•";
 }
 .options-footer {
   justify-content: flex-end;
