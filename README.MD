@@ -83,18 +83,20 @@ The map packs cover the following areas. Coverage and naming vary by software ve
 
 ### Larger pulleys and supercharger cutout
 
-One focus of this project is the loss of boost sometimes observed near high engine speeds after installing a larger crankshaft pulley. The reported behavior is that the ECU disengages the supercharger clutch and opens the bypass valve.
+With a larger crankshaft pulley, some software versions lose boost at high RPM. The same car and hardware showed this behavior with **338, 438 and 643**, but not **404**.
 
-The binaries and map comparisons help investigate why different software versions behave differently with the same hardware changes.
+**A possible cause found in the code:** when measured airflow exceeds a plausibility threshold, the ECU can replace the MAF reading with a calculated load model. A supercharger diagnostic then checks a load ratio stored in one byte: **256 wraps to 0**, which looks like insufficient load. If the fault persists through the required checks, the ECU disengages the clutch and opens the bypass; this fault can remain active until the ECU restarts.
 
-Not all binaries behave equally, and some of them don't limit at all when you increase the supercharger boost. Here's a list of binaries with tested behavior:
+The newer load models can cross this boundary where the 404 does not. This was reproduced with the **code-2 model**, but the active model and fault still need checking in the car. The results below describe tested setups, not versions without protection:
 
-❌ **Limit:**
+❌ **Cutout observed:**
+
 - 9903-230Kompressor_261206457_114.236338.39.BIN
 - 9906-230Kompressor_261206458_114.236438.40.BIN
 - 9914-230Kompressor_261206570_114.236643.43.BIN
 
-✅ **Don't limit:**
+✅ **No cutout observed in the tested setup:**
+
 - 9640-230Kompressor_261204573_114.235034.34.BIN
 - 9646-230Kompressor_261204527_114.235153.52.BIN
 - 9720-230Kompressor_261204747_114.235404.04.BIN
