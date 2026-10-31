@@ -168,7 +168,6 @@ nav>a:hover{color:var(--accent)}
 .dashboard-bottom>div{display:flex;align-items:center;gap:16px}
 .dashboard-bottom strong{font-size:32px;letter-spacing:-1.5px;font-weight:800;white-space:nowrap}
 .dashboard-bottom strong span{font:14px var(--mono);letter-spacing:0;padding-left:3px}
-.dashboard-bottom .language-label{font-size:23px;letter-spacing:-1px}
 .dashboard-bottom p{font-size:14px;line-height:1.9;color:var(--muted)}
 .small-icon{font-size:35px;color:#657791}
 .small-print{font-size:14px;color:var(--muted);line-height:1.9;margin-top:23px}
