@@ -53,11 +53,6 @@ imageDialog.addEventListener('close', () => captureTrigger?.focus());
 
 const form = document.querySelector('#consultation-form');
 const formStatus = document.querySelector('#form-status');
-function consultationText() {
-  const values = new FormData(form);
-  const labels = {custom: 'Custom setup / to be defined', stage1: 'Stage 1 · 230 Kompressor', stage2: 'Stage 2 · 230 Kompressor', stage3: 'Stage 3 · 230 Kompressor'};
-  return `Hi Daniel,\n\nName: ${values.get('name')}\nEmail: ${values.get('email')}\n\nI would like to discuss a custom tune for my M111.\n\nModel: ${values.get('model')}\nEngine: ${values.get('engine')}\nConfiguration: ${labels[values.get('configuration')]}\n\nMy setup and goals:\n${values.get('message').trim()}\n\nThank you.`;
-}
 let submitting = false;
 form.addEventListener('submit', async event => {
   event.preventDefault();
@@ -93,15 +88,6 @@ form.addEventListener('submit', async event => {
     button.innerHTML = originalLabel;
     form.removeAttribute('aria-busy');
     submitting = false;
-  }
-});
-document.querySelector('#copy-consultation').addEventListener('click', async () => {
-  if (!form.reportValidity()) return;
-  try {
-    await navigator.clipboard.writeText(consultationText());
-    formStatus.textContent = 'Enquiry copied. Paste it into an email to daniel@drasite.com or an Instagram message.';
-  } catch {
-    formStatus.textContent = 'Your browser could not copy the enquiry. Email daniel@drasite.com directly.';
   }
 });
 let toastTimer;
