@@ -85,9 +85,13 @@ The map packs cover the following areas. Coverage and naming vary by software ve
 
 With a larger crankshaft pulley, some software versions lose boost at high RPM. The same car and hardware showed this behavior with **338, 438 and 643**, but not **404**.
 
-**A possible cause found in the code:** when measured airflow exceeds a plausibility threshold, the ECU can replace the MAF reading with a calculated load model. A supercharger diagnostic then checks a load ratio stored in one byte: **256 wraps to 0**, which looks like insufficient load. If the fault persists through the required checks, the ECU disengages the clutch and opens the bypass; this fault can remain active until the ECU restarts.
+**A possible cause found in the code (bank 1):** when airflow exceeds the MAF plausibility threshold, the ECU can substitute a calculated load. The boosted **ON model** supplies that load, while the **OFF model** supplies the reference used to calculate the diagnostic's variable divisor, even with the clutch engaged. Both are corrected for intake temperature and adaptation. A diagnostic ratio derived from these values is stored in one byte: **256 wraps to 0**, falsely indicating insufficient load. After 20 enabled failure pulses within the diagnostic window, the ECU disengages the clutch and commands the bypass open; the fault can remain latched until the ECU restarts.
 
-The newer load models can cross this boundary where the 404 does not. This was reproduced with the **code-2 model**, but the active model and fault still need checking in the car. The results below describe tested setups, not versions without protection:
+**Both 404 and 338 are vulnerable to this overflow.** Their different model values change which temperature and adaptation combinations cross the boundary. The illustrated code test uses assumed inputs to show cases where only the 338 overflows and where both do. It uses the **coding 2 model in the 338**; the active coding and fault still need checking in the car.
+
+[**Visual study: 404 vs 338 supercharger cutout (SVG)**](Images/supercharger-cutout-404-338.svg) — Highlighted calibration tables, IAT conversion to °C and the calculation leading to the fault.
+
+The results below describe observed behavior in tested setups, not immunity to this fault:
 
 ❌ **Cutout observed:**
 
