@@ -1712,9 +1712,15 @@ def spark(values, ceiling, width=48, height=7, color=None, full=False):
     tail = list(values) if full else list(values)[-90:]
     width = max(1, width)
     pixels_w, pixels_h = width*2, max(1,height)*4
-    if full and len(tail) > pixels_w:
-        tail = [max(tail[i*len(tail)//pixels_w:(i+1)*len(tail)//pixels_w])
-                for i in range(pixels_w)]
+    if full and len(tail) > max(1, pixels_w-2):
+        # Reserve the latest real reading and two held points without losing peaks.
+        earlier, latest = tail[:-1], tail[-1]
+        buckets = max(1, pixels_w-3)
+        tail = [max(earlier[i*len(earlier)//buckets:(i+1)*len(earlier)//buckets])
+                for i in range(buckets)] + [latest]
+    if tail:
+        # Display-only extension: acquisition, history and logs remain untouched.
+        tail.extend([tail[-1]]*2)
     fill = set()
     if tail and ceiling > 0:
         for x in range(pixels_w):

@@ -241,6 +241,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         values: DoubleArray,
         ceiling: Double,
         color: Int,
+        latestValue: Double? = null,
     ) {
         paint.shader = null
         paint.style = Paint.Style.STROKE
@@ -257,15 +258,20 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         fun y(v: Double) =
             bounds.bottom -
                 bounds.height() * (v / ceiling.coerceAtLeast(1.0)).coerceIn(0.0, 1.0).toFloat()
+        // Keep binned peaks, then hold the actual latest reading for two more positions.
+        val latest = latestValue ?: values.last()
+        val latestIndex = if (values.last() == latest) values.lastIndex else values.size
+        val rightIndex = latestIndex + 2
+        fun appendTrace() {
+            for (i in 1..rightIndex) path.lineTo(
+                bounds.left + bounds.width() * i / rightIndex,
+                y(if (i < values.size) values[i] else latest),
+            )
+        }
         path.reset()
         path.moveTo(bounds.left, bounds.bottom)
         path.lineTo(bounds.left, y(values.first()))
-        if (values.size == 1) path.lineTo(bounds.right, y(values.first()))
-        else
-            for (i in 1 until values.size) path.lineTo(
-                bounds.left + bounds.width() * i / (values.size - 1),
-                y(values[i]),
-            )
+        appendTrace()
         path.lineTo(bounds.right, bounds.bottom)
         path.close()
         paint.style = Paint.Style.FILL
@@ -284,12 +290,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         paint.alpha = 255
         path.reset()
         path.moveTo(bounds.left, y(values.first()))
-        if (values.size == 1) path.lineTo(bounds.right, y(values.first()))
-        else
-            for (i in 1 until values.size) path.lineTo(
-                bounds.left + bounds.width() * i / (values.size - 1),
-                y(values[i]),
-            )
+        appendTrace()
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 2f
         canvas.drawPath(path, paint)
@@ -581,6 +582,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             display.knock,
             maxOf(3.0, display.knock.maxOrNull() ?: 3.0),
             purple,
+            latestValue = sample?.retard,
         )
         drawText(
             canvas,
