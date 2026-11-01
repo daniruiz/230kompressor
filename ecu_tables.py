@@ -2,7 +2,8 @@
 """Export WinOLS CSV definitions as PNG tables, MAF curves and ASCII SW versions.
 
 Axis units and conversions come from the CSV; raw axes are not converted to
-physical units automatically. BIN files are never modified.
+physical units automatically. CSV comments are displayed below each image.
+BIN files are never modified.
 """
 import argparse
 import csv
@@ -10,6 +11,7 @@ import io
 import json
 import re
 import sys
+import textwrap
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -17,6 +19,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
+from matplotlib.font_manager import FontProperties
 import numpy as np
 
 
@@ -223,6 +226,35 @@ def fmt(value, precision=-1):
     return f'{value:.4f}'.rstrip('0').rstrip('.') if value else '0'
 
 
+def save_figure(fig, job, destination, dpi):
+    """Append a readable CSV comment without shrinking the existing plot."""
+    try:
+        comment = (job['row'].get('Comment') or '').strip()
+        if comment:
+            fig.canvas.draw()
+            renderer = fig.canvas.get_renderer()
+            font = FontProperties(size=9)
+            available = fig.get_figwidth() * fig.dpi * .96
+            width = max(1, int(available / (font.get_size_in_points() * fig.dpi / 72 * .5)))
+            paragraphs = ('Comment: ' + comment).splitlines()
+            while True:
+                wrapped = '\n'.join(textwrap.fill(p, width=width, break_on_hyphens=False)
+                                    for p in paragraphs)
+                if width == 1 or all(renderer.get_text_width_height_descent(line, font, False)[0]
+                                     <= available for line in wrapped.splitlines()):
+                    break
+                width -= 1
+            # Place the comment outside the original canvas. The tight bounding
+            # box expands the exported image to include it and leaves plot sizes intact.
+            fig.text(.02, -.12 / fig.get_figheight(), wrapped, ha='left', va='top', fontproperties=font,
+                     color='#333333', linespacing=1.4, parse_math=False)
+            fig.savefig(destination, dpi=dpi, bbox_inches='tight')
+        else:
+            fig.savefig(destination, dpi=dpi)
+    finally:
+        plt.close(fig)
+
+
 def render(job, destination, limits, cmap_name, dpi):
     if 'text' in job:
         fig, ax = plt.subplots(figsize=(10, 2.4))
@@ -231,10 +263,7 @@ def render(job, destination, limits, cmap_name, dpi):
                 fontsize=18, family='monospace', transform=ax.transAxes,
                 parse_math=False)
         fig.tight_layout()
-        try:
-            fig.savefig(destination, dpi=dpi)
-        finally:
-            plt.close(fig)
+        save_figure(fig, job, destination, dpi)
         return
 
     row, values = job['row'], job['values']
@@ -256,10 +285,7 @@ def render(job, destination, limits, cmap_name, dpi):
         ax.grid(alpha=.25)
         ax.set_title(row['Name'] + '\n' + job['binary'].name, fontsize=11)
         fig.tight_layout()
-        try:
-            fig.savefig(destination, dpi=dpi)
-        finally:
-            plt.close(fig)
+        save_figure(fig, job, destination, dpi)
         return
 
     fig, ax = plt.subplots(figsize=(max(8, cols * .66 + 2.4), max(3.4, rows * .39 + 2.5)))
@@ -294,10 +320,7 @@ def render(job, destination, limits, cmap_name, dpi):
              f"Conversion: raw × {row['Fieldvalues.Factor']} + ({row['Fieldvalues.Offset']}) | "
              f"Axes: X = {axis_origin(row, 'AxisX')} | Y = {axis_origin(row, 'AxisY')}", fontsize=8)
     fig.tight_layout(rect=(0, .075, 1, .91))
-    try:
-        fig.savefig(destination, dpi=dpi)
-    finally:
-        plt.close(fig)
+    save_figure(fig, job, destination, dpi)
 
 
 def main():
