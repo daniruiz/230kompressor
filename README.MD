@@ -30,7 +30,7 @@ The project focuses on the Bosch ME2.1-equipped M111 Kompressor engines found in
 
 | Resource | What it contains |
 | --- | --- |
-| [WinOLS and TunerPro map definitions](Map%20Definitions/) | Software-specific `.kp` and `.csv` definitions for locating and editing calibration tables. |
+| [WinOLS and TunerPro map definitions](Map%20Definitions/) | Software-specific `.kp`, `.csv` and `.xdf` definitions for locating and editing calibration tables. |
 | [Original ECU binaries](Original%20Binaries/) | A collection of M111 Kompressor software versions for analysis and comparison. |
 | [Stock reference binary](230k_ME21_STOCK.BIN) | The project's stock reference file. |
 | [Tuned reference binary](230k_ME21.BIN) | The project's modified calibration for studying changes. |
@@ -66,7 +66,7 @@ These are the versions currently represented in the `Original Binaries` director
 
 For the reading and flashing process, see the community [Bosch ME2.0 / ME2.1 read-and-flash guide](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431).
 
-## Fuel, ignition and limiter maps
+## Fuel, ignition, load and limiter maps
 
 The map packs cover the following areas. Coverage and naming vary by software version, and some names describe an observed effect rather than a fully established function.
 
@@ -80,6 +80,10 @@ The map packs cover the following areas. Coverage and naming vary by software ve
 | **Warm-up Bypass command minimum** | Minimum boost bypass valve position during warm-up. |
 | **Fallback RPM Limiter** | Tables associated in project testing with the approximate 5,700 rpm limit when the ABS signal is unavailable. |
 | **Temperature ignition correction** | Tables associated with coolant and intake air temperature (IAT), with load-dependent weighting. |
+| **MAF reading upper limit** | Airflow plausibility threshold indexed by RPM and throttle. A confirmed excess can trigger substitution of the measured airflow with the Engine Load Model. |
+| **Engine Load Model — supercharger OFF / ON** | Estimates load from RPM and throttle for MAF fallback and other control/diagnostic functions. Intake temperature and learned adaptation further correct the result. |
+| **Engine Load Model — ON coding variants** | Additional ON models selected by ECU configuration: coding **2**, coding **5**, or the **default** for other values. |
+| **Supercharger load diagnosis — bypass command threshold** | A single-byte setting that determines when the supercharger load diagnosis is enabled. See the cutout explanation below. |
 
 ### Larger pulleys and supercharger cutout
 
