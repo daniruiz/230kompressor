@@ -152,6 +152,7 @@ class MainActivity : Activity() {
             listOf<Pair<String, () -> Unit>>(
                 tr("Adaptador: $deviceName", "Adapter: $deviceName") to { selectDevice() },
                 tr("Conectar", "Connect") to { connect() },
+                "ECU tune" to { openLink("https://m111kompressor.drasite.com/") },
                 "Demo" to { start(true, null) },
                 tr("Parar", "Stop") to { stop() },
                 tr("Errores de la ECU", "ECU fault codes") to { faultsMenu() },
