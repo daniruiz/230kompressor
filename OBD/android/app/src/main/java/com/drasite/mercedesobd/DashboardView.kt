@@ -9,6 +9,9 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
+import android.text.TextPaint
+import android.text.TextUtils
+import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -126,6 +129,16 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     private val path = Path()
     private val regularFont = resources.getFont(R.font.cascadia_regular)
     private val boldFont = resources.getFont(R.font.cascadia_bold)
+    private val footerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = regularFont
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics)
+        textAlign = Paint.Align.LEFT
+    }
+    private val footerLineGapPx = 2 * resources.displayMetrics.density
+    private val footerLineHeightPx: Float
+        get() = footerPaint.fontMetrics.let { it.bottom - it.top }
+    private val footerTextHeightPx: Float
+        get() = footerLineHeightPx * 2 + footerLineGapPx
     private var canvasScaleX = 1f
     private var canvasScaleY = 1f
     private var textScale = 1f
@@ -349,7 +362,13 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (width <= 0 || height <= 0) return
-        val layout = DashboardLayout(width.toFloat(), height.toFloat(), menuSizePx, footerLinkWidthPx)
+        val layout = DashboardLayout(
+            width.toFloat(),
+            height.toFloat(),
+            menuSizePx,
+            footerLinkWidthPx,
+            minimumFooterHeight = footerTextHeightPx + 12 * resources.displayMetrics.density,
+        )
         canvasScaleX = layout.scaleX
         canvasScaleY = layout.contentScaleY
         textScale = minOf(canvasScaleX, canvasScaleY)
@@ -373,9 +392,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
 
         canvas.save()
         canvas.translate(0f, layout.contentHeight)
-        canvasScaleY = layout.footerHeight / DashboardLayout.FOOTER_HEIGHT
-        textTransform = CanvasTextTransform(canvasScaleX, canvasScaleY, textScale)
-        canvas.scale(canvasScaleX, canvasScaleY)
+        // Footer text uses the system font size, independently of the dashboard grid.
         drawFooter(canvas, display, sample, valid, layout)
         canvas.restore()
         drawPageIndicator(canvas)
@@ -699,8 +716,15 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         valid: Boolean,
         layout: DashboardLayout,
     ) {
-        val footerWidth = layout.footerTextWidth
-        val footerCenter = 8f + footerWidth / 2
+        val margin = 12 * resources.displayMetrics.density
+        val footerWidth = (layout.footerContentWidth - margin * 2).coerceAtLeast(0f)
+        if (footerWidth <= 0f) return
+        val firstBaseline = (layout.footerHeight - footerTextHeightPx) / 2 - footerPaint.fontMetrics.top
+        fun drawLine(value: String, baseline: Float, color: Int) {
+            footerPaint.color = color
+            val text = TextUtils.ellipsize(value, footerPaint, footerWidth, TextUtils.TruncateAt.END)
+            canvas.drawText(text.toString(), margin, baseline, footerPaint)
+        }
         val volts =
             if (valid) formatValue("~%.2f V", sample!!.voltage * Decoder.VOLT_SCALE) else "— V"
         val software = if (display.ecuIdentificationStatus == "demo") "" else
@@ -708,28 +732,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val perf =
             tr("${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software", "${sample?.cycleMs?:"—"} ms/cycle · ECU $volts$software") +
                 " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
-        drawText(
-            canvas,
-            perf,
-            footerCenter,
-            26f,
-            13f,
-            muted,
-            false,
-            footerWidth,
-            Paint.Align.CENTER,
-        )
-        drawText(
-            canvas,
+        drawLine(perf, firstBaseline, muted)
+        drawLine(
             (if (temperaturesPage) tr("Desliza →: panel principal · ", "Swipe →: main dashboard · ") else tr("Desliza ←: temperaturas · ", "Swipe ←: temperatures · ")) +
                 display.status.replace('\r', ' ').replace('\n', ' ').take(180),
-            footerCenter,
-            49f,
-            13f,
+            firstBaseline + footerLineHeightPx + footerLineGapPx,
             if (valid) green else amber,
-            false,
-            footerWidth,
-            Paint.Align.CENTER,
         )
     }
 
