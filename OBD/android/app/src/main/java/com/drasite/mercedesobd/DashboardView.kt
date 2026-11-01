@@ -18,6 +18,12 @@ import kotlin.math.abs
 /** Native Canvas dashboard: vector graphics, no terminal or web/runtime layer. */
 class DashboardView(context: Context, private val model: Model) : View(context) {
     var flashEnabled = true
+    var footerLinkWidthPx = 0f
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
     private var temperaturesPage = false
     private var pagePosition = 0f
     private var pageAnimator: ValueAnimator? = null
@@ -342,7 +348,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (width <= 0 || height <= 0) return
-        val layout = DashboardLayout(width.toFloat(), height.toFloat(), menuSizePx)
+        val layout = DashboardLayout(width.toFloat(), height.toFloat(), menuSizePx, footerLinkWidthPx)
         canvasScaleX = layout.scaleX
         canvasScaleY = layout.contentScaleY
         textScale = minOf(canvasScaleX, canvasScaleY)

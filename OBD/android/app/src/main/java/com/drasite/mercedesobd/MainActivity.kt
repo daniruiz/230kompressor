@@ -6,10 +6,12 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
 import android.bluetooth.BluetoothAdapter
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.ClipData
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.Typeface
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
@@ -103,6 +105,28 @@ class MainActivity : Activity() {
         dashboard =
             DashboardView(this, model).apply { flashEnabled = prefs.getBoolean("flash", true) }
         root.addView(dashboard, FrameLayout.LayoutParams(-1, -1))
+        val authorLink =
+            Button(this, null, android.R.attr.borderlessButtonStyle).apply {
+                text = "@dani_ruiz"
+                textSize = 16f
+                typeface = Typeface.DEFAULT_BOLD
+                isAllCaps = false
+                contentDescription = tr("@dani_ruiz en Instagram", "@dani_ruiz on Instagram")
+                setTextColor(Color.rgb(76, 159, 255))
+                setPadding(dp(8), 0, dp(8), 0)
+                minWidth = 0
+                minimumWidth = 0
+                setOnClickListener { openLink("https://www.instagram.com/dani_ruiz24/") }
+                addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+                    dashboard.footerLinkWidthPx = view.width.toFloat()
+                }
+            }
+        root.addView(
+            authorLink,
+            FrameLayout.LayoutParams(-2, dp(48), Gravity.BOTTOM or Gravity.RIGHT).apply {
+                rightMargin = dp(48)
+            },
+        )
         val menuButton =
             Button(this).apply {
                 text = "⋮"
@@ -145,6 +169,14 @@ class MainActivity : Activity() {
     }
 
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
+
+    private fun openLink(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (_: ActivityNotFoundException) {
+            model.notice(tr("No hay una aplicación disponible para abrir el enlace", "No app is available to open this link"))
+        }
+    }
 
     private var faultDialog: Dialog? = null
     private var correctionsDialog: Dialog? = null

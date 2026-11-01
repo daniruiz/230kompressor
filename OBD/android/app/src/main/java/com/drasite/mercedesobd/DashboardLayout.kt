@@ -1,12 +1,12 @@
 package com.drasite.mercedesobd
 
-/** Pixel geometry shared by the chart grid and its overlaid footer action button. */
-internal class DashboardLayout(width: Float, height: Float, menuSize: Float) {
+/** Pixel geometry shared by the chart grid and its overlaid footer controls. */
+internal class DashboardLayout(width: Float, height: Float, menuSize: Float, linkWidth: Float = 0f) {
     val scaleX = width / WIDTH
     val footerHeight = maxOf(height * FOOTER_HEIGHT / HEIGHT, menuSize).coerceAtMost(height - 1f)
     val contentHeight = height - footerHeight
     val contentScaleY = contentHeight / CONTENT_HEIGHT
-    val footerTextWidth = ((width - menuSize) / scaleX - 16f).coerceAtLeast(0f)
+    val footerTextWidth = ((width - menuSize - linkWidth) / scaleX - 16f).coerceAtLeast(0f)
 
     companion object {
         const val WIDTH = 1200f
