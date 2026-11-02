@@ -144,7 +144,7 @@
   </XDFTABLE>
   <XDFTABLE uniqueid="0x002D" flags="0x0">
     <title>Supercharger load diagnosis - bypass command threshold</title>
-    <description>Enables supercharger load diagnosis only when the bypass command exceeds this value. Setting 255 disables this diagnostic and its associated cutout, including genuine insufficient-load detection.</description>
+    <description>Threshold as a percentage of the 0-255 bypass command (raw * 100 / 255). Enables supercharger load diagnosis only when the bypass command exceeds this value. Setting 100% (raw 255) disables this diagnostic and its associated cutout, including genuine insufficient-load detection.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units />
@@ -175,12 +175,12 @@
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4471" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>raw</units>
-      <decimalpl>0</decimalpl>
+      <units>%</units>
+      <decimalpl>2</decimalpl>
       <min>0</min>
-      <max>255</max>
+      <max>100</max>
       <outputtype>1</outputtype>
-      <MATH equation="X">
+      <MATH equation="X*100/255">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
@@ -1726,7 +1726,7 @@
   </XDFTABLE>
   <XDFTABLE uniqueid="0x002E" flags="0x0">
     <title>Supercharger load diagnosis - bypass command threshold</title>
-    <description>Enables supercharger load diagnosis only when the bypass command exceeds this value. Setting 255 disables this diagnostic and its associated cutout, including genuine insufficient-load detection.</description>
+    <description>Threshold as a percentage of the 0-255 bypass command (raw * 100 / 255). Enables supercharger load diagnosis only when the bypass command exceeds this value. Setting 100% (raw 255) disables this diagnostic and its associated cutout, including genuine insufficient-load detection.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units />
@@ -1757,12 +1757,12 @@
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30471" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>raw</units>
-      <decimalpl>0</decimalpl>
+      <units>%</units>
+      <decimalpl>2</decimalpl>
       <min>0</min>
-      <max>255</max>
+      <max>100</max>
       <outputtype>1</outputtype>
-      <MATH equation="X">
+      <MATH equation="X*100/255">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
