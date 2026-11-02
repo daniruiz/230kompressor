@@ -93,21 +93,16 @@ With a larger crankshaft pulley, some software versions lose boost at high RPM. 
 
 **Both 404 and 338 are vulnerable to this overflow.** Their different model values change which temperature and adaptation combinations cross the boundary. The illustrated code test uses assumed inputs to show cases where only the 338 overflows and where both do. It uses the **coding 2 model in the 338**; the active coding and fault still need checking in the car.
 
+**Original binaries not affected by this overflow: 034, 153 and 035.** They retain and compare the full 16-bit ratio, so **256 remains 256 instead of wrapping to 0**, regardless of IAT.
+
+✅ Not affected by the byte overflow
+- `114.235034.34`
+- `114.235153.52`
+- `114.235035.52`
+
+The original **355, 404, 516, 819, 338, 438 and 643** binaries use the 8-bit result and are potentially affected. The three unaffected versions still retain the **`FD36.12` supercharger diagnosis**: a calculated ratio of **128 or less** can activate it when the diagnostic conditions and persistence requirements are met. They are free of this specific overflow, not of every possible supercharger cutout.
+
 [**Visual study: 404 vs 338 supercharger cutout (SVG)**](Images/supercharger-cutout-404-338.svg) — Highlighted calibration tables, IAT conversion to °C and the calculation leading to the fault.
-
-The results below describe observed behavior in tested setups, not immunity to this fault:
-
-❌ **Cutout observed:**
-
-- 9903-230Kompressor_261206457_114.236338.39.BIN
-- 9906-230Kompressor_261206458_114.236438.40.BIN
-- 9914-230Kompressor_261206570_114.236643.43.BIN
-
-✅ **No cutout observed in the tested setup:**
-
-- 9640-230Kompressor_261204573_114.235034.34.BIN
-- 9646-230Kompressor_261204527_114.235153.52.BIN
-- 9720-230Kompressor_261204747_114.235404.04.BIN
 
 ## Immo off
 
