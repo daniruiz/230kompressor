@@ -31,12 +31,12 @@ class MainActivity : Activity() {
         const val EXPORT_LOGS_REQUEST = 1001
     }
 
-    private val model = Model()
-    private lateinit var session: Session
+    private val runtime get() = application as MercedesApplication
+    private val model get() = runtime.model
+    private val session get() = runtime.session
     private lateinit var dashboard: DashboardView
     private val handler = Handler(Looper.getMainLooper())
-    private var demoMode = false
-    private val alerts by lazy { AlertPlayer(this, model) }
+    private val demoMode get() = runtime.demoMode
     private var resumed = false
     private var wasRunning = false
     private var exporting = false
@@ -48,7 +48,7 @@ class MainActivity : Activity() {
         object : Runnable {
             override fun run() {
                 dashboard.invalidate()
-                val running = session.running
+                val running = runtime.active
                 if (wasRunning && !running) {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     cancelSound()
@@ -68,7 +68,6 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         // Hardware volume keys adjust the same stream used by demo alerts.
         volumeControlStream = AudioManager.STREAM_MUSIC
-        session = Session(File(filesDir, "logs"), model) { handler.post { beepBurst() } }
         setContentView(createContentView())
         savedInstanceState?.getStringArrayList("pending_export")?.let {
             pendingExport = runCatching { LogFiles.exportedFile(File(cacheDir, "log_exports"), it) }.getOrNull()
@@ -263,28 +262,32 @@ class MainActivity : Activity() {
             model.notice(tr("Espera a que termine la exportación", "Wait for the export to finish"))
             return
         }
-        if (session.start(demo, address, prefs.getBoolean("adapter_tuning", true))) {
-            cancelSound()
-            demoMode = demo
+        if (runtime.active) {
+            model.notice(tr("Detén la sesión actual antes de iniciar otra", "Stop the current session before starting another"))
+            return
+        }
+        if (runtime.start(demo, address)) {
+            if (Build.VERSION.SDK_INT >= 33 &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+                !prefs.getBoolean("notification_permission_asked", false)) {
+                prefs.edit().putBoolean("notification_permission_asked", true).apply()
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2)
+            }
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             wasRunning = true
-        } else model.notice(tr("Detén la sesión actual antes de iniciar otra", "Stop the current session before starting another"))
+        }
     }
 
     private fun stop() {
         pendingAdapterAddress = null
-        val active = session.running
-        session.stop()
+        val active = runtime.active
+        runtime.stop()
         cancelSound()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         if (active) model.notice(tr("Deteniendo sesión…", "Stopping session…")) else model.stop()
     }
 
-    private fun beepBurst() {
-        if (resumed && session.running && prefs.getBoolean("sound", true)) alerts.play(demoMode)
-    }
-
-    private fun cancelSound() = alerts.cancel()
+    private fun cancelSound() = runtime.alerts.cancel()
 
     private fun settings() {
         val names =
@@ -311,7 +314,7 @@ class MainActivity : Activity() {
     }
 
     private fun logsAvailable(): Boolean {
-        if (session.running) {
+        if (runtime.active) {
             model.notice(tr("Pulsa Parar y espera al cierre para gestionar los registros", "Tap Stop and wait for the session to end to manage logs"))
             return false
         }
@@ -430,29 +433,22 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         resumed = true
+        if (runtime.active) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         handler.post(ticker)
     }
 
     override fun onPause() {
         resumed = false
-        cancelSound()
         handler.removeCallbacks(ticker)
         super.onPause()
-    }
-
-    override fun onStop() {
-        stop()
-        super.onStop()
     }
 
     override fun onDestroy() {
         faultDialog?.dismiss()
         correctionsDialog?.dismiss()
         logsDialog?.dismiss()
-        session.stop()
-        cancelSound()
         handler.removeCallbacksAndMessages(null)
-        alerts.release()
         super.onDestroy()
     }
 }
