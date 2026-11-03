@@ -18,7 +18,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -36,18 +35,8 @@ class MainActivity : Activity() {
     private lateinit var session: Session
     private lateinit var dashboard: DashboardView
     private val handler = Handler(Looper.getMainLooper())
-    private var tone: AlertTone? = null
-    private var soundGeneration = 0
-    private var nextBurst = 0L
     private var demoMode = false
-    private val alertVolume by lazy {
-        val audio = getSystemService(AudioManager::class.java)
-        AlertVolume(
-            { audio.getStreamVolume(AudioManager.STREAM_MUSIC) },
-            { audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC) },
-            { audio.setStreamVolume(AudioManager.STREAM_MUSIC, it, 0) },
-        )
-    }
+    private val alerts by lazy { AlertPlayer(this, model) }
     private var resumed = false
     private var wasRunning = false
     private var exporting = false
@@ -292,72 +281,10 @@ class MainActivity : Activity() {
     }
 
     private fun beepBurst() {
-        if (!prefs.getBoolean("sound", true) || !session.running || !resumed) return
-        if (tone == null)
-            try {
-                tone = AlertTone()
-            } catch (e: Exception) {
-                model.notice(tr("No se pudo iniciar el sonido: ${e.message}", "Could not start audio: ${e.message}"))
-                return
-            }
-        val gen = soundGeneration
-        val start = maxOf(SystemClock.uptimeMillis(), nextBurst)
-        nextBurst = start + 6 * 130
-        repeat(6) { i ->
-            handler.postAtTime(
-                {
-                    if (
-                        gen == soundGeneration && resumed && session.running && prefs.getBoolean("sound", true)
-                    ) {
-                        prepareAlertVolume()
-                        try {
-                            tone?.play()
-                        } catch (e: RuntimeException) {
-                            cancelSound()
-                            model.notice(tr("No se pudo reproducir el aviso: ${e.message}", "Could not play alert: ${e.message}"))
-                        }
-                    }
-                },
-                start + i * 130,
-            )
-        }
-        val end = nextBurst
-        handler.postAtTime(
-            {
-                // A later burst may still be using the saved volume.
-                if (gen == soundGeneration && end == nextBurst) restoreAlertVolume()
-            },
-            end,
-        )
+        if (resumed && session.running && prefs.getBoolean("sound", true)) alerts.play(demoMode)
     }
 
-    private fun prepareAlertVolume() {
-        try {
-            alertVolume.begin(demoMode)
-        } catch (_: SecurityException) {
-            model.notice(tr("Android no permite ajustar el volumen de los avisos", "Android does not allow changing alert volume"))
-        }
-    }
-
-    private fun restoreAlertVolume() {
-        try {
-            alertVolume.restore()
-        } catch (_: SecurityException) {
-            model.notice(tr("Android no permite restaurar el volumen anterior", "Android does not allow restoring the previous volume"))
-        }
-    }
-
-    private fun cancelSound() {
-        soundGeneration++
-        nextBurst = 0
-        try {
-            tone?.stop()
-        } catch (_: IllegalStateException) {
-            // A lost audio track must not prevent restoring the media volume.
-        } finally {
-            restoreAlertVolume()
-        }
-    }
+    private fun cancelSound() = alerts.cancel()
 
     private fun settings() {
         val names =
@@ -525,8 +452,7 @@ class MainActivity : Activity() {
         session.stop()
         cancelSound()
         handler.removeCallbacksAndMessages(null)
-        tone?.release()
-        tone = null
+        alerts.release()
         super.onDestroy()
     }
 }
