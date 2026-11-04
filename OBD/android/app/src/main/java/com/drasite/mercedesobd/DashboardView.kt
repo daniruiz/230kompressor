@@ -602,16 +602,16 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val valueY = if (compact) 470f else 339f
         val channelY = if (compact) 497f else 377f
         drawCard(canvas, kr, tr("CONTROL DE PICADO", "KNOCK CONTROL"), purple, flash, flashColor = alertColor)
-        drawText(
+        drawTextRuns(
             canvas,
-            if (valid) formatValue(tr("Retardo %.2f°", "Retard %.2f°"), sample!!.retard) else tr("Retardo —", "Retard —"),
+            listOf(
+                TextRun(tr("Retardo de encendido: ", "Ignition retard: "), muted),
+                TextRun(if (valid) formatValue("%.2f°", sample!!.retard) else "—", lightPurple, true),
+            ),
             center,
             valueY,
             if (compact) 23f else 27f,
-            lightPurple,
-            true,
             560f,
-            Paint.Align.CENTER,
         )
         if (display.count > 0) {
             // Match the right inset in screen pixels even when the grid stretches vertically.
