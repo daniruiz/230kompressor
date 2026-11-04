@@ -124,6 +124,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     private val orange = Color.rgb(255, 159, 67)
     private val green = Color.rgb(69, 237, 203)
     private val purple = Color.rgb(135, 56, 252)
+    private val lightPurple = Color.rgb(216, 184, 255)
     private val red = Color.rgb(255, 34, 34)
     private val muted = Color.rgb(154, 174, 200)
     private val path = Path()
@@ -572,7 +573,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             center,
             valueY,
             if (compact) 23f else 27f,
-            cyan,
+            lightPurple,
             true,
             560f,
             Paint.Align.CENTER,
