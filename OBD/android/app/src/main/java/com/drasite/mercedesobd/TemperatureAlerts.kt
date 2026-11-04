@@ -6,8 +6,8 @@ internal class TemperatureAlerts {
     private var intakeHot = false
 
     fun accept(sample: Sample): Boolean {
-        val motor = sample.coolant - 40 > MOTOR_LIMIT
-        val intake = sample.iat - 40 > INTAKE_LIMIT
+        val motor = isHot(sample.coolant - 40, MOTOR_LIMIT)
+        val intake = isHot(sample.iat - 40, INTAKE_LIMIT)
         val raised = (motor && !motorHot) || (intake && !intakeHot)
         motorHot = motor
         intakeHot = intake
@@ -17,5 +17,7 @@ internal class TemperatureAlerts {
     companion object {
         const val MOTOR_LIMIT = 110
         const val INTAKE_LIMIT = 70
+
+        fun isHot(temperature: Int?, limit: Int) = temperature != null && temperature > limit
     }
 }

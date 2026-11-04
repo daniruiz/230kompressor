@@ -423,7 +423,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             drawMetrics(canvas, display, sample, valid)
             drawKnock(canvas, display, sample, valid, now)
             drawMixture(canvas, sample, valid)
-            drawTemperaturesAndAdvance(canvas, sample, valid)
+            drawTemperaturesAndAdvance(canvas, sample, valid, now)
         }
         canvas.restore()
     }
@@ -499,6 +499,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawKnock(canvas, display, sample, valid, now, compact = true)
     }
 
+    private fun temperatureFlashes(hot: Boolean, now: Long) =
+        hot && flashEnabled && (now / 250) % 2 == 0L
+
     private fun drawTemperatureGauge(
         canvas: Canvas,
         bounds: RectF,
@@ -509,8 +512,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         color: Int,
         now: Long,
     ) {
-        val hot = temperature != null && temperature > limit
-        val flash = hot && flashEnabled && (now / 250) % 2 == 0L
+        val hot = TemperatureAlerts.isHot(temperature, limit)
+        val flash = temperatureFlashes(hot, now)
         val gaugeColor = if (hot) red else color
         drawCard(canvas, bounds, title, gaugeColor, flash, cornerRadius = 24f)
         val cx = bounds.centerX()
@@ -677,8 +680,13 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         )
     }
 
-    private fun drawTemperaturesAndAdvance(canvas: Canvas, sample: Sample?, valid: Boolean) {
-        drawCard(canvas, RectF(803f, 443f, 1192f, 514f), tr("TEMPERATURAS", "TEMPERATURES"), amber)
+    private fun drawTemperaturesAndAdvance(canvas: Canvas, sample: Sample?, valid: Boolean, now: Long) {
+        val hot = valid && sample != null &&
+            (TemperatureAlerts.isHot(sample.coolant - 40, TemperatureAlerts.MOTOR_LIMIT) ||
+                TemperatureAlerts.isHot(sample.iat - 40, TemperatureAlerts.INTAKE_LIMIT))
+        val temperatureColor = if (hot) red else amber
+        drawCard(canvas, RectF(803f, 443f, 1192f, 514f), tr("TEMPERATURAS", "TEMPERATURES"),
+            temperatureColor, temperatureFlashes(hot, now))
         drawText(
             canvas,
             if (valid) tr("Admisión ${sample!!.iat-40} °C     Refrigerante ${sample.coolant-40} °C", "Intake ${sample!!.iat-40} °C     Coolant ${sample.coolant-40} °C")
@@ -686,7 +694,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             997f,
             496f,
             16f,
-            amber,
+            temperatureColor,
             true,
             365f,
             Paint.Align.CENTER,
