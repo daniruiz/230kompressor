@@ -631,7 +631,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         sample: Sample?,
         valid: Boolean,
     ) {
-        drawCard(canvas, RectF(803f, 272f, 1192f, 435f), tr("MEZCLA", "MIXTURE"), green)
+        drawCard(canvas, RectF(803f, 272f, 1192f, 394f), tr("MEZCLA", "MIXTURE"), green)
         fun row(label: String, value: String, y: Float, color: Int = green) {
             drawText(canvas, label, 816f, y, 14f, muted, false, 145f)
             drawText(canvas, value, 1179f, y, 15f, color, true, 215f, Paint.Align.RIGHT)
@@ -645,7 +645,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                     Decoder.trim(sample.ltft),
                 )
             else "—",
-            325f,
+            320f,
         )
         row(
             tr("Caudalímetro", "Airflow"),
@@ -656,7 +656,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                     sample.maf * Decoder.MAF_SCALE,
                 )
             else "—",
-            365f,
+            350f,
             cyan,
         )
         row(
@@ -668,24 +668,24 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                     if (sample.oxygen > 0x2456) tr("rico", "rich") else tr("pobre", "lean"),
                 )
             else "—",
-            405f,
+            380f,
             amber,
         )
     }
 
     private fun drawTemperaturesAndAdvance(canvas: Canvas, sample: Sample?, valid: Boolean) {
-        drawCard(canvas, RectF(803f, 443f, 1192f, 514f), tr("TEMPERATURAS", "TEMPERATURES"), amber)
+        drawCard(canvas, RectF(803f, 402f, 1192f, 514f), tr("TEMPERATURAS", "TEMPERATURES"), amber)
         drawText(
             canvas,
-            if (valid) tr("Admisión ${sample!!.iat-40} °C     Refrigerante ${sample.coolant-40} °C", "Intake ${sample!!.iat-40} °C     Coolant ${sample.coolant-40} °C")
-            else tr("Admisión —     Refrigerante —", "Intake —     Coolant —"),
-            997f,
-            496f,
-            16f,
-            amber,
-            true,
-            365f,
-            Paint.Align.CENTER,
+            if (valid) tr("Admisión ${sample!!.iat-40} °C", "Intake ${sample!!.iat-40} °C")
+            else tr("Admisión —", "Intake —"),
+            997f, 463f, 22f, amber, true, 365f, Paint.Align.CENTER,
+        )
+        drawText(
+            canvas,
+            if (valid) tr("Refrigerante ${sample!!.coolant-40} °C", "Coolant ${sample!!.coolant-40} °C")
+            else tr("Refrigerante —", "Coolant —"),
+            997f, 497f, 22f, amber, true, 365f, Paint.Align.CENTER,
         )
         drawCard(canvas, RectF(803f, 522f, 1192f, 621f), tr("AVANCE DE ENCENDIDO", "IGNITION ADVANCE"), cyan)
         val adv = if (valid) Decoder.advance(sample!!.advance) else null
