@@ -206,7 +206,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             title,
             bounds.centerX(),
             bounds.top + 24,
-            12f,
+            14f,
             color,
             true,
             bounds.width() - 24,
