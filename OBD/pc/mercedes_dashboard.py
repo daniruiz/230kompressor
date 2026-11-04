@@ -1859,7 +1859,7 @@ def render(model, args, width=110, height=44, now=None):
         maf = f'{s.maf_raw*MAF_GS_PER_RAW:.1f} g/s' if shown and s.maf_raw is not None else '—'
         mixture.add_row(tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
         oxygen_label = tr('rico', 'rich') if shown and s.oxygen_raw is not None and s.oxygen_raw > O2_SWITCH_RAW else tr('pobre', 'lean')
-        oxygen = f'{oxygen_voltage(s.oxygen_raw):.3f} V · {oxygen_label}' if shown and s.oxygen_raw is not None else '—'
+        oxygen = f'{oxygen_label} · {oxygen_voltage(s.oxygen_raw):.3f} V' if shown and s.oxygen_raw is not None else '—'
         mixture.add_row(tr('Sonda λ', 'O₂ sensor'), Text(oxygen, style=f'bold {AMBER}'))
         temperatures = Table.grid(expand=True, padding=(0,1))
         temperatures.add_column(style=MUTED)

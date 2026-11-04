@@ -706,9 +706,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             tr("Sonda λ", "O₂ sensor"),
             if (valid)
                 formatValue(
-                    "%.3f V · %s",
-                    Decoder.oxygen(sample!!.oxygen),
-                    if (sample.oxygen > 0x2456) tr("rico", "rich") else tr("pobre", "lean"),
+                    "%s · %.3f V",
+                    if (sample!!.oxygen > 0x2456) tr("rico", "rich") else tr("pobre", "lean"),
+                    Decoder.oxygen(sample.oxygen),
                 )
             else "—",
             380f,
