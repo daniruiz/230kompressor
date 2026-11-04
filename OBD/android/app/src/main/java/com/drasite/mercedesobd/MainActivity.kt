@@ -20,6 +20,8 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
@@ -69,6 +71,7 @@ class MainActivity : Activity() {
         // Hardware volume keys adjust the same stream used by demo alerts.
         volumeControlStream = AudioManager.STREAM_MUSIC
         setContentView(createContentView())
+        applyFullscreen()
         savedInstanceState?.getStringArrayList("pending_export")?.let {
             pendingExport = runCatching { LogFiles.exportedFile(File(cacheDir, "log_exports"), it) }.getOrNull()
             exporting = pendingExport != null
@@ -76,17 +79,47 @@ class MainActivity : Activity() {
         if (savedInstanceState == null && intent.getBooleanExtra("demo", false)) start(true, null)
     }
 
+    @Suppress("DEPRECATION")
+    private fun applyFullscreen() {
+        val fullscreen = prefs.getBoolean("fullscreen", true)
+        if (Build.VERSION.SDK_INT >= 30) {
+            window.setDecorFitsSystemWindows(false)
+            window.insetsController?.apply {
+                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                if (fullscreen) hide(WindowInsets.Type.systemBars()) else show(WindowInsets.Type.systemBars())
+            }
+        } else {
+            val layoutFlags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            window.decorView.systemUiVisibility = if (fullscreen) layoutFlags or
+                View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY else layoutFlags
+        }
+        window.decorView.requestApplyInsets()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) applyFullscreen()
+    }
+
     private fun createContentView(): View {
         val root =
             FrameLayout(this).apply {
                 setBackgroundColor(Color.rgb(3, 6, 12))
                 setOnApplyWindowInsetsListener { view, insets ->
-                    view.setPadding(
-                        insets.systemWindowInsetLeft,
-                        insets.systemWindowInsetTop,
-                        insets.systemWindowInsetRight,
-                        insets.systemWindowInsetBottom,
-                    )
+                    if (Build.VERSION.SDK_INT >= 30) {
+                        val safe = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+                        view.setPadding(safe.left, safe.top, safe.right, safe.bottom)
+                    } else {
+                        val cutout = if (Build.VERSION.SDK_INT >= 28) insets.displayCutout else null
+                        view.setPadding(
+                            maxOf(insets.systemWindowInsetLeft, cutout?.safeInsetLeft ?: 0),
+                            maxOf(insets.systemWindowInsetTop, cutout?.safeInsetTop ?: 0),
+                            maxOf(insets.systemWindowInsetRight, cutout?.safeInsetRight ?: 0),
+                            maxOf(insets.systemWindowInsetBottom, cutout?.safeInsetBottom ?: 0),
+                        )
+                    }
                     insets
                 }
             }
@@ -294,9 +327,10 @@ class MainActivity : Activity() {
             arrayOf(
                 tr("Sonido: retardo > 3° o temperatura alta", "Sound: retard > 3° or high temperature"),
                 tr("Parpadeo de avisos durante 3 segundos", "Alert flash for 3 seconds"),
+                tr("Pantalla completa", "Fullscreen"),
                 tr("Optimizar tiempos del adaptador (próxima conexión)", "Optimize adapter timings (next connection)"),
             )
-        val keys = arrayOf("sound", "flash", "adapter_tuning")
+        val keys = arrayOf("sound", "flash", "fullscreen", "adapter_tuning")
         val values = BooleanArray(keys.size) { prefs.getBoolean(keys[it], true) }
         AlertDialog.Builder(this)
             .setTitle(tr("Ajustes · MercedesOBD", "Settings · MercedesOBD"))
@@ -306,6 +340,7 @@ class MainActivity : Activity() {
                 keys.forEachIndexed { i, k -> edit.putBoolean(k, values[i]) }
                 edit.apply()
                 dashboard.flashEnabled = values[1]
+                applyFullscreen()
                 if (!values[0]) cancelSound()
                 model.notice(tr("Ajustes guardados", "Settings saved"))
             }
@@ -433,6 +468,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         resumed = true
+        applyFullscreen()
         if (runtime.active) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         handler.post(ticker)
