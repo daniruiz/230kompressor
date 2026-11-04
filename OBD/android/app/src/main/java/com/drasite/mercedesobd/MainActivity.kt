@@ -25,6 +25,7 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.PopupMenu
 import java.io.File
 
@@ -149,26 +150,23 @@ class MainActivity : Activity() {
                 }
             }
         val controlSize = dp(DashboardLayout.FOOTER_CONTROL_DP)
+        val controlGap = dp(DashboardLayout.FOOTER_CONTROL_GAP_DP)
         val controlHeight = maxOf(controlSize, kotlin.math.ceil(authorLink.paint.fontSpacing + dp(8)).toInt())
         val indicatorHeight = dp(DashboardLayout.INDICATOR_HEIGHT_DP)
         root.addView(
             authorLink,
             FrameLayout.LayoutParams(-2, controlHeight, Gravity.BOTTOM or Gravity.RIGHT).apply {
-                rightMargin = controlSize
+                rightMargin = controlSize + controlGap
                 bottomMargin = indicatorHeight
             },
         )
         val menuButton =
-            Button(this, null, android.R.attr.borderlessButtonStyle).apply {
-                text = "⋮"
-                textSize = 20f
+            ImageButton(this).apply {
+                setImageResource(R.drawable.ic_settings)
+                setBackgroundResource(R.drawable.dashboard_options_background)
                 contentDescription = tr("Menú de acciones", "Actions menu")
-                setTextColor(Color.WHITE)
-                setPadding(0, 0, 0, 0)
-                minWidth = 0
-                minimumWidth = 0
-                minHeight = 0
-                minimumHeight = 0
+                tooltipText = contentDescription
+                setPadding(dp(12), dp(12), dp(12), dp(12))
                 setOnClickListener { showActions(this) }
             }
         root.addView(

@@ -374,6 +374,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             menuSizePx,
             footerLinkWidthPx,
             minimumFooterHeight = maxOf(footerTextHeightPx + 8 * resources.displayMetrics.density, footerControlHeightPx) + indicatorHeightPx,
+            controlGap = DashboardLayout.FOOTER_CONTROL_GAP_DP * resources.displayMetrics.density,
         )
         canvasScaleX = layout.scaleX
         canvasScaleY = layout.contentScaleY

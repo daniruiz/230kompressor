@@ -7,16 +7,18 @@ internal class DashboardLayout(
     menuSize: Float,
     linkWidth: Float = 0f,
     minimumFooterHeight: Float = 0f,
+    controlGap: Float = 0f,
 ) {
     val scaleX = width / WIDTH
     val footerHeight = maxOf(menuSize, minimumFooterHeight)
         .coerceAtMost(height - 1f)
     val contentHeight = height - footerHeight
     val contentScaleY = contentHeight / CONTENT_HEIGHT
-    val footerContentWidth = (width - menuSize - linkWidth).coerceAtLeast(0f)
+    val footerContentWidth = (width - menuSize - linkWidth - controlGap).coerceAtLeast(0f)
 
     companion object {
-        const val FOOTER_CONTROL_DP = 32
+        const val FOOTER_CONTROL_DP = 48
+        const val FOOTER_CONTROL_GAP_DP = 8
         const val INDICATOR_HEIGHT_DP = 8
         const val WIDTH = 1200f
         const val HEIGHT = 680f
