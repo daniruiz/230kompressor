@@ -131,7 +131,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     private val boldFont = resources.getFont(R.font.cascadia_bold)
     private val footerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         typeface = regularFont
-        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics)
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f, resources.displayMetrics)
         textAlign = Paint.Align.LEFT
     }
     private val footerLineHeightPx: Float
