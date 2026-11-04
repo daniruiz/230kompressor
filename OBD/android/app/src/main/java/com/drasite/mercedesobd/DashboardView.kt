@@ -568,7 +568,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             center,
             valueY,
             if (compact) 23f else 27f,
-            purple,
+            cyan,
             true,
             560f,
             Paint.Align.CENTER,
