@@ -423,16 +423,16 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
 
     private fun drawPageIndicator(canvas: Canvas) {
         val density = resources.displayMetrics.density
-        val radius = 3f * density
+        val radius = 2f * density
         val spacing = 14f * density
         paint.shader = null
         paint.style = Paint.Style.FILL
         paint.color = muted
         // Temperatures sit to the left of the main panel and enter with a right swipe.
         paint.alpha = (70 + 110 * pagePosition).toInt()
-        canvas.drawCircle(width / 2f - spacing / 2f, 7f * density, radius, paint)
+        canvas.drawCircle(width / 2f - spacing / 2f, height - 4f * density, radius, paint)
         paint.alpha = (70 + 110 * (1f - pagePosition)).toInt()
-        canvas.drawCircle(width / 2f + spacing / 2f, 7f * density, radius, paint)
+        canvas.drawCircle(width / 2f + spacing / 2f, height - 4f * density, radius, paint)
         paint.alpha = 255
     }
 
