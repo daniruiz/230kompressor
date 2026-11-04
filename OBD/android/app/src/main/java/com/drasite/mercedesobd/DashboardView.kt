@@ -189,6 +189,41 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         canvas.restore()
     }
 
+    private data class TextRun(val text: String, val color: Int, val bold: Boolean = false)
+
+    private fun drawTextRuns(
+        canvas: Canvas,
+        runs: List<TextRun>,
+        centerX: Float,
+        y: Float,
+        size: Float,
+        width: Float,
+    ) {
+        paint.shader = null
+        paint.style = Paint.Style.FILL
+        paint.textAlign = Paint.Align.LEFT
+        paint.textSize = size
+        val measuredWidth = runs.sumOf { run ->
+            paint.typeface = if (run.bold) boldFont else regularFont
+            paint.measureText(run.text).toDouble()
+        }.toFloat()
+        // Fit the entire line together so differently styled runs stay aligned.
+        val availableWidth = textTransform.availableWidth(width)
+        val scale = if (measuredWidth > availableWidth) availableWidth / measuredWidth else 1f
+        paint.textSize = size * scale
+        var x = -measuredWidth * scale / 2
+        canvas.save()
+        canvas.translate(centerX, y)
+        canvas.scale(textTransform.correctionX, textTransform.correctionY)
+        for (run in runs) {
+            paint.typeface = if (run.bold) boldFont else regularFont
+            paint.color = run.color
+            canvas.drawText(run.text, x, 0f, paint)
+            x += paint.measureText(run.text)
+        }
+        canvas.restore()
+    }
+
     private fun drawCard(
         canvas: Canvas,
         bounds: RectF,
@@ -688,17 +723,18 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val temperatureColor = if (hot) red else amber
         drawCard(canvas, RectF(803f, 402f, 1192f, 473f), tr("TEMPERATURAS", "TEMPERATURES"),
             temperatureColor, temperatureFlashes(hot, now))
-        drawText(
+        drawTextRuns(
             canvas,
-            if (valid) tr("Admisión ${sample!!.iat-40} °C     Refrigerante ${sample.coolant-40} °C", "Intake ${sample!!.iat-40} °C     Coolant ${sample.coolant-40} °C")
-            else tr("Admisión —     Refrigerante —", "Intake —     Coolant —"),
+            listOf(
+                TextRun(tr("Admisión ", "Intake "), muted),
+                TextRun(if (valid) "${sample!!.iat - 40} °C" else "—", amber, true),
+                TextRun(tr("     Refrigerante ", "     Coolant "), muted),
+                TextRun(if (valid) "${sample!!.coolant - 40} °C" else "—", amber, true),
+            ),
             997f,
             455f,
             16f,
-            temperatureColor,
-            true,
             365f,
-            Paint.Align.CENTER,
         )
         drawCard(canvas, RectF(803f, 481f, 1192f, 621f), tr("AVANCE DE ENCENDIDO", "IGNITION ADVANCE"), cyan)
         val adv = if (valid) Decoder.advance(sample!!.advance) else null
