@@ -734,8 +734,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                 " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
         drawLine(perf, firstBaseline, muted)
         drawLine(
-            (if (temperaturesPage) tr("Desliza →: panel principal · ", "Swipe →: main dashboard · ") else tr("Desliza ←: temperaturas · ", "Swipe ←: temperatures · ")) +
-                display.status.replace('\r', ' ').replace('\n', ' ').take(180),
+            display.status.replace('\r', ' ').replace('\n', ' ').take(180),
             firstBaseline + footerLineHeightPx + footerLineGapPx,
             if (valid) green else amber,
         )
