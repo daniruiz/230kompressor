@@ -133,11 +133,11 @@ class MainActivity : Activity() {
         root.addView(dashboard, FrameLayout.LayoutParams(-1, -1))
         val authorLink =
             Button(this, null, android.R.attr.borderlessButtonStyle).apply {
-                text = "@dani_ruiz"
+                text = "@dani_ruiz24"
                 textSize = 16f
                 typeface = Typeface.DEFAULT_BOLD
                 isAllCaps = false
-                contentDescription = tr("@dani_ruiz en Instagram", "@dani_ruiz on Instagram")
+                contentDescription = tr("@dani_ruiz24 en Instagram", "@dani_ruiz24 on Instagram")
                 setTextColor(Color.rgb(76, 159, 255))
                 setPadding(dp(8), 0, dp(8), 0)
                 minWidth = 0
