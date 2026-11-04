@@ -574,16 +574,19 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             Paint.Align.CENTER,
         )
         if (display.count > 0) {
+            // Match the right inset in screen pixels even when the grid stretches vertically.
+            val counterTop = kr.top + 13f * canvasScaleX / canvasScaleY
+            val counterBounds = RectF(kr.right - 122f, counterTop, kr.right - 13f, counterTop + 45f)
             paint.shader = null
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 2f
             paint.color = alertColor
-            canvas.drawRoundRect(RectF(kr.right - 122f, valueY - 32f, kr.right - 13f, valueY + 13f), 4f, 4f, paint)
+            canvas.drawRoundRect(counterBounds, 4f, 4f, paint)
             drawText(
                 canvas,
                 "%04d".format(display.count),
-                kr.right - 67f,
-                valueY,
+                counterBounds.centerX(),
+                counterTop + 32f,
                 29f,
                 alertColor,
                 true,
