@@ -45,6 +45,7 @@ class MainActivity : Activity() {
     private var pendingExport: File? = null
     private val logFiles by lazy { LogFiles(File(filesDir, "logs"), File(cacheDir, "log_exports")) }
     private var pendingAdapterAddress: String? = null
+    private var pendingNotificationStart: Pair<Boolean, String?>? = null
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     private val ticker =
         object : Runnable {
@@ -72,6 +73,10 @@ class MainActivity : Activity() {
         volumeControlStream = AudioManager.STREAM_MUSIC
         setContentView(createContentView())
         applyFullscreen()
+        if (savedInstanceState?.containsKey("pending_notification_demo") == true) {
+            pendingNotificationStart = savedInstanceState.getBoolean("pending_notification_demo") to
+                savedInstanceState.getString("pending_notification_address")
+        }
         savedInstanceState?.getStringArrayList("pending_export")?.let {
             pendingExport = runCatching { LogFiles.exportedFile(File(cacheDir, "log_exports"), it) }.getOrNull()
             exporting = pendingExport != null
@@ -243,7 +248,12 @@ class MainActivity : Activity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 1) {
+        if (requestCode == 2) {
+            val pending = pendingNotificationStart
+            pendingNotificationStart = null
+            // Declining notifications does not prevent an explicitly started OBD session.
+            pending?.let { (demo, address) -> start(demo, address) }
+        } else if (requestCode == 1) {
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
                 if (pendingConnect) connect() else selectDevice()
             } else model.notice(tr("Permiso Dispositivos cercanos denegado", "Nearby devices permission denied"))
@@ -308,19 +318,23 @@ class MainActivity : Activity() {
             model.notice(tr("Detén la sesión actual antes de iniciar otra", "Stop the current session before starting another"))
             return
         }
+        if (pendingNotificationStart != null) return
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+            !prefs.getBoolean("notification_permission_asked", false)) {
+            pendingNotificationStart = demo to address
+            prefs.edit().putBoolean("notification_permission_asked", true).apply()
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2)
+            return
+        }
         if (runtime.start(demo, address)) {
-            if (Build.VERSION.SDK_INT >= 33 &&
-                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
-                !prefs.getBoolean("notification_permission_asked", false)) {
-                prefs.edit().putBoolean("notification_permission_asked", true).apply()
-                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2)
-            }
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             wasRunning = true
         }
     }
 
     private fun stop() {
+        pendingNotificationStart = null
         pendingAdapterAddress = null
         val active = runtime.active
         runtime.stop()
@@ -350,6 +364,7 @@ class MainActivity : Activity() {
                 edit.apply()
                 dashboard.flashEnabled = values[1]
                 applyFullscreen()
+                if (values[0] && runtime.active) runtime.alerts.prepare()
                 if (!values[0]) cancelSound()
                 model.notice(tr("Ajustes guardados", "Settings saved"))
             }
@@ -470,6 +485,10 @@ class MainActivity : Activity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
+        pendingNotificationStart?.let { (demo, address) ->
+            outState.putBoolean("pending_notification_demo", demo)
+            outState.putString("pending_notification_address", address)
+        }
         pendingExport?.let { outState.putStringArrayList("pending_export", arrayListOf(it.parentFile!!.name, it.name)) }
         super.onSaveInstanceState(outState)
     }

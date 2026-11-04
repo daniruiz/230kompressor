@@ -66,6 +66,7 @@ class DashboardService : Service() {
             val tuning = getSharedPreferences("settings", MODE_PRIVATE).getBoolean("adapter_tuning", true)
             check(runtime.session.start(demo, intent.getStringExtra("address"), tuning))
             runtime.startRequested = false
+            if (getSharedPreferences("settings", MODE_PRIVATE).getBoolean("sound", true)) runtime.alerts.prepare()
             handler.removeCallbacks(monitor)
             handler.post(monitor)
         } catch (e: RuntimeException) {

@@ -24,14 +24,25 @@ internal class AlertPlayer(context: Context, private val model: Model) {
         .setOnAudioFocusChangeListener({ change -> if (change < 0) cancel() }, handler)
         .build()
 
+    /** Initialize playback when connecting, before an alert is needed. */
+    fun prepare(): Boolean {
+        return try {
+            if (tone == null) tone = AlertTone()
+            true
+        } catch (e: RuntimeException) {
+            model.notice(tr("No se pudo preparar el audio: ${e.message}", "Could not prepare audio: ${e.message}"))
+            false
+        }
+    }
+
     fun play(demo: Boolean) {
         // Coalesce overlapping alerts instead of accumulating delayed warnings.
-        if (playing) return
+        if (playing || !prepare()) return
         try {
             if (audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return
             playing = true
             volume.begin(demo)
-            if (tone == null) tone = AlertTone()
+            // Audio focus is transient system coordination, not a user permission dialog.
             tone!!.play()
             handler.postDelayed({ cancel() }, AlertTone.DURATION_MS + 250)
         } catch (e: RuntimeException) {
