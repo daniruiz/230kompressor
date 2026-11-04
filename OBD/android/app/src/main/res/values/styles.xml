@@ -5,5 +5,46 @@
         <item name="android:statusBarColor">#03060C</item>
         <item name="android:navigationBarColor">#03060C</item>
         <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:colorBackground">#03060C</item>
+        <item name="android:windowBackground">#03060C</item>
+        <item name="android:colorBackgroundFloating">#0C1726</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#9AAEC8</item>
+        <item name="android:colorControlNormal">#9AAEC8</item>
+        <item name="android:colorControlActivated">#57D8ED</item>
+        <item name="android:colorControlHighlight">#3357D8ED</item>
+        <item name="android:alertDialogTheme">@style/DashboardAlertTheme</item>
+        <item name="android:popupMenuStyle">@style/DashboardPopupMenu</item>
+        <item name="android:textAppearanceLargePopupMenu">@style/DashboardPopupText</item>
+        <item name="android:textAppearanceSmallPopupMenu">@style/DashboardPopupText</item>
+        <item name="android:listPopupWindowStyle">@style/DashboardListPopup</item>
+    </style>
+    <style name="DashboardAlertTheme" parent="android:style/Theme.Material.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/dashboard_panel_background</item>
+        <item name="android:colorBackground">#0C1726</item>
+        <item name="android:colorBackgroundFloating">#0C1726</item>
+        <item name="android:colorAccent">#57D8ED</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#9AAEC8</item>
+        <item name="android:colorControlNormal">#9AAEC8</item>
+        <item name="android:colorControlActivated">#57D8ED</item>
+        <item name="android:colorControlHighlight">#3357D8ED</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/DashboardDialogButton</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/DashboardDialogButton</item>
+        <item name="android:buttonBarNeutralButtonStyle">@style/DashboardDialogButton</item>
+    </style>
+    <style name="DashboardDialogButton" parent="android:style/Widget.Material.Button.Borderless.Colored">
+        <item name="android:textColor">#57D8ED</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+    <style name="DashboardPopupMenu" parent="android:style/Widget.Material.PopupMenu">
+        <item name="android:popupBackground">@drawable/dashboard_panel_background</item>
+    </style>
+    <style name="DashboardListPopup" parent="android:style/Widget.Material.ListPopupWindow">
+        <item name="android:popupBackground">@drawable/dashboard_panel_background</item>
+    </style>
+    <style name="DashboardPopupText" parent="android:style/TextAppearance.Material.Widget.PopupMenu.Large">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">16sp</item>
     </style>
 </resources>
