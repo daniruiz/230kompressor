@@ -140,28 +140,37 @@ class MainActivity : Activity() {
                 setOnClickListener { openLink("https://www.instagram.com/dani_ruiz24/") }
                 addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
                     dashboard.footerLinkWidthPx = view.width.toFloat()
+                    dashboard.footerControlHeightPx = view.height.toFloat()
                 }
             }
+        val controlSize = dp(DashboardLayout.FOOTER_CONTROL_DP)
+        val controlHeight = maxOf(controlSize, kotlin.math.ceil(authorLink.paint.fontSpacing + dp(8)).toInt())
+        val indicatorHeight = dp(DashboardLayout.INDICATOR_HEIGHT_DP)
         root.addView(
             authorLink,
-            FrameLayout.LayoutParams(-2, dp(48), Gravity.BOTTOM or Gravity.RIGHT).apply {
-                rightMargin = dp(48)
+            FrameLayout.LayoutParams(-2, controlHeight, Gravity.BOTTOM or Gravity.RIGHT).apply {
+                rightMargin = controlSize
+                bottomMargin = indicatorHeight
             },
         )
         val menuButton =
-            Button(this).apply {
+            Button(this, null, android.R.attr.borderlessButtonStyle).apply {
                 text = "⋮"
-                textSize = 24f
+                textSize = 20f
                 contentDescription = tr("Menú de acciones", "Actions menu")
                 setTextColor(Color.WHITE)
                 setPadding(0, 0, 0, 0)
                 minWidth = 0
                 minimumWidth = 0
+                minHeight = 0
+                minimumHeight = 0
                 setOnClickListener { showActions(this) }
             }
         root.addView(
             menuButton,
-            FrameLayout.LayoutParams(dp(48), dp(48), Gravity.BOTTOM or Gravity.RIGHT),
+            FrameLayout.LayoutParams(controlSize, controlHeight, Gravity.BOTTOM or Gravity.RIGHT).apply {
+                bottomMargin = indicatorHeight
+            },
         )
         return root
     }

@@ -9,13 +9,15 @@ internal class DashboardLayout(
     minimumFooterHeight: Float = 0f,
 ) {
     val scaleX = width / WIDTH
-    val footerHeight = maxOf(height * FOOTER_HEIGHT / HEIGHT, menuSize, minimumFooterHeight)
+    val footerHeight = maxOf(menuSize, minimumFooterHeight)
         .coerceAtMost(height - 1f)
     val contentHeight = height - footerHeight
     val contentScaleY = contentHeight / CONTENT_HEIGHT
     val footerContentWidth = (width - menuSize - linkWidth).coerceAtLeast(0f)
 
     companion object {
+        const val FOOTER_CONTROL_DP = 32
+        const val INDICATOR_HEIGHT_DP = 8
         const val WIDTH = 1200f
         const val HEIGHT = 680f
         const val CONTENT_HEIGHT = 621f

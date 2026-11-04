@@ -134,16 +134,22 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics)
         textAlign = Paint.Align.LEFT
     }
-    private val footerLineGapPx = 2 * resources.displayMetrics.density
     private val footerLineHeightPx: Float
         get() = footerPaint.fontMetrics.let { it.bottom - it.top }
     private val footerTextHeightPx: Float
-        get() = footerLineHeightPx * 2 + footerLineGapPx
+        get() = footerLineHeightPx
     private var canvasScaleX = 1f
     private var canvasScaleY = 1f
     private var textScale = 1f
     private var textTransform = CanvasTextTransform(1f, 1f, 1f)
-    private val menuSizePx = 48 * resources.displayMetrics.density
+    private val menuSizePx = DashboardLayout.FOOTER_CONTROL_DP * resources.displayMetrics.density
+    private val indicatorHeightPx = DashboardLayout.INDICATOR_HEIGHT_DP * resources.displayMetrics.density
+    var footerControlHeightPx = menuSizePx
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
 
     init {
         contentDescription =
@@ -367,7 +373,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             height.toFloat(),
             menuSizePx,
             footerLinkWidthPx,
-            minimumFooterHeight = footerTextHeightPx + 12 * resources.displayMetrics.density,
+            minimumFooterHeight = maxOf(footerTextHeightPx + 8 * resources.displayMetrics.density, footerControlHeightPx) + indicatorHeightPx,
         )
         canvasScaleX = layout.scaleX
         canvasScaleY = layout.contentScaleY
@@ -719,7 +725,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val margin = 12 * resources.displayMetrics.density
         val footerWidth = (layout.footerContentWidth - margin * 2).coerceAtLeast(0f)
         if (footerWidth <= 0f) return
-        val firstBaseline = (layout.footerHeight - footerTextHeightPx) / 2 - footerPaint.fontMetrics.top
+        val firstBaseline = (layout.footerHeight - indicatorHeightPx - footerTextHeightPx) / 2 - footerPaint.fontMetrics.top
         fun drawLine(value: String, baseline: Float, color: Int) {
             footerPaint.color = color
             val text = TextUtils.ellipsize(value, footerPaint, footerWidth, TextUtils.TruncateAt.END)
@@ -732,12 +738,8 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         val perf =
             tr("${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software", "${sample?.cycleMs?:"—"} ms/cycle · ECU $volts$software") +
                 " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
-        drawLine(perf, firstBaseline, muted)
-        drawLine(
-            display.status.replace('\r', ' ').replace('\n', ' ').take(180),
-            firstBaseline + footerLineHeightPx + footerLineGapPx,
-            if (valid) green else amber,
-        )
+        val status = display.status.replace('\r', ' ').replace('\n', ' ').take(180)
+        drawLine(if (valid) "$perf · $status" else "$status · $perf", firstBaseline, if (valid) green else amber)
     }
 
     private companion object {
