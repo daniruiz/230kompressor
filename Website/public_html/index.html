@@ -24,6 +24,21 @@
       property="og:image"
       content="https://m111kompressor.drasite.com/assets/m111-kompressor-social.jpg"
     />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://m111kompressor.drasite.com/"
+    />
+    <link
+      rel="alternate"
+      hreflang="es"
+      href="https://m111kompressor.drasite.com/es.html"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://m111kompressor.drasite.com/"
+    />
     <link rel="canonical" href="https://m111kompressor.drasite.com/" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta property="og:site_name" content="M111Kompressor" />
@@ -52,9 +67,10 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20261104-language" />
     <link rel="stylesheet" href="seo.css" />
-    <script src="app.js?v=20261031-init-fix" defer></script>
+    <script src="language.js?v=20261104"></script>
+    <script src="app.js?v=20261104-language" defer></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -148,15 +164,20 @@
         ]
       }
     </script>
-	<!-- Google tag (gtag.js) -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-G975NQNE8M"></script>
-	<script>
-	  window.dataLayer = window.dataLayer || [];
-	  function gtag(){dataLayer.push(arguments);}
-	  gtag('js', new Date());
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-G975NQNE8M"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
 
-	  gtag('config', 'G-G975NQNE8M');
-	</script>
+      gtag("config", "G-G975NQNE8M");
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#content">Skip to content</a>
@@ -164,6 +185,25 @@
       <a class="brand" href="#home" aria-label="M111Kompressor, home"
         ><span class="brand-model">M111</span><span>Kompressor</span></a
       >
+      <div class="language-switch" role="group" aria-label="Language / Idioma">
+        <a
+          href="./?lang=en"
+          lang="en"
+          hreflang="en"
+          data-language="en"
+          aria-current="page"
+          aria-label="English"
+          >EN</a
+        >
+        <a
+          href="es.html?lang=es"
+          lang="es"
+          hreflang="es"
+          data-language="es"
+          aria-label="Castellano"
+          >ES</a
+        >
+      </div>
       <button
         class="menu-toggle"
         aria-expanded="false"
@@ -513,7 +553,13 @@
             <p class="stage-intro">Airflow, cooling and fuel delivery.</p>
             <ul class="stage-hardware">
               <li>Stage 1 base</li>
-              <li><a href="https://www.benzworld.org/threads/home-port-job-of-the-eaton-m62-s-c.1516156/" target="_blank">Ported supercharger</a></li>
+              <li>
+                <a
+                  href="https://www.benzworld.org/threads/home-port-job-of-the-eaton-m62-s-c.1516156/"
+                  target="_blank"
+                  >Ported supercharger</a
+                >
+              </li>
               <li>Intercooler</li>
               <li>Remove MAF and throttle body screens</li>
               <li>Bosch 320 cc injectors 0280155759</li>
@@ -1029,7 +1075,7 @@
           <form
             class="consultation-form"
             id="consultation-form"
-            action="contact.php"
+            action="contact.php?lang=en"
             method="post"
           >
             <div class="form-row">
@@ -1058,17 +1104,25 @@
               <label
                 >Your model<select name="model" required>
                   <option value="">Select your Mercedes</option>
-                  <option>C200 / C230 Kompressor · W202</option>
-                  <option>CLK200 / CLK230 Kompressor · W208</option>
-                  <option>SLK200 / SLK230 Kompressor · R170</option>
-                  <option>Another M111 project</option>
+                  <option value="C200 / C230 Kompressor · W202">
+                    C200 / C230 Kompressor · W202
+                  </option>
+                  <option value="CLK200 / CLK230 Kompressor · W208">
+                    CLK200 / CLK230 Kompressor · W208
+                  </option>
+                  <option value="SLK200 / SLK230 Kompressor · R170">
+                    SLK200 / SLK230 Kompressor · R170
+                  </option>
+                  <option value="Another M111 project">
+                    Another M111 project
+                  </option>
                 </select></label
               ><label
                 >Engine<select name="engine" required>
                   <option value="">Select your engine</option>
-                  <option>200 Kompressor</option>
-                  <option>230 Kompressor</option>
-                  <option>To be confirmed</option>
+                  <option value="200 Kompressor">200 Kompressor</option>
+                  <option value="230 Kompressor">230 Kompressor</option>
+                  <option value="To be confirmed">To be confirmed</option>
                 </select></label
               >
             </div>

@@ -1,16 +1,21 @@
 "use strict";
 
+const t = (en, es) => (document.documentElement.lang === "es" ? es : en);
+
 const menuButton = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#navigation");
 function closeMenu() {
   navigation.classList.remove("open");
   menuButton.setAttribute("aria-expanded", "false");
-  menuButton.setAttribute("aria-label", "Open menu");
+  menuButton.setAttribute("aria-label", t("Open menu", "Abrir menú"));
 }
 menuButton.addEventListener("click", () => {
   const open = menuButton.getAttribute("aria-expanded") !== "true";
   menuButton.setAttribute("aria-expanded", String(open));
-  menuButton.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+  menuButton.setAttribute(
+    "aria-label",
+    open ? t("Close menu", "Cerrar menú") : t("Open menu", "Abrir menú"),
+  );
   navigation.classList.toggle("open", open);
 });
 navigation
@@ -80,9 +85,9 @@ form.addEventListener("submit", async (event) => {
   const button = form.querySelector('button[type="submit"]');
   const originalLabel = button.innerHTML;
   button.disabled = true;
-  button.textContent = "Sending…";
+  button.textContent = t("Sending…", "Enviando…");
   form.setAttribute("aria-busy", "true");
-  formStatus.textContent = "Sending your enquiry…";
+  formStatus.textContent = t("Sending your enquiry…", "Enviando tu consulta…");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   try {
@@ -95,7 +100,11 @@ form.addEventListener("submit", async (event) => {
     const session = await tokenResponse.json();
     if (!tokenResponse.ok || !session.token)
       throw new Error(
-        session.message || "Please try again or email Daniel directly.",
+        session.message ||
+          t(
+            "Please try again or email Daniel directly.",
+            "Inténtalo de nuevo o escribe directamente a Daniel.",
+          ),
       );
     const values = new FormData(form);
     values.set("token", session.token);
@@ -108,16 +117,28 @@ form.addEventListener("submit", async (event) => {
     });
     const result = await response.json();
     if (!response.ok || result.ok !== true)
-      throw new Error(result.message || "Your enquiry could not be sent.");
+      throw new Error(
+        result.message ||
+          t(
+            "Your enquiry could not be sent.",
+            "No se ha podido enviar tu consulta.",
+          ),
+      );
     formStatus.textContent = result.message;
     form.reset();
     syncEngineStages();
   } catch (error) {
     formStatus.textContent =
       error.name === "AbortError"
-        ? "The request timed out. Delivery could not be confirmed. Please email daniel@drasite.com before retrying."
+        ? t(
+            "The request timed out. Delivery could not be confirmed. Please email daniel@drasite.com before retrying.",
+            "Se ha agotado el tiempo de espera. No se ha podido confirmar el envío. Escribe a daniel@drasite.com antes de volver a intentarlo.",
+          )
         : error instanceof SyntaxError || error instanceof TypeError
-          ? "Could not connect to the mail service. Please email daniel@drasite.com directly."
+          ? t(
+              "Could not connect to the mail service. Please email daniel@drasite.com directly.",
+              "No se ha podido conectar con el servicio de correo. Escribe directamente a daniel@drasite.com.",
+            )
           : error.message;
   } finally {
     clearTimeout(timer);
@@ -131,7 +152,10 @@ let toastTimer;
 document.querySelectorAll("[data-download]").forEach((link) =>
   link.addEventListener("click", () => {
     const toast = document.querySelector("#toast");
-    toast.textContent = `Opening ${link.dataset.download} from the official project repository.`;
+    toast.textContent = t(
+      `Opening ${link.dataset.download} from the official project repository.`,
+      `Abriendo ${link.dataset.download} desde el repositorio oficial del proyecto.`,
+    );
     toast.classList.add("visible");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove("visible"), 5000);

@@ -18,6 +18,32 @@ function reply(
     string $message,
     array $details = [],
 ): never {
+    // The form URL carries the language for both the token and submission requests.
+    if (($_POST["lang"] ?? ($_GET["lang"] ?? "en")) === "es") {
+        $message = strtr($message, [
+            "Please check the form fields." =>
+                "Revisa los campos del formulario.",
+            "Method not allowed." => "Método no permitido.",
+            "The enquiry is too large." => "La consulta es demasiado larga.",
+            "Please email daniel@drasite.com directly." =>
+                "Escribe directamente a daniel@drasite.com.",
+            "Please try sending the form again." =>
+                "Vuelve a intentar enviar el formulario.",
+            "Thank you for your enquiry." => "Gracias por tu consulta.",
+            "Please complete all fields with a valid email and a message of at least 10 characters." =>
+                "Completa todos los campos con un correo válido y un mensaje de al menos 10 caracteres.",
+            "Please wait 30 seconds before sending another enquiry." =>
+                "Espera 30 segundos antes de enviar otra consulta.",
+            "Your enquiry has been submitted. Daniel will reply by email." =>
+                "Tu consulta se ha enviado. Daniel te responderá por correo electrónico.",
+            "Email delivery is disabled on this server." =>
+                "El envío de correo está deshabilitado en este servidor.",
+            "The server could not accept your enquiry for sending." =>
+                "El servidor no ha podido aceptar tu consulta para enviarla.",
+            " Please email daniel@drasite.com directly. Reference: " =>
+                " Escribe directamente a daniel@drasite.com. Referencia: ",
+        ]);
+    }
     http_response_code($status);
     echo json_encode(
         array_merge(["ok" => $ok, "message" => $message], $details),
