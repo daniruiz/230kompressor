@@ -22,6 +22,9 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    testOptions.unitTests.all {
+        it.systemProperty("sim4le.fixtures", rootProject.file("../tests/sim4le_fixtures.json").absolutePath)
+    }
 }
 
 dependencies {

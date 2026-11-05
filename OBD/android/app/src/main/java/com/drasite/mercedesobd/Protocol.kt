@@ -96,17 +96,40 @@ data class Sample(
     val at: Long = monoMs(),
     val acquisitionMs: Double = 0.0,
     val cycleMs: Long? = null,
+    val family: EcuFamily = EcuFamily.ME21,
+    val auxiliary: Map<Int, AuxiliaryReading> = emptyMap(),
+    val mapKpa: Int? = null,
+    val speedKph: Int? = null,
 ) {
-    val injectionMetrics = Injection.metrics(injection, rpm, voltage)
+    val injectionMetrics = if (family == EcuFamily.ME21) Injection.metrics(injection, rpm, voltage) else null
+
+    private fun auxiliaryValue(pid: Int): Int? = auxiliary[pid]?.takeIf { at - it.at in 0..3000 }?.raw
+    val coolantC: Int get() = if (family == EcuFamily.ME21) coolant - 40 else maxOf(coolant * 3 / 4 - 8, 0) - 40
+    val iatC: Int get() = if (family == EcuFamily.ME21) iat - 40 else maxOf(iat * 3 / 4 - 8, 0) - 40
+    val loadValue: Double? get() = if (family == EcuFamily.ME21) load.toDouble() else auxiliaryValue(0x04)?.times(100.0 / 255)
+    val throttlePct: Double get() = if (family == EcuFamily.ME21) throttle * 100.0 / 255 else
+        (if (throttle > 0xC30) 255 else (throttle.toLong() * 0xA7FF / 524288).toInt()) * 100.0 / 255
+    val mafGs: Double get() = if (family == EcuFamily.ME21) maf * Decoder.MAF_SCALE else
+        (maf.toLong() * 0xDE39 / 65536) / 100.0
+    val mafSaturated: Boolean get() = family == EcuFamily.ME21 && maf == 255
+    val oxygenV: Double get() = if (family == EcuFamily.ME21) Decoder.oxygen(oxygen) else minOf(oxygen, 200) / 200.0
+    val oxygenRich: Boolean get() = if (family == EcuFamily.ME21) oxygen > 0x2456 else oxygenV > .45
+    val advanceDeg: Double? get() = if (family == EcuFamily.ME21) Decoder.advance(advance) else auxiliaryValue(0x0E)?.let { it / 2.0 - 64 }
+    val voltageV: Double? get() = if (family == EcuFamily.ME21) voltage * Decoder.VOLT_SCALE else null
+    val stftPct: Double? get() = if (family == EcuFamily.ME21) Decoder.trim(stft) else auxiliaryValue(0x06)?.let { (it - 128) * 100.0 / 128 }
+    val ltftPct: Double? get() = if (family == EcuFamily.ME21) Decoder.trim(ltft) else auxiliaryValue(0x07)?.let { (it - 128) * 100.0 / 128 }
+    val correctionDegrees: List<Double> get() = corrections.map {
+        if (family == EcuFamily.ME21) it * .75 else maxOf(128 - it, 0) * .375
+    }
 
     val injectionMs
-        get() = injectionMetrics.totalMs
+        get() = injectionMetrics?.totalMs
 
     val duty
-        get() = injectionMetrics.duty
+        get() = injectionMetrics?.duty
 
     val retard
-        get() = (corrections.maxOrNull() ?: 0) * .75
+        get() = correctionDegrees.maxOrNull() ?: 0.0
 
     val highRetard
         get() = retard > Decoder.KNOCK_ALERT_THRESHOLD_DEG
@@ -145,6 +168,14 @@ class Elm(
         private set
     var ecuIdentificationStatus = "pending"
         private set
+    var family = EcuFamily.ME21
+        private set
+    private var longMessages = false
+    private var auxiliaryIndex = 0
+    private var nextAuxiliaryAt = 0L
+    private val auxiliary = mutableMapOf<Int, AuxiliaryReading>()
+    private val unsupportedAuxiliary = mutableSetOf<Int>()
+    private var benchmarking = false
 
     private var gap = 60L
     private var lastBus: Long? = null
@@ -216,7 +247,7 @@ class Elm(
         }
         if (
             reply.contains("NO DATA", true) &&
-                (payload.startsWith("22") || payload.startsWith("2A"))
+                (payload.startsWith("22") || payload.startsWith("2A") || payload == "2101")
         ) {
             log.event("recovery", "payload" to payload)
             rollback("NO DATA")
@@ -260,7 +291,7 @@ class Elm(
             break
         }
         log.event("keyword_check", "disabled_acknowledged" to kwDisabled)
-        at("ATAL", true)
+        longMessages = at("ATAL", true)
         // Try a fresh session immediately; reserve the idle period for one
         // retry after an init/read failure with the adapter prompt intact.
         for (attempt in 0..1) {
@@ -300,10 +331,71 @@ class Elm(
     }
 
     fun verifyLink() {
-        readSingleFrame("221104") { Decoder.positive(it, 0x22, "621104", 5) }
+        if (family == EcuFamily.SIM4LE) {
+            readSingleFrame("2101", Sim4le::grouped)
+            return
+        }
+        try {
+            readSingleFrame("221104") { Decoder.positive(it, 0x22, "621104", 5) }
+        } catch (e: NegativeResponse) {
+            if (e.service != 0x22 || e.code !in listOf(0x11, 0x12, 0x31)) throw e
+            identifySim4le()
+        }
+    }
+
+    private fun identifySim4le() {
+        val identification = readSingleFrame("1A94") { Sim4le.payload(it, 0x1A, "5A94", 14) }
+        val program = identification.copyOfRange(2, 14).toString(Charsets.US_ASCII)
+        if (program != "6577815126--") throw DiagnosticException(tr(
+            "Software ECU no compatible: $program. No hay un perfil SIM4LE validado para este programa.",
+            "Unsupported ECU software: $program. No verified SIM4LE profile for this program.",
+        ))
+        if (!longMessages) throw DiagnosticException(tr(
+            "SIM4LE requiere un adaptador que acepte ATAL y respuestas largas de 180 bytes",
+            "SIM4LE requires an adapter supporting ATAL and long 180-byte responses",
+        ))
+        readSingleFrame("2101", Sim4le::grouped)
+        family = EcuFamily.SIM4LE
+        ecuSoftware = "SIM4LE 6577815126 (M10062)"
+        ecuIdentificationStatus = "identified_1a94"
+        log.event("ecu_identification", "family" to "SIM4LE", "software" to ecuSoftware,
+            "status" to ecuIdentificationStatus, "method" to "1A94",
+            "group_request" to "2101", "group_data_bytes" to 178,
+            "stored_corrections_available" to false,
+            "injection_conversion_available" to false)
+    }
+
+    private fun requireMe21Diagnostics() {
+        if (family == EcuFamily.SIM4LE) throw DiagnosticException(tr(
+            "Esta función aún no está disponible para SIM4LE; la lectura agrupada continúa",
+            "This function is not yet available for SIM4LE; grouped readings continue",
+        ))
+    }
+
+    private fun pollAuxiliary() {
+        if (benchmarking || now() < nextAuxiliaryAt) return
+        val available = Sim4le.auxiliaryPids.filter { it !in unsupportedAuxiliary }
+        if (available.isEmpty()) return
+        val pid = available[auxiliaryIndex++ % available.size]
+        try {
+            val payload = "01%02X".format(Locale.ROOT, pid)
+            val frame = readSingleFrame(payload) {
+                Decoder.positive(it, 0x01, "41%02X".format(Locale.ROOT, pid), 3)
+            }
+            auxiliary[pid] = AuxiliaryReading(frame[2].u(), now())
+        } catch (e: LinkTimeout) {
+            throw e
+        } catch (e: DiagnosticException) {
+            auxiliary.remove(pid)
+            if (e is NegativeResponse && e.code in listOf(0x11, 0x12, 0x31)) unsupportedAuxiliary.add(pid)
+            log.event("auxiliary_read_error", "pid" to "%02X".format(Locale.ROOT, pid), "error" to e.toString())
+        } finally {
+            nextAuxiliaryAt = now() + 250
+        }
     }
 
     fun readFaults(): List<FaultCode> {
+        requireMe21Diagnostics()
         rollback("DTC")
         // No single-response suffix: A1 returns one frame per fault and a terminator.
         val faults = FaultCodes.decode(command("A1", 30000))
@@ -312,6 +404,7 @@ class Elm(
     }
 
     fun clearFaults() {
+        requireMe21Diagnostics()
         rollback("DTC")
         val rpm = Decoder.word(Decoder.positive(query("221104", false), 0x22, "621104", 5), 3)
         if (rpm != 0) throw DiagnosticException(tr("Para borrar averías, apaga el motor y deja el contacto puesto", "To clear faults, stop the engine and leave the ignition on"))
@@ -342,6 +435,7 @@ class Elm(
     }
 
     fun defineGroup(): Sample {
+        if (family == EcuFamily.SIM4LE) return readSingleFrame("2101", Sim4le::grouped)
         Decoder.ids.forEachIndexed { i, id ->
             // Send each definition explicitly; only read services may retry NO DATA.
             Decoder.positive(query(Decoder.definition(i + 1, id)), 0x2C, "6C01D2", 3)
@@ -352,6 +446,14 @@ class Elm(
 
     fun acquire(group: Boolean): Sample {
         val start = now()
+        if (family == EcuFamily.SIM4LE) {
+            // One complete ECU snapshot per cycle; standard-only channels are
+            // sampled separately, at most one PID every 250 ms.
+            val sample = readSingleFrame("2101", Sim4le::grouped)
+            pollAuxiliary()
+            val end = now()
+            return sample.copy(at = end, acquisitionMs = (end - start).toDouble(), auxiliary = auxiliary.toMap())
+        }
         val sample =
             if (group) Decoder.grouped(query("2A0101"))
             else {
@@ -388,6 +490,10 @@ class Elm(
      * layout from plausible trim values; a lost prompt still ends the session.
      */
     fun identifyEcu(notice: (String) -> Unit): EcuProfile? {
+        if (family == EcuFamily.SIM4LE) {
+            notice(tr("SIM4LE $ecuSoftware · lectura agrupada", "SIM4LE $ecuSoftware · grouped readings"))
+            return null
+        }
         ecuProfile = null
         ecuSoftware = null
         ecuIdentificationStatus = "unverified"
@@ -456,6 +562,7 @@ class Elm(
     }
 
     fun readFuelCorrections(): FuelCorrections {
+        requireMe21Diagnostics()
         val selected = ecuProfile
             ?: throw DiagnosticException(tr("Lectura de correcciones no disponible: software ECU sin verificar",
                 "Correction readings unavailable: unverified ECU software"))
@@ -467,6 +574,15 @@ class Elm(
     }
 
     fun optimize(group: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) {
+        benchmarking = true
+        try {
+            optimizeTransport(group, publish, notice)
+        } finally {
+            benchmarking = false
+        }
+    }
+
+    private fun optimizeTransport(group: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) {
         if (!fast) return
         if (!stn) {
             optimizeElm(group, publish, notice)

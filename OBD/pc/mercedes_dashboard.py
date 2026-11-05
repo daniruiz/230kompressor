@@ -29,6 +29,11 @@ MAF is the ECU calculated airflow (also available in substitute operation),
 quantized to approximately 1.1108 g/s per F74C count; 255 is saturated.
 Ignition conversion matches the OBD PID 0E path, positive = BTDC.
 Memory service framing is derived from ECU code, pending on-car validation.
+
+SIM4LE program 6577815126 (M10062) is identified via 1A94, then uses its native
+2101 snapshot. Load, STFT/LTFT and advance are spaced Mode 01 auxiliaries.
+SIM4LE injection time, duty, voltage and stored adaptations remain unavailable
+where their conversion/layout is unverified; ME2.1 constants are never reused.
 """
 from __future__ import annotations
 import argparse
@@ -50,8 +55,10 @@ from contextlib import contextmanager
 
 if __package__:
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
+    from . import sim4le_protocol as sim4le
 else:
     from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
+    import sim4le_protocol as sim4le
 
 try:
     from rich import box
@@ -638,12 +645,12 @@ def definition(slot: int, ident: int, clear: bool = False) -> str:
 class Sample:
     rpm: int
     injection: int
-    load: int
+    load: int | None
     corrections: tuple[int, ...]
     duration_ms: float = 0.0
     at: float = field(default_factory=time.monotonic)
-    trims: tuple[int, ...] = (32768,)*2
-    temperatures: tuple[int, int] = (40,40)
+    trims: tuple[int | None, ...] = (32768,)*2
+    temperatures: tuple[int | None, int | None] = (40,40)
     pairs_raw: str = ""
     maf_raw: int | None = None
     interval_ms: float | None = None
@@ -651,10 +658,37 @@ class Sample:
     throttle_raw: int | None = None
     oxygen_raw: int | None = None
     voltage_raw: int | None = None
+    family: str = 'ME2.1'
+    engineering: dict = field(default_factory=dict)
+    provenance: dict = field(default_factory=dict)
+    auxiliary_age_ms: dict = field(default_factory=dict)
+
+    @property
+    def retard_degrees(self):
+        if self.family == sim4le.FAMILY:
+            return tuple(max(128 - raw, 0) * 0.375 for raw in self.corrections)
+        return tuple(raw * 0.75 for raw in self.corrections)
+
+    def value(self, name, voltage_scale=VOLTAGE_V_PER_RAW_EST):
+        """One engineering-value contract for the display and both log formats."""
+        if self.family == sim4le.FAMILY:
+            return self.engineering.get(name)
+        return {
+            'coolant_C': self.temperatures[0] - 40,
+            'iat_C': self.temperatures[1] - 40,
+            'stft_a_pct': trim_percent(self.trims[0]),
+            'ltft_a_pct': trim_percent(self.trims[1]),
+            'throttle_pct': self.throttle_raw * 100 / 255 if self.throttle_raw is not None else None,
+            'maf_g_s_est': self.maf_raw * MAF_GS_PER_RAW if self.maf_raw is not None else None,
+            'advance_deg': advance_degrees(self.advance_raw) if self.advance_raw is not None else None,
+            'oxygen_voltage_V': oxygen_voltage(self.oxygen_raw),
+            'ecu_voltage_V_est': ecu_voltage_est(self.voltage_raw, voltage_scale),
+            'load_pct': self.load * 100 / 255 if self.load is not None else None,
+        }.get(name)
 
     @property
     def high_retard(self):
-        return max(self.corrections, default=0) * 0.75 > KNOCK_ALERT_THRESHOLD_DEG
+        return max(self.retard_degrees, default=0) > KNOCK_ALERT_THRESHOLD_DEG
 
 
 def from_pairs(pairs: list[bytes]) -> Sample:
@@ -680,6 +714,43 @@ def ecu_voltage_est(raw: int | None, scale: float = VOLTAGE_V_PER_RAW_EST) -> fl
 def grouped(reply: str) -> Sample:
     frame = positive(reply, 0x2A, b'\x6a\x01', 2 + 2 * len(IDS))
     return from_pairs([frame[i:i+2] for i in range(2, len(frame), 2)])
+
+
+def sim4le_payload(reply: str, service: int) -> bytes:
+    # ATH0 may wrap a long KWP payload across lines. Reject adapter errors,
+    # duplicate replies and mixed positive/negative data instead of guessing.
+    lines = [re.sub(r'\s+', '', line) for line in reply.replace('>', '').replace('\r', '\n').splitlines() if line.strip()]
+    if not lines or any(not re.fullmatch(r'(?:[0-9A-Fa-f]{2})+', line) for line in lines):
+        raise DiagnosticError(tr('Trama SIM4LE inválida o incompleta', 'Invalid or incomplete SIM4LE frame'))
+    frame = bytes.fromhex(''.join(lines))
+    if len(frame) == 3 and frame[:2] == bytes((0x7F, service)):
+        raise NegativeResponse(service, frame[2])
+    return frame
+
+
+def sim4le_identity(reply: str) -> bytes:
+    frame = sim4le_payload(reply, 0x1A)
+    if len(frame) != 14 or frame[:2] != b'\x5a\x94':
+        raise DiagnosticError(tr('Identificación SIM4LE inválida', 'Invalid SIM4LE identification'))
+    return frame
+
+
+def sim4le_grouped(reply: str) -> Sample:
+    frame = sim4le_payload(reply, 0x21)
+    try:
+        decoded = sim4le.decode_snapshot(frame)
+    except ValueError as exc:
+        raise DiagnosticError(str(exc)) from exc
+    values = decoded.pop('values')
+    decoded.pop('correction_degrees')
+    iat = decoded.pop('iat_raw')
+    coolant = decoded.pop('coolant_raw')
+    return Sample(**decoded, load=None, trims=(None, None), temperatures=(coolant, iat),
+                  family=sim4le.FAMILY, engineering=values, pairs_raw=frame[2:].hex(),
+                  provenance={**{key: '2101' for key in values},
+                              'coolant_C': '2101_processed_filtered_with_fallback',
+                              'rpm': '2101', 'injection_raw': '2101_F7EE_unscaled',
+                              'retard_degrees': '2101_D164_D165_D166_D167'})
 
 
 def duty_percent(injection_raw: int, rpm: int, tick_us: float = 8/3) -> float:
@@ -726,6 +797,16 @@ def deadtime_ticks(voltage_raw: int | None, calibration: InjectorCalibration) ->
 
 def injection_metrics(sample: Sample, args) -> dict:
     """Same calculation for UI, CSV and JSONL; no additional ECU requests."""
+    if sample.family == sim4le.FAMILY:
+        # F7EE's relation to timers is known, but physical tick duration is not.
+        # Never apply ME2.1 F746's provisional scale or its dead-time curve.
+        return dict(injection_raw=sample.injection, injection_raw_source='SIM4LE_F7EE',
+                    F746_raw=None, injection_ms_est=None, injector_duty_est_pct=None,
+                    duty_over_100_est=None, injection_cycle_720_ms=120000/sample.rpm if sample.rpm else None,
+                    injection_cycle_margin_ms_est=None, F8C6_calc_raw=None,
+                    injector_deadtime_ms_est=None, injection_before_deadtime_raw=None,
+                    injection_before_deadtime_ms_est=None, injector_deadtime_fraction_pct=None,
+                    injection_breakdown_status='SIM4LE_time_scale_unverified', injection_F746_saturated=None)
     cal = args.injector_calibration
     raw = sample.injection
     total_ms = raw*args.tick_us/1000
@@ -747,7 +828,7 @@ def injection_metrics(sample: Sample, args) -> dict:
         # measurement of effective injector flow or proof that fuel is on.
         net = raw-dead
         status = 'running_path_assumed'
-    return dict(F746_raw=raw, injection_ms_est=total_ms,
+    return dict(F746_raw=raw, injection_raw=raw, injection_raw_source='ME21_F746', injection_ms_est=total_ms,
                 injector_duty_est_pct=duty, duty_over_100_est=duty > 100,
                 injection_cycle_720_ms=120000/sample.rpm if sample.rpm else None,
                 injection_cycle_margin_ms_est=(120000/sample.rpm-total_ms) if sample.rpm else None,
@@ -814,36 +895,40 @@ class Journal:
             self.csv_fields += [f'knock_channel_{i}_deg_est' for i in range(1,5)]
             self.csv_fields += ['stft_a_pct','ltft_a_pct',
                                 'coolant_C','iat_C','oxygen_voltage_V','ecu_voltage_V_est']
+            self.csv_fields += ['ecu_family', 'load_obd_pct', 'map_kPa', 'speed_km_h', 'injection_raw']
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
     def sample(self, sample, args, model, event):
         if self.stream is None:
             return
-        values = dict(demo=args.demo, rpm=sample.rpm, load_raw=sample.load,
+        values = dict(demo=args.demo, rpm=sample.rpm, load_raw=sample.load, ecu_family=sample.family,
             **injection_metrics(sample, args),
             cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms, observed_count=model.count, observed_event=event,
-            coolant_C=sample.temperatures[0]-40, iat_C=sample.temperatures[1]-40,
-            coolant_raw=sample.temperatures[0], iat_raw=sample.temperatures[1], pairs_raw=sample.pairs_raw)
+            coolant_C=sample.value('coolant_C'), iat_C=sample.value('iat_C'),
+            coolant_raw=sample.temperatures[0], iat_raw=sample.temperatures[1], pairs_raw=sample.pairs_raw,
+            signal_provenance=sample.provenance, auxiliary_age_ms=sample.auxiliary_age_ms)
         for i,n in enumerate(sample.corrections,1):
             values[f'knock_channel_{i}_raw']=n
-            values[f'knock_channel_{i}_deg_est']=n*0.75
+            values[f'knock_channel_{i}_deg_est']=sample.retard_degrees[i-1]
         for name,n in zip(('stft_a','ltft_a'),sample.trims):
             values[name+'_raw']=n
-            values[name+'_pct']=trim_percent(n)
+            values[name+'_pct']=sample.value(name+'_pct')
         values.update(ecu_voltage_raw=sample.voltage_raw,
-                      ecu_voltage_V_est=ecu_voltage_est(sample.voltage_raw, args.voltage_scale),
-                      ecu_voltage_scale_V_per_raw=args.voltage_scale,
+                      ecu_voltage_V_est=sample.value('ecu_voltage_V_est', args.voltage_scale),
+                      ecu_voltage_scale_V_per_raw=args.voltage_scale if sample.family == 'ME2.1' else None,
                       throttle_raw=sample.throttle_raw,
-                      throttle_pct=sample.throttle_raw*100/255 if sample.throttle_raw is not None else None,
+                      throttle_pct=sample.value('throttle_pct'),
                       oxygen_raw=sample.oxygen_raw,
-                      oxygen_voltage_V=oxygen_voltage(sample.oxygen_raw),
-                      oxygen_state=oxygen_state(sample.oxygen_raw),
+                      oxygen_voltage_V=sample.value('oxygen_voltage_V'),
+                      oxygen_state=oxygen_state(sample.oxygen_raw) if sample.family == 'ME2.1' else None,
                       maf_raw=sample.maf_raw,
-                      maf_g_s_est=sample.maf_raw*MAF_GS_PER_RAW if sample.maf_raw is not None else None,
-                      maf_saturated=sample.maf_raw == 255,
+                      maf_g_s_est=sample.value('maf_g_s_est'),
+                      maf_saturated=sample.maf_raw == 255 if sample.family == 'ME2.1' else None,
+                      map_kPa=sample.value('map_kPa'), speed_km_h=sample.value('speed_kmh'),
+                      load_obd_pct=sample.value('load_pct') if sample.family == sim4le.FAMILY else None,
                       advance_raw=sample.advance_raw,
-                      advance_deg=advance_degrees(sample.advance_raw) if sample.advance_raw is not None else None)
+                      advance_deg=sample.value('advance_deg'))
         with model.lock:
             profile = model.ecu_profile
             values.update(ecu_software=model.ecu_software,
@@ -906,6 +991,12 @@ class ELM:
         self.ecu_profile = None
         self.ecu_software = None
         self.ecu_identification_status = 'pending'
+        self.ecu_family = 'ME2.1'
+        self.sim4le_auxiliary = {}
+        self.sim4le_auxiliary_index = 0
+        self.sim4le_auxiliary_at = 0.0
+        self.sim4le_auxiliary_disabled = set()
+        self.long_messages = False
         self.serial.reset_input_buffer()
 
     def command(self, command: str, timeout=6, allow_repeat=False):
@@ -995,7 +1086,7 @@ class ELM:
                 self.restore_transport(tr('Sufijo de una respuesta rechazado', 'Single-response suffix rejected'))
             reply = self.command(payload)
         # Retry only read services, never replay group definitions or writes.
-        if 'NO DATA' in reply.upper() and payload.startswith(('22', '2A')):
+        if 'NO DATA' in reply.upper() and payload.startswith(('22', '2A', '21', '01')):
             self.journal.write('recovery', reason='NO DATA', payload=payload,
                                action='fixed timeout, explicit command, single-response retry',
                                fast=self.fast, adaptive=self.adaptive)
@@ -1014,6 +1105,9 @@ class ELM:
         return reply
 
     def read_faults(self):
+        if self.ecu_family == sim4le.FAMILY:
+            raise DiagnosticError(tr('Averías SIM4LE no disponibles en esta versión; usa un lector OBD estándar',
+                                     'SIM4LE fault reading is unavailable in this version; use a standard OBD reader'))
         self.restore_transport('DTC')
         # All frames, no response-count suffix and no repeat-by-CR.
         faults = decode_faults(self.command('A1', timeout=30, allow_repeat=False))
@@ -1021,6 +1115,9 @@ class ELM:
         return faults
 
     def clear_faults(self):
+        if self.ecu_family == sim4le.FAMILY:
+            raise DiagnosticError(tr('Borrado de averías SIM4LE no disponible en esta versión',
+                                     'SIM4LE fault clearing is unavailable in this version'))
         self.restore_transport('DTC')
         rpm_frame = positive(self.query('221104', optimized=False, allow_repeat=False), 0x22, b'\x62\x11\x04', 5)
         if int.from_bytes(rpm_frame[3:], 'little') != 0:
@@ -1047,14 +1144,15 @@ class ELM:
         self.journal.write('adapter_details', identity=identity, firmware=firmware, hardware=hardware,
                            port=self.port, baud=self.baud, **self.port_metadata,
                            group_ids=[f'11{x:02X}' for x in IDS],
-                           decoder_revision='12_ids_load_from_1107_voltage_1110_v2')
+                           group_ids_family='ME2.1_only_not_selected_yet',
+                           decoder_revision='ME21_12ids_v2_SIM4LE_M10062_2101_v1')
         self.at('ATPC')
         for cmd in ('ATD', 'ATE0', 'ATL0', 'ATS0', 'ATH0', 'ATM0', 'ATSP4',
                     'ATIIA01', 'ATSH8101F1', 'ATKW0', 'ATSW00',
                     'ATAT'+self.adaptive, 'ATST'+self.response_timeout):
             self.at(cmd)
         # Group packets exceed the 7-byte limit of some ELM implementations.
-        self.at('ATAL', optional=True)
+        self.long_messages = self.at('ATAL', optional=True)
         # A fresh ECU may accept slow init immediately. Only let an old session
         # expire if the first init/read fails with the adapter prompt intact.
         for attempt in range(2):
@@ -1072,8 +1170,7 @@ class ELM:
                 if any(s in init.upper() for s in ('ERROR', 'UNABLE', 'BUS BUSY')):
                     raise DiagnosticError(tr('Inicialización fallida: ', 'Initialization failed: ') + init.strip())
                 kw = self.command('ATKW').strip()
-                self._read_single_frame('221104',
-                    lambda reply: positive(reply, 0x22, b'\x62\x11\x04', 5))
+                self.detect_ecu_family()
             except (LinkTimeout, NegativeResponse):
                 # A missing prompt loses framing; a negative ECU reply already
                 # confirms communication. Neither calls for repeating slow init.
@@ -1083,7 +1180,7 @@ class ELM:
                     raise
                 self.journal.write('connection_retry', reason=str(exc), wait_ms=6000)
             else:
-                self.journal.write('ecu_link_verified', keywords=kw, attempts=attempt+1,
+                self.journal.write('ecu_link_verified', keywords=kw, attempts=attempt+1, family=self.ecu_family,
                                    startup_wait_ms=attempt*6000)
                 notice(tr('Sesión lista · palabras clave ', 'Session ready · keywords ') + kw)
                 return
@@ -1111,6 +1208,45 @@ class ELM:
                            elm_timing_probe_disabled=self.elm_timing_probe_disabled)
         return True
 
+    def detect_ecu_family(self):
+        """Select a layout using service support AND an exact software identity."""
+        try:
+            self._read_single_frame('221104',
+                lambda reply: positive(reply, 0x22, b'\x62\x11\x04', 5))
+            self.ecu_family = 'ME2.1'
+            return
+        except NegativeResponse as exc:
+            if exc.service != 0x22 or exc.code not in (0x11, 0x12, 0x31):
+                raise
+        identity = self._read_single_frame('1A94', sim4le_identity)
+        if identity[2:] != b'6577815126--':
+            raise DiagnosticError(tr('Software ECU sin perfil SIM4LE verificado: ',
+                                     'ECU software has no verified SIM4LE profile: ') + identity[2:].hex())
+        if not self.long_messages:
+            raise DiagnosticError(tr('SIM4LE requiere un adaptador con ATAL y respuestas de 180 bytes',
+                                     'SIM4LE requires an adapter supporting ATAL and 180-byte responses'))
+        # Identity comes first: a plausible frame length alone is insufficient.
+        try:
+            self._read_single_frame('2101', sim4le_grouped)
+        except LinkTimeout:
+            raise
+        except DiagnosticError as exc:
+            raise DiagnosticError(tr('SIM4LE: no se recibió la trama completa de 180 bytes; comprueba el adaptador. ',
+                                     'SIM4LE: the full 180-byte frame was not received; check the adapter. ') + str(exc)) from exc
+        self.ecu_family = sim4le.FAMILY
+        self.ecu_profile = None
+        self.ecu_software = 'SIM4LE 6577815126 (M10062)'
+        self.ecu_identification_status = 'identified_1A94'
+        self.journal.write('ecu_identification', family=self.ecu_family, software=self.ecu_software,
+                           status=self.ecu_identification_status, method='1A94', identity_raw=identity.hex(),
+                           grouped_request='2101', snapshot_data_bytes=178,
+                           stored_corrections_available=False, dtc_available=False,
+                           injection_time_scale_verified=False, active_tick_us=None,
+                           active_voltage_scale=None, active_deadtime_curve=None,
+                           retard_formula='max(128-raw,0)*0.375',
+                           auxiliary_pids=[f'{pid:02X}' for pid in sim4le.AUXILIARY_PIDS],
+                           auxiliary_max_age_ms=sim4le.AUXILIARY_MAX_AGE * 1000)
+
     def optimize_transport(self, mode, notice, publish):
         """Use documented STN timing controls; trial P4=0 on validated reads only.
 
@@ -1137,7 +1273,7 @@ class ELM:
         try:
             baseline = []
             for _ in range(4):
-                sample = self.acquire(mode)
+                sample = self.acquire(mode, auxiliary=False)
                 publish(sample)
                 baseline.append(sample.duration_ms)
                 if self.timing_fallbacks or not self.fast:
@@ -1147,7 +1283,7 @@ class ELM:
             self.p4_fast = True
             trial = []
             for _ in range(6):
-                sample = self.acquire(mode)
+                sample = self.acquire(mode, auxiliary=False)
                 publish(sample)
                 trial.append(sample.duration_ms)
                 if self.timing_fallbacks or not self.fast:
@@ -1196,7 +1332,7 @@ class ELM:
         def collect(gap, count, values):
             self.request_gap = gap
             for index in range(count+1):
-                sample = self.acquire(mode)
+                sample = self.acquire(mode, auxiliary=False)
                 publish(sample)
                 if (self.elm_timing_probe_disabled or self.timing_fallbacks != fallback_count
                         or not self.fast):
@@ -1274,6 +1410,9 @@ class ELM:
             return decode(self.query(payload, optimized=False, allow_repeat=False))
 
     def define_group(self):
+        if self.ecu_family == sim4le.FAMILY:
+            # Native snapshot: no dynamic descriptor writes are required.
+            return self._read_single_frame('2101', sim4le_grouped)
         # Define active slots. Clear remaining slots so frame layout is exact,
         # regardless of any diagnostic client previously connected.
         for slot in range(1, 13):
@@ -1285,9 +1424,28 @@ class ELM:
         # This configured group returns one frame; still verify all twelve pairs.
         return self._read_single_frame('2A0101', grouped)
 
-    def acquire(self, mode):
+    def acquire(self, mode, auxiliary=True):
         start = time.monotonic()
-        if mode == 'grouped':
+        if self.ecu_family == sim4le.FAMILY:
+            if auxiliary:
+                self._refresh_sim4le_auxiliary()
+            sample = sim4le_grouped(self.query('2101'))
+            at = time.monotonic()
+            for key, (value, measured_at, pid, raw) in self.sim4le_auxiliary.items():
+                age = at - measured_at
+                sample.auxiliary_age_ms[key] = round(age * 1000, 1)
+                sample.provenance[key] = f'01{pid:02X}'
+                if age <= sim4le.AUXILIARY_MAX_AGE:
+                    sample.engineering[key] = value
+                    if pid == 0x05:
+                        sample.temperatures = (raw, sample.temperatures[1])
+                    elif pid in (0x06, 0x07):
+                        trims = list(sample.trims)
+                        trims[pid - 0x06] = raw
+                        sample.trims = tuple(trims)
+                    elif pid == 0x0E:
+                        sample.advance_raw = raw
+        elif mode == 'grouped':
             sample = grouped(self.query('2A0101'))
         else:
             pairs = []
@@ -1299,6 +1457,29 @@ class ELM:
         sample.at = time.monotonic()
         sample.duration_ms = (sample.at-start)*1000
         return sample
+
+    def _refresh_sim4le_auxiliary(self):
+        """At most one slow auxiliary per interval; keep the fast frame native."""
+        now = time.monotonic()
+        if now - self.sim4le_auxiliary_at < sim4le.AUXILIARY_INTERVAL:
+            return
+        available = [pid for pid in sim4le.AUXILIARY_PIDS if pid not in self.sim4le_auxiliary_disabled]
+        if not available:
+            return
+        pid = available[self.sim4le_auxiliary_index % len(available)]
+        self.sim4le_auxiliary_index += 1
+        self.sim4le_auxiliary_at = now
+        try:
+            frame = positive(self.query(f'01{pid:02X}', allow_repeat=False), 0x01, bytes((0x41, pid)), 3)
+            key, value = sim4le.decode_auxiliary(pid, frame)
+            self.sim4le_auxiliary[key] = (value, time.monotonic(), pid, frame[2])
+        except LinkTimeout:
+            raise
+        except DiagnosticError as exc:
+            if isinstance(exc, NegativeResponse) and exc.code in (0x11, 0x12, 0x31):
+                self.sim4le_auxiliary_disabled.add(pid)
+            self.journal.write('auxiliary_unavailable', ecu_family=self.ecu_family,
+                               pid=f'{pid:02X}', error=str(exc))
 
     def _read_memory_word(self, address):
         # Custom service 23 returns one LE word from a logical 16-bit address.
@@ -1318,6 +1499,9 @@ class ELM:
         RAM addresses come from that profile. A lost prompt remains
         fatal: it is unsafe to continue on a desynchronised serial stream.
         """
+        if self.ecu_family == sim4le.FAMILY:
+            notice(tr('SIM4LE identificada · lecturas agrupadas nativas', 'SIM4LE identified · native grouped readings'))
+            return None
         self.ecu_profile = None
         self.ecu_software = None
         self.ecu_identification_status = 'unverified'
@@ -1378,6 +1562,9 @@ class ELM:
         return None
 
     def read_fuel_corrections(self):
+        if self.ecu_family == sim4le.FAMILY:
+            raise DiagnosticError(tr('Adaptaciones guardadas SIM4LE no verificadas; STFT/LTFT OBD siguen disponibles',
+                                     'Stored SIM4LE adaptations are unverified; OBD STFT/LTFT remain available'))
         profile = self.ecu_profile
         if profile is None:
             raise DiagnosticError(tr('Lectura de correcciones no disponible: software ECU sin verificar',
@@ -1528,11 +1715,11 @@ class Model:
                 sample.interval_ms = (sample.at-self.sample.at)*1000
             old = self.previous
             # Initial/gapped samples establish a baseline; they are not events.
-            continuous = old is not None and 0 < sample.at-old.at <= 2.0
+            continuous = old is not None and old.family == sample.family and 0 < sample.at-old.at <= 2.0
             raised = []
             if continuous and sample.rpm >= 400 and old.rpm >= 400:
                 # The ECU ignition routine indexes four active channel bytes.
-                raised = [i for i,(a,b) in enumerate(zip(old.corrections[:4], sample.corrections[:4])) if b > a]
+                raised = [i for i,(a,b) in enumerate(zip(old.retard_degrees[:4], sample.retard_degrees[:4])) if b > a]
             if raised:
                 self.count += 1  # one observed update, NOT number of combustion knocks
                 if self.sound is not None and sample.high_retard:
@@ -1545,10 +1732,13 @@ class Model:
             self.samples += 1
             self.times.append(sample.at)
             self.history['rpm'].append(sample.rpm)
-            self.history['load'].append(sample.load)
+            load = sample.value('load_pct') if sample.family == sim4le.FAMILY else sample.load
+            if load is not None:
+                self.history['load'].append(load)
             self.history['inj'].append(sample.injection)
-            self.history['duty'].append(duty_percent(sample.injection, sample.rpm, tick_us))
-            retard = max(sample.corrections, default=0)
+            if sample.family == 'ME2.1':
+                self.history['duty'].append(duty_percent(sample.injection, sample.rpm, tick_us))
+            retard = max(sample.retard_degrees, default=0)
             if self.history['retard'] or retard > 0:
                 self.history['retard'].append(retard)
             self.status = tr('Recibiendo datos', 'Receiving data') if not raised else tr('Aumento de corrección observado', 'Correction increase observed')
@@ -1606,9 +1796,11 @@ def worker(args, model, stop, journal, faults=None, corrections=None):
         elm.setup(model.notice, args.adaptive)
         elm.identify_ecu(model.notice)
         model.set_ecu(elm)
-        mode = 'individual' if args.individual else 'grouped'
+        mode = 'individual' if args.individual and elm.ecu_family == 'ME2.1' else 'grouped'
         if mode == 'grouped':
-            model.notice(tr(f'Configurando {len(IDS)} entradas agrupadas · RAM de diagnóstico', f'Configuring {len(IDS)} grouped entries · diagnostic RAM'))
+            model.notice(tr('SIM4LE · trama nativa agrupada 2101', 'SIM4LE · native grouped snapshot 2101')
+                         if elm.ecu_family == sim4le.FAMILY else
+                         tr(f'Configurando {len(IDS)} entradas agrupadas · RAM de diagnóstico', f'Configuring {len(IDS)} grouped entries · diagnostic RAM'))
             try:
                 first = elm.define_group()
                 event = model.accept(first, args.tick_us)
@@ -1616,6 +1808,8 @@ def worker(args, model, stop, journal, faults=None, corrections=None):
             except LinkTimeout:
                 raise
             except DiagnosticError as exc:
+                if elm.ecu_family == sim4le.FAMILY:
+                    raise
                 journal.write('fallback', reason=str(exc))
                 model.reject(tr('Grupo rechazado; paso a lecturas individuales', 'Group rejected; switching to individual reads'))
                 mode = 'individual'
@@ -1649,7 +1843,7 @@ def worker(args, model, stop, journal, faults=None, corrections=None):
                               **injection_metrics(sample, args), load_raw=sample.load,
                               correction_raw=sample.corrections, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms,
                               observed_event=event, observed_count=model.count,
-                              correction_deg_nominal=[n*0.75 for n in sample.corrections])
+                              ecu_family=sample.family, correction_deg_nominal=sample.retard_degrees)
             except LinkTimeout:
                 raise
             except DiagnosticError as exc:
@@ -1659,7 +1853,7 @@ def worker(args, model, stop, journal, faults=None, corrections=None):
                     model.adapter_profile = elm.adapter_profile
                     model.notice(tr('Tiempos compatibles restaurados · reintentando lectura', 'Compatible timings restored · retrying read'))
                     continue
-                if mode == 'grouped' and consecutive >= 3:
+                if mode == 'grouped' and consecutive >= 3 and elm.ecu_family == 'ME2.1':
                     mode = model.mode = 'individual'
                     journal.write('fallback', reason='3 respuestas de grupo inválidas')
                     consecutive = 0
@@ -1790,26 +1984,35 @@ def render(model, args, width=110, height=44, now=None):
         if width < MIN_WIDTH or height < MIN_HEIGHT:
             return Panel(Text(tr(f'Amplía la terminal a {MIN_WIDTH} columnas × {MIN_HEIGHT} filas como mínimo.\n', f'Resize the terminal to at least {MIN_WIDTH} columns × {MIN_HEIGHT} rows.\n')+model.status, style=CYAN), style=f'on {bg}')
         shown = s is not None and not stale
+        is_sim4le = s is not None and s.family == sim4le.FAMILY
         rpm, load, inj = (s.rpm,s.load,s.injection) if s else (0,0,0)
+        if is_sim4le:
+            load = s.value('load_pct')
+        throttle = s.value('throttle_pct') if shown else None
         trace_width = width//3-2
         layout['metrics'].split_row(Layout(name='rpm'),Layout(name='load'),Layout(name='inj'))
         layout['rpm'].update(metric(tr('RÉGIMEN', 'ENGINE SPEED'), rpm_text(rpm) if shown else '—', 'rpm',
             tr('0–6.500 rpm', '0–6,500 rpm'), CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
-        layout['load'].update(metric(tr('CARGA INTERNA', 'INTERNAL LOAD'), str(load) if shown else '—', 'raw',
-            (tr(f'Mariposa: {s.throttle_raw*100/255:.1f} %', f'Throttle: {s.throttle_raw*100/255:.1f} %') if shown and s.throttle_raw is not None else tr('Mariposa: —', 'Throttle: —')), AMBER, load/255,
-            spark(model.history['load'],255,trace_width,color=AMBER),bg))
+        load_ceiling = 100 if is_sim4le else 255
+        layout['load'].update(metric(tr('CARGA OBD', 'OBD LOAD') if is_sim4le else tr('CARGA INTERNA', 'INTERNAL LOAD'),
+            (f'{load:.1f}' if is_sim4le else str(load)) if shown and load is not None else '—', '%' if is_sim4le else 'raw',
+            (tr(f'Mariposa: {throttle:.1f} %', f'Throttle: {throttle:.1f} %') if throttle is not None else tr('Mariposa: —', 'Throttle: —')),
+            AMBER, (load or 0)/load_ceiling,
+            spark(model.history['load'],load_ceiling,trace_width,color=AMBER),bg))
         injection = injection_metrics(s, args) if shown else None
-        duty = injection['injector_duty_est_pct'] if injection else 0
-        duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
+        duty = injection['injector_duty_est_pct'] if injection else None
+        duty_color = RED if duty is not None and duty > 100 else AMBER if duty is not None and duty >= 90 else GREEN
         detail = (
             f"~{injection['injection_ms_est']:.2f} ms · {inj} raw"
-            if injection else tr('Sin lectura actual de F746', 'No current F746 reading')
+            if injection and injection['injection_ms_est'] is not None else
+            tr(f'{inj} raw · escala de tiempo sin verificar', f'{inj} raw · time scale unverified')
+            if shown and is_sim4le else tr('Sin lectura actual de F746', 'No current F746 reading')
         )
         layout['inj'].update(metric(
             tr('INYECCIÓN / DUTY', 'INJECTION / DUTY'),
-            f'~{duty:.1f}' if shown else '—', '%',
-            detail, duty_color, duty/100,
+            f'~{duty:.1f}' if shown and duty is not None else 'N/A' if is_sim4le else '—', '%',
+            detail, duty_color, (duty or 0)/100,
             spark(
                 model.history['duty'],
                 max(100, max(model.history['duty'], default=100)),
@@ -1818,14 +2021,14 @@ def render(model, args, width=110, height=44, now=None):
         ))
         table = Table.grid(expand=True, padding=(0,2))
         table.add_column(ratio=1)
-        correction = max(s.corrections) if s else 0
+        correction = max(s.retard_degrees) if s else 0
         indices = Table.grid(expand=True, padding=(0,2))
         for _ in range(4):
             indices.add_column(ratio=1)
         row=[]
         for i in range(4):
-            n=s.corrections[i] if s and i < len(s.corrections) else 0
-            row.append(Text(f'\nC{i+1}: {n*0.75:.2f}°' if shown else tr(f'CANAL {i+1}   —', f'CHANNEL {i+1}   —'),
+            n=s.retard_degrees[i] if s and i < len(s.corrections) else 0
+            row.append(Text(f'\nC{i+1}: {n:.2f}°' if shown else tr(f'CANAL {i+1}   —', f'CHANNEL {i+1}   —'),
                             style=f'italic bold {MAGENTA}' if n and shown else MUTED))
         indices.add_row(*row)
         if model.count > 0:
@@ -1837,7 +2040,7 @@ def render(model, args, width=110, height=44, now=None):
         else:
             table.add_row(indices)
         retard_line = Text(('' if model.count > 0 else '\n') + tr('Retardo de encendido: ', 'Ignition retard: '), style=MUTED)
-        retard_line.append(f'{correction*0.75:.2f}°' if shown else '—',
+        retard_line.append(f'{correction:.2f}°' if shown else '—',
                            style=f'bold {MAGENTA}')
         body = [table,
                 Align.center(retard_line),
@@ -1853,29 +2056,35 @@ def render(model, args, width=110, height=44, now=None):
         mixture = Table.grid(expand=True, padding=(0,1))
         mixture.add_column(style=MUTED)
         mixture.add_column(justify='right')
-        for label,raw in zip(('STFT','LTFT'),s.trims if s else (32768,)*2):
-            mixture.add_row(label, Text(f'{trim_percent(raw):+.2f} %' if shown else '—',
+        for label,key in zip(('STFT','LTFT'),('stft_a_pct','ltft_a_pct')):
+            value = s.value(key) if shown else None
+            mixture.add_row(label, Text(f'{value:+.2f} %' if value is not None else '—',
                                         style=f'bold {GREEN}'))
-        maf = f'{s.maf_raw*MAF_GS_PER_RAW:.1f} g/s' if shown and s.maf_raw is not None else '—'
+        airflow = s.value('maf_g_s_est') if shown else None
+        maf = f'{airflow:.1f} g/s' if airflow is not None else '—'
         mixture.add_row(tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
         oxygen_label = tr('rico', 'rich') if shown and s.oxygen_raw is not None and s.oxygen_raw > O2_SWITCH_RAW else tr('pobre', 'lean')
-        oxygen = f'{oxygen_label} · {oxygen_voltage(s.oxygen_raw):.3f} V' if shown and s.oxygen_raw is not None else '—'
+        oxygen_v = s.value('oxygen_voltage_V') if shown else None
+        oxygen = (f'{oxygen_v:.3f} V' if is_sim4le else f'{oxygen_label} · {oxygen_v:.3f} V') if oxygen_v is not None else '—'
         mixture.add_row(tr('Sonda λ', 'O₂ sensor'), Text(oxygen, style=f'bold {AMBER}'))
         temperatures = Table.grid(expand=True, padding=(0,1))
         temperatures.add_column(style=MUTED)
         temperatures.add_column(justify='right')
-        for label,raw in zip((tr('ADMISIÓN', 'INTAKE'),tr('REFRIGERANTE', 'COOLANT')),reversed(s.temperatures if s else (40,40))):
-            temperatures.add_row(label, Text(f'{raw-40} °C' if shown else '—', style=f'bold {AMBER}'))
+        for label,key in zip((tr('ADMISIÓN', 'INTAKE'),tr('REFRIGERANTE', 'COOLANT')),('iat_C','coolant_C')):
+            value = s.value(key) if shown else None
+            temperatures.add_row(label, Text(f'{value:g} °C' if value is not None else '—', style=f'bold {AMBER}'))
         layout['extras'].split_column(Layout(name='mixture',size=6), Layout(name='temps',size=4), Layout(name='advance',minimum_size=3))
         layout['mixture'].update(Panel(mixture, title=tr('MEZCLA', 'MIXTURE'), border_style=GREEN,
                                        box=box.ROUNDED, style=f'on {bg}'))
         layout['temps'].update(Panel(temperatures, title=tr('TEMPERATURAS', 'TEMPERATURES'), border_style=AMBER,
                                      box=box.ROUNDED, style=f'on {bg}'))
-        adv = advance_degrees(s.advance_raw) if shown and s.advance_raw is not None else None
+        adv = s.value('advance_deg') if shown else None
         advance_text = Text(f'{adv:+5.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
         advance_bar = bar(abs(adv), 40, 24 if height > 36 else 15, color=CYAN) if adv is not None else Text('─'*24, style=MUTED)
         direction = (tr('antes del PMS', 'before TDC') if adv < 0 else tr('después del PMS', 'after TDC') if adv > 0 else tr('en el PMS', 'at TDC')) if adv is not None else tr('Sin lectura actual', 'No current reading')
+        if is_sim4le and adv is not None:
+            direction = tr('antes del PMS', 'before TDC') if adv > 0 else tr('después del PMS', 'after TDC') if adv < 0 else tr('en el PMS', 'at TDC')
         layout['advance'].update(Panel(Align.center(Group(Align.center(advance_text),
                                                           Align.center(advance_bar),
                                                           Align.center(Text(direction, style=MUTED))) if height > 36 else advance_text + ' ' + advance_bar,
@@ -1894,7 +2103,7 @@ def render(model, args, width=110, height=44, now=None):
         footer.append('Ctrl+C', style=f'bold {GREEN}')
         footer.append(tr(' salir', ' exit'))
         mode_label = tr('DEMO · SIN COCHE', 'DEMO · NO CAR') if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
-        voltage = ecu_voltage_est(s.voltage_raw, args.voltage_scale) if shown else None
+        voltage = s.value('ecu_voltage_V_est', args.voltage_scale) if shown else None
         footer.append('\nECU ' + (f'~{voltage:.2f} V' if voltage is not None else '— V'), style=f'bold {CYAN}')
         if not args.demo:
             software_label = model.ecu_software or tr('no identificada', 'unidentified')
@@ -1926,7 +2135,7 @@ def parse_args(argv=None):
     p.add_argument('--seconds', type=float, default=0, help=tr('Duración; 0 hasta Ctrl+C', 'Duration; 0 until Ctrl+C'))
     p.add_argument('--adaptive', choices=['0','1','2'], default='0',
                    help=tr('Ajuste ELM: 0 fijo (por defecto, más estable); 1/2 adaptativo', 'ELM timing: 0 fixed (default, more stable); 1/2 adaptive'))
-    p.add_argument('--individual', action='store_true', help=tr('Usar 22 en vez de intentar la agrupación', 'Use service 22 instead of attempting grouped reads'))
+    p.add_argument('--individual', action='store_true', help=tr('ME2.1: usar 22 sin agrupación; SIM4LE conserva su grupo nativo', 'ME2.1: use individual service 22 reads; SIM4LE retains its native group'))
     p.add_argument('--no-adapter-tuning', action='store_true',
                    help=tr('Desactivar la optimización automática de tiempos para ELM y OBDLink/STN', 'Disable automatic timing optimization for ELM and OBDLink/STN'))
     # Keep the former opt-in flag as a compatible alias; tuning is now automatic.
@@ -1962,8 +2171,11 @@ def main(argv=None):
         return 1
     journal.write('session', demo=args.demo, port=args.port, baud=args.baud,
                   diagnostic_ids=[f'11{i:02X}' for i in IDS],
-                  ecu_identification_policy='ROM software reference; once at connection',
-                  supported_ecu_software=[p.software for p in ECU_PROFILES],
+                  ecu_family='pending_detection' if not args.demo else 'ME2.1_demo',
+                  diagnostic_ids_family='ME2.1_only',
+                  ecu_identification_policy='ME2.1 ROM reference or SIM4LE exact 1A94 identity; once at connection',
+                  supported_ecu_software=[p.software for p in ECU_PROFILES] + ['SIM4LE 6577815126 (M10062)'],
+                  legacy_conversion_fields_scope='ME2.1_only; never applied to SIM4LE',
                   voltage_scale_V_per_raw_assumed=args.voltage_scale, voltage_conversion_verified=False,
                   tick_us_assumed=args.tick_us, correction_deg_per_raw_nominal=0.75,
                   injection_tick_conversion_verified=False,

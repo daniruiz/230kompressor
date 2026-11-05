@@ -109,8 +109,8 @@ class Model {
         val old = previous
         val raisedChannels =
             if (old != null && s.at - old.at in 1..2000 && old.rpm >= 400 && s.rpm >= 400)
-                s.corrections.take(4).mapIndexedNotNull { i, value ->
-                    if (i < old.corrections.size && value > old.corrections[i]) i + 1 else null
+                s.correctionDegrees.take(4).mapIndexedNotNull { i, value ->
+                    if (old.family == s.family && i < old.correctionDegrees.size && value > old.correctionDegrees[i]) i + 1 else null
                 }
             else emptyList()
         val raised = raisedChannels.isNotEmpty()
@@ -129,8 +129,8 @@ class Model {
             if (q.size > 90) q.removeFirst()
         }
         add(rpm, s.rpm.toDouble())
-        add(load, s.load.toDouble())
-        add(duty, s.duty)
+        s.loadValue?.let { add(load, it) } ?: load.clear()
+        s.duty?.let { add(duty, it) } ?: duty.clear()
         if (knock.isNotEmpty() || s.retard > 0) knock.add(s.retard)
         times.add(s.at)
         if (times.size > 40) times.removeFirst()

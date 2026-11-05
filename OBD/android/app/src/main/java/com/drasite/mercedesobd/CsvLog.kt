@@ -16,6 +16,7 @@ internal object CsvLog {
         listOf(
             "stft_a_pct", "ltft_a_pct",
             "coolant_C", "iat_C", "oxygen_voltage_V", "ecu_voltage_V_est",
+            "ecu_family", "load_obd_pct", "map_kPa", "speed_km_h", "injection_raw",
         )
 
     private val utcSeconds = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss", Locale.ROOT)

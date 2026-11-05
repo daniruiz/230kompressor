@@ -197,6 +197,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             } catch (e: LinkTimeout) {
                 throw e
             } catch (e: DiagnosticException) {
+                if (elm.family == EcuFamily.SIM4LE) throw e
                 j.event("fallback", "reason" to e.toString())
                 model.notice(tr("Grupo rechazado; lecturas individuales", "Group rejected; individual reads"))
                 group = false
@@ -217,7 +218,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                     consecutive++
                     model.reject(e.message ?: tr("Respuesta inválida", "Invalid response"))
                     if (elm.rollback(e.message ?: "Error")) continue
-                    if (group && consecutive >= 3) {
+                    if (group && consecutive >= 3 && elm.family == EcuFamily.ME21) {
                         elm.verifyLink()
                         group = false
                         consecutive = 0

@@ -29,17 +29,9 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
             "session",
             "demo" to demo,
             "platform" to "android_native",
-            "tick_us_assumed" to Decoder.TICK_US,
-            "injection_tick_conversion_verified" to false,
-            "injection_duty_basis" to "F746 common request; one pulse per 720 degrees assumed; not measured output duty",
-            "injector_deadtime_source" to Injection.calibration.source,
-            "injector_calibration_sha256" to Injection.calibration.sha256,
-            "injector_deadtime_curve" to Injection.calibration.nodes,
-            "injector_deadtime_is_direct_ram_read" to false,
-            "injector_minimum_ticks" to Injection.calibration.minimumTicks,
-            "voltage_scale_V_per_raw_assumed" to Decoder.VOLT_SCALE,
-            "voltage_conversion_verified" to false,
-            "correction_deg_per_raw_nominal" to 0.75,
+            "measurement_conversions" to "family_specific; see sample ecu_family and sources",
+            "me21_tick_us_assumed" to Decoder.TICK_US,
+            "sim4le_injection_conversion_available" to false,
             "detector" to "observed_correction_increase_NOT_ECU_knock_counter",
             "transport_revision" to "native_spp_elm_auto_host_gap_and_chunk_timestamps_v2",
             "adapter_tuning" to (adapterTuning && !demo),
@@ -48,9 +40,11 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
             "response_timeout_ms" to 512,
             "request_gap_ms" to 60,
             "exchange_timing_basis" to "host_receive_batches_not_kline",
-            "diagnostic_ids" to Decoder.ids.map { "11%02X".format(it) },
-            "ecu_identification_policy" to "ROM software reference; once at connection",
-            "supported_ecu_software" to EcuProfiles.all.map { it.software },
+            "me21_diagnostic_ids" to Decoder.ids.map { "11%02X".format(it) },
+            "sim4le_group_request" to "2101",
+            "ecu_identification_policy" to "ME21 ROM software reference or SIM4LE exact 1A94 program identity; once at connection",
+            "me21_supported_ecu_software" to EcuProfiles.all.map { it.software },
+            "sim4le_supported_programs" to listOf("6577815126--"),
         )
     }
 
@@ -73,47 +67,76 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
     @Synchronized
     fun sample(s: Sample, d: Display, raised: Boolean) {
         val csvWriter = csv ?: return
+        val me21 = s.family == EcuFamily.ME21
         val v =
             linkedMapOf<String, Any?>(
                 "utc" to CsvLog.utc(),
                 "demo" to demo,
                 "rpm" to s.rpm,
-                "load_raw" to s.load,
+                "ecu_family" to if (me21) "ME2.1" else "SIM4LE",
+                "sample_source" to if (me21) "ME21_11xx" else "SIM4LE_2101",
+                "injection_raw" to s.injection,
+                "injection_raw_source" to if (me21) "ME21_F746" else "SIM4LE_F7EE",
+                "load_raw" to if (me21) s.load else null,
+                "load_obd_pct" to if (!me21) s.loadValue else null,
+                "map_kPa" to s.mapKpa,
+                "speed_km_h" to s.speedKph,
                 "acquisition_ms" to s.acquisitionMs,
                 "cycle_ms" to s.cycleMs,
                 "observed_count" to d.count,
                 "observed_event" to raised,
-                "coolant_C" to s.coolant - 40,
-                "iat_C" to s.iat - 40,
+                "coolant_C" to s.coolantC,
+                "iat_C" to s.iatC,
                 "coolant_raw" to s.coolant,
+                "coolant_source" to if (me21) "ME21_1101" else "SIM4LE_2101_E06F_processed_filtered",
                 "iat_raw" to s.iat,
                 "pairs_raw" to s.pairs,
                 "throttle_raw" to s.throttle,
-                "throttle_pct" to s.throttle * 100.0 / 255,
+                "throttle_pct" to s.throttlePct,
                 "oxygen_raw" to s.oxygen,
-                "oxygen_voltage_V" to Decoder.oxygen(s.oxygen),
-                "oxygen_state" to if (s.oxygen > 0x2456) "rico" else "pobre",
+                "oxygen_voltage_V" to s.oxygenV,
+                "oxygen_state" to if (!me21) null else if (s.oxygenRich) "rico" else "pobre",
                 "maf_raw" to s.maf,
-                "maf_g_s_est" to s.maf * Decoder.MAF_SCALE,
-                "maf_saturated" to (s.maf == 255),
-                "advance_raw" to s.advance,
-                "advance_deg" to Decoder.advance(s.advance),
-                "ecu_voltage_raw" to s.voltage,
-                "ecu_voltage_V_est" to s.voltage * Decoder.VOLT_SCALE,
-                "ecu_voltage_scale_V_per_raw" to Decoder.VOLT_SCALE,
+                "maf_g_s_est" to s.mafGs,
+                "maf_saturated" to s.mafSaturated,
+                "advance_raw" to if (me21) s.advance else null,
+                "advance_deg" to s.advanceDeg,
+                "advance_positive_direction" to if (me21) "after_TDC" else "before_TDC",
+                "ecu_voltage_raw" to if (me21) s.voltage else null,
+                "ecu_voltage_V_est" to s.voltageV,
+                "ecu_voltage_scale_V_per_raw" to if (me21) Decoder.VOLT_SCALE else null,
                 "ecu_software" to d.ecuSoftware,
                 "ecu_identification_status" to d.ecuIdentificationStatus,
                 "ltft_low_address" to d.ecuProfile?.let { addressHex(it.ltftLowAddress) },
                 "ltft_high_address" to d.ecuProfile?.let { addressHex(it.ltftHighAddress) },
-                "stft_a_raw" to s.stft,
-                "stft_a_pct" to Decoder.trim(s.stft),
-                "ltft_a_raw" to s.ltft,
-                "ltft_a_pct" to Decoder.trim(s.ltft),
+                "stft_a_raw" to if (me21) s.stft else null,
+                "stft_a_pct" to s.stftPct,
+                "ltft_a_raw" to if (me21) s.ltft else null,
+                "ltft_a_pct" to s.ltftPct,
             )
-        v.putAll(s.injectionMetrics.logValues())
+        if (me21) {
+            v.putAll(requireNotNull(s.injectionMetrics).logValues())
+            v["injection_tick_us_assumed"] = Decoder.TICK_US
+            v["injector_deadtime_source"] = Injection.calibration.source
+        } else {
+            v["injection_raw"] = s.injection
+            v["injection_raw_address"] = "F7EE"
+            v["injection_ms_est"] = null
+            v["injector_duty_est_pct"] = null
+            v["injection_breakdown_status"] = "sim4le_timer_scale_unverified"
+            v["auxiliary_source"] = "OBD_mode_01"
+            v["auxiliary_ttl_ms"] = 3000
+            for (pid in Sim4le.auxiliaryPids) {
+                val reading = s.auxiliary[pid]
+                val key = "obd_01%02X".format(java.util.Locale.ROOT, pid)
+                v["${key}_raw"] = reading?.raw
+                v["${key}_age_ms"] = reading?.let { s.at - it.at }
+                v["${key}_valid"] = reading != null && s.at - reading.at in 0..3000
+            }
+        }
         s.corrections.forEachIndexed { i, n ->
             v["knock_channel_${i+1}_raw"] = n
-            v["knock_channel_${i+1}_deg_est"] = n * .75
+            v["knock_channel_${i+1}_deg_est"] = s.correctionDegrees[i]
         }
         // Sample.at uses the monotonic acquisition clock; each log starts at zero.
         val start = csvStartedAt ?: s.at.also { csvStartedAt = it }
