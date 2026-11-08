@@ -32,9 +32,11 @@ import java.io.File
 class MainActivity : Activity() {
     private companion object {
         const val EXPORT_LOGS_REQUEST = 1001
+        const val ENABLE_BLUETOOTH_REQUEST = 1002
+        const val ADAPTER_PERMISSIONS_REQUEST = 3
     }
 
-    private enum class BluetoothAction { SELECT, CONNECT, AUTO_CONNECT }
+    private enum class BluetoothAction { CONNECT, AUTO_CONNECT }
     private data class PendingStart(val demo: Boolean, val address: String?, val automatic: Boolean)
 
     private val runtime get() = application as MercedesApplication
@@ -51,6 +53,8 @@ class MainActivity : Activity() {
     private var pendingAdapterAddress: String? = null
     private var pendingNotificationStart: PendingStart? = null
     private var pendingBluetoothAction: BluetoothAction? = null
+    private val pendingAdapterPermissions = ArrayList<() -> Unit>()
+    private val pendingBluetoothEnable = ArrayList<() -> Unit>()
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     private val ticker =
         object : Runnable {
@@ -192,10 +196,9 @@ class MainActivity : Activity() {
 
     private fun showActions(anchor: View) {
         val popup = PopupMenu(this, anchor, Gravity.RIGHT)
-        val deviceName = prefs.getString("name", tr("Adaptador", "Adapter")) ?: tr("Adaptador", "Adapter")
         val actions =
             listOf<Pair<String, () -> Unit>>(
-                tr("Adaptador: $deviceName", "Adapter: $deviceName") to { selectDevice() },
+                tr("Adaptadores OBD", "OBD adapters") to { selectDevice() },
                 tr("Conectar", "Connect") to { connect() },
                 "ECU tune" to { openLink("https://m111kompressor.drasite.com/") },
                 "Demo" to { start(true, null) },
@@ -227,6 +230,8 @@ class MainActivity : Activity() {
     private var faultDialog: Dialog? = null
     private var correctionsDialog: Dialog? = null
     private var logsDialog: Dialog? = null
+    private var adaptersDialog: AdaptersDialog? = null
+    private var adaptersWindow: Dialog? = null
 
     private fun faultsMenu() {
         if (faultDialog?.isShowing == true) return
@@ -256,7 +261,10 @@ class MainActivity : Activity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 2) {
+        if (requestCode == ADAPTER_PERMISSIONS_REQUEST) {
+            // The chooser checks the actual grants, including denial/cancellation.
+            completeAdapterRequest(pendingAdapterPermissions)
+        } else if (requestCode == 2) {
             val pending = pendingNotificationStart
             pendingNotificationStart = null
             // Declining notifications does not prevent an explicitly started OBD session.
@@ -266,7 +274,6 @@ class MainActivity : Activity() {
             pendingBluetoothAction = null
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
                 when (pending) {
-                    BluetoothAction.SELECT -> selectDevice()
                     BluetoothAction.CONNECT -> connect()
                     BluetoothAction.AUTO_CONNECT -> autoConnect()
                     null -> Unit
@@ -277,39 +284,75 @@ class MainActivity : Activity() {
 
     @SuppressLint("MissingPermission")
     private fun selectDevice() {
-        if (!permission(BluetoothAction.SELECT)) return
-        try {
-            val adapter =
-                BluetoothAdapter.getDefaultAdapter()
-                    ?: throw IllegalStateException(tr("Este dispositivo no tiene Bluetooth", "This device has no Bluetooth"))
-            if (!adapter.isEnabled) {
-                model.notice(tr("Activa Bluetooth y empareja el adaptador en Ajustes", "Enable Bluetooth and pair the adapter in Settings"))
-                return
-            }
-            val devices = adapter.bondedDevices.sortedBy { it.name ?: it.address }
-            if (devices.isEmpty()) {
-                model.notice(tr("Empareja el OBDLink/ELM en los ajustes Bluetooth de Android", "Pair the OBDLink/ELM in Android Bluetooth settings"))
-                return
-            }
-            AlertDialog.Builder(this)
-                .setTitle(tr("Adaptadores ya emparejados", "Paired adapters"))
-                .setItems(
-                    devices.map { "${it.name?:"Bluetooth"}\n${it.address}" }.toTypedArray()
-                ) { _, i ->
-                    val d = devices[i]
+        if (adaptersWindow?.isShowing == true) return
+        lateinit var chooser: AdaptersDialog
+        fun current() = adaptersDialog === chooser && adaptersWindow?.isShowing == true &&
+            !isFinishing && !isDestroyed
+        chooser = AdaptersDialog(
+            activity = this,
+            selectedAddress = prefs.getString("address", null),
+            isSessionActive = { runtime.active },
+            requestPermissions = { requested, done ->
+                requestAdapterPermissions(requested) { if (current()) done() }
+            },
+            requestEnable = { done ->
+                requestBluetoothEnable { if (current()) done() }
+            },
+            onSelected = { device ->
+                try {
+                    val address = device.address
+                    val name = device.name ?: address
                     prefs
                         .edit()
-                        .putString("address", d.address)
-                        .putString("name", d.name ?: d.address)
+                        .putString("address", address)
+                        .putString("name", name)
                         .apply()
                     stop()
-                    pendingAdapterAddress = d.address
-                    model.notice(tr("Conectando a ${d.name?:d.address}…", "Connecting to ${d.name?:d.address}…"))
+                    pendingAdapterAddress = address
+                    model.notice(tr("Conectando a $name…", "Connecting to $name…"))
+                } catch (_: SecurityException) {
+                    model.notice(tr("Permiso Bluetooth no disponible", "Bluetooth permission unavailable"))
                 }
-                .setNegativeButton(tr("Cerrar", "Close"), null)
-                .show()
-        } catch (e: Exception) {
-            model.notice(e.message ?: e.toString())
+            },
+        )
+        adaptersDialog = chooser
+        adaptersWindow = chooser.show()
+    }
+
+    private fun requestAdapterPermissions(requested: Array<String>, done: () -> Unit) {
+        val missing = requested.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isEmpty()) {
+            done()
+            return
+        }
+        // A reopened chooser must also hear the result of an existing OS prompt.
+        val alreadyPending = pendingAdapterPermissions.isNotEmpty()
+        pendingAdapterPermissions.add(done)
+        if (alreadyPending) return
+        try {
+            requestPermissions(missing.toTypedArray(), ADAPTER_PERMISSIONS_REQUEST)
+        } catch (e: RuntimeException) {
+            model.notice(tr("No se pudieron solicitar permisos Bluetooth: ${e.message}", "Could not request Bluetooth permissions: ${e.message}"))
+            completeAdapterRequest(pendingAdapterPermissions)
+        }
+    }
+
+    private fun completeAdapterRequest(callbacks: MutableList<() -> Unit>) {
+        val waiting = callbacks.toList()
+        callbacks.clear()
+        waiting.forEach { it() }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun requestBluetoothEnable(done: () -> Unit) {
+        val alreadyPending = pendingBluetoothEnable.isNotEmpty()
+        pendingBluetoothEnable.add(done)
+        if (alreadyPending) return
+        try {
+            startActivityForResult(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), ENABLE_BLUETOOTH_REQUEST)
+        } catch (e: RuntimeException) {
+            model.notice(tr("No se pudo solicitar activar Bluetooth: ${e.message}", "Could not request enabling Bluetooth: ${e.message}"))
+            completeAdapterRequest(pendingBluetoothEnable)
         }
     }
 
@@ -480,6 +523,10 @@ class MainActivity : Activity() {
     @Deprecated("Platform activity result used to avoid extra dependencies")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == ENABLE_BLUETOOTH_REQUEST) {
+            completeAdapterRequest(pendingBluetoothEnable)
+            return
+        }
         if (requestCode != EXPORT_LOGS_REQUEST) return
         val uri = data?.data
         val file = pendingExport
@@ -527,6 +574,7 @@ class MainActivity : Activity() {
         applyFullscreen()
         if (runtime.active) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        adaptersDialog?.refresh()
         handler.post(ticker)
     }
 
@@ -537,6 +585,11 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        pendingAdapterPermissions.clear()
+        pendingBluetoothEnable.clear()
+        adaptersDialog?.dismiss()
+        adaptersDialog = null
+        adaptersWindow = null
         faultDialog?.dismiss()
         correctionsDialog?.dismiss()
         logsDialog?.dismiss()
