@@ -129,8 +129,7 @@ class MainActivity : Activity() {
                     insets
                 }
             }
-        dashboard =
-            DashboardView(this, model).apply { flashEnabled = prefs.getBoolean("flash", true) }
+        dashboard = DashboardView(this, model)
         root.addView(dashboard, FrameLayout.LayoutParams(-1, -1))
         val authorLink =
             Button(this, null, android.R.attr.borderlessButtonStyle).apply {
@@ -347,20 +346,18 @@ class MainActivity : Activity() {
         val names =
             arrayOf(
                 tr("Sonido: retardo > 3° o temperatura alta", "Sound: retard > 3° or high temperature"),
-                tr("Parpadeo de avisos durante 3 segundos", "Alert flash for 3 seconds"),
                 tr("Pantalla completa", "Fullscreen"),
                 tr("Optimizar tiempos del adaptador (próxima conexión)", "Optimize adapter timings (next connection)"),
             )
-        val keys = arrayOf("sound", "flash", "fullscreen", "adapter_tuning")
+        val keys = arrayOf("sound", "fullscreen", "adapter_tuning")
         val values = BooleanArray(keys.size) { prefs.getBoolean(keys[it], true) }
         AlertDialog.Builder(this)
             .setTitle(tr("Ajustes · MercedesOBD", "Settings · MercedesOBD"))
             .setMultiChoiceItems(names, values) { _, i, value -> values[i] = value }
             .setPositiveButton(tr("Guardar", "Save")) { _, _ ->
-                val edit = prefs.edit()
+                val edit = prefs.edit().remove("flash")
                 keys.forEachIndexed { i, k -> edit.putBoolean(k, values[i]) }
                 edit.apply()
-                dashboard.flashEnabled = values[1]
                 applyFullscreen()
                 if (values[0] && runtime.active) runtime.alerts.prepare()
                 if (!values[0]) cancelSound()
