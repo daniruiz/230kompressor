@@ -64,7 +64,8 @@ class DashboardService : Service() {
             }
             runtime.demoMode = demo
             val tuning = getSharedPreferences("settings", MODE_PRIVATE).getBoolean("adapter_tuning", true)
-            check(runtime.session.start(demo, intent.getStringExtra("address"), tuning))
+            check(runtime.session.start(demo, intent.getStringExtra("address"), tuning,
+                automatic = intent.getBooleanExtra("automatic", false) && !demo))
             runtime.startRequested = false
             if (getSharedPreferences("settings", MODE_PRIVATE).getBoolean("sound", true)) runtime.alerts.prepare()
             handler.removeCallbacks(monitor)
@@ -74,7 +75,7 @@ class DashboardService : Service() {
             runtime.model.notice(tr("No se pudo mantener la sesión: ${e.message}", "Could not keep session running: ${e.message}"))
             finishService()
         }
-        // Never reconnect or resume a logging session automatically after process death.
+        // A killed service never restarts itself; optional connection happens on app launch.
         return START_NOT_STICKY
     }
 

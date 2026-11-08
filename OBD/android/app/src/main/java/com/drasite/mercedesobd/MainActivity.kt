@@ -34,6 +34,9 @@ class MainActivity : Activity() {
         const val EXPORT_LOGS_REQUEST = 1001
     }
 
+    private enum class BluetoothAction { SELECT, CONNECT, AUTO_CONNECT }
+    private data class PendingStart(val demo: Boolean, val address: String?, val automatic: Boolean)
+
     private val runtime get() = application as MercedesApplication
     private val model get() = runtime.model
     private val session get() = runtime.session
@@ -46,7 +49,8 @@ class MainActivity : Activity() {
     private var pendingExport: File? = null
     private val logFiles by lazy { LogFiles(File(filesDir, "logs"), File(cacheDir, "log_exports")) }
     private var pendingAdapterAddress: String? = null
-    private var pendingNotificationStart: Pair<Boolean, String?>? = null
+    private var pendingNotificationStart: PendingStart? = null
+    private var pendingBluetoothAction: BluetoothAction? = null
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     private val ticker =
         object : Runnable {
@@ -75,14 +79,23 @@ class MainActivity : Activity() {
         setContentView(createContentView())
         applyFullscreen()
         if (savedInstanceState?.containsKey("pending_notification_demo") == true) {
-            pendingNotificationStart = savedInstanceState.getBoolean("pending_notification_demo") to
-                savedInstanceState.getString("pending_notification_address")
+            pendingNotificationStart = PendingStart(
+                savedInstanceState.getBoolean("pending_notification_demo"),
+                savedInstanceState.getString("pending_notification_address"),
+                savedInstanceState.getBoolean("pending_notification_automatic"),
+            )
+        }
+        pendingBluetoothAction = savedInstanceState?.getString("pending_bluetooth_action")?.let { name ->
+            BluetoothAction.entries.firstOrNull { it.name == name }
         }
         savedInstanceState?.getStringArrayList("pending_export")?.let {
             pendingExport = runCatching { LogFiles.exportedFile(File(cacheDir, "log_exports"), it) }.getOrNull()
             exporting = pendingExport != null
         }
-        if (savedInstanceState == null && intent.getBooleanExtra("demo", false)) start(true, null)
+        if (savedInstanceState == null) {
+            if (intent.getBooleanExtra("demo", false)) start(true, null)
+            else autoConnect()
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -230,11 +243,9 @@ class MainActivity : Activity() {
             checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) ==
                 PackageManager.PERMISSION_GRANTED
 
-    private var pendingConnect = false
-
-    private fun permission(connect: Boolean): Boolean {
+    private fun permission(action: BluetoothAction): Boolean {
         if (permitted()) return true
-        pendingConnect = connect
+        pendingBluetoothAction = action
         requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 1)
         return false
     }
@@ -249,17 +260,24 @@ class MainActivity : Activity() {
             val pending = pendingNotificationStart
             pendingNotificationStart = null
             // Declining notifications does not prevent an explicitly started OBD session.
-            pending?.let { (demo, address) -> start(demo, address) }
+            pending?.let { (demo, address, automatic) -> start(demo, address, automatic) }
         } else if (requestCode == 1) {
+            val pending = pendingBluetoothAction
+            pendingBluetoothAction = null
             if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-                if (pendingConnect) connect() else selectDevice()
+                when (pending) {
+                    BluetoothAction.SELECT -> selectDevice()
+                    BluetoothAction.CONNECT -> connect()
+                    BluetoothAction.AUTO_CONNECT -> autoConnect()
+                    null -> Unit
+                }
             } else model.notice(tr("Permiso Dispositivos cercanos denegado", "Nearby devices permission denied"))
         }
     }
 
     @SuppressLint("MissingPermission")
     private fun selectDevice() {
-        if (!permission(false)) return
+        if (!permission(BluetoothAction.SELECT)) return
         try {
             val adapter =
                 BluetoothAdapter.getDefaultAdapter()
@@ -296,7 +314,7 @@ class MainActivity : Activity() {
     }
 
     private fun connect() {
-        if (!permission(true)) return
+        if (!permission(BluetoothAction.CONNECT)) return
         val address = prefs.getString("address", null)
         if (address == null) {
             selectDevice()
@@ -305,7 +323,18 @@ class MainActivity : Activity() {
         start(false, address)
     }
 
-    private fun start(demo: Boolean, address: String?) {
+    private fun autoConnect() {
+        if (!prefs.getBoolean("auto_connect", false) || runtime.active || exporting) return
+        val address = prefs.getString("last_connected_address", null)
+        if (address == null) {
+            model.notice(tr("Conecta una vez al OBD para recordar la conexión automática", "Connect to an OBD once to remember it for automatic connection"))
+            return
+        }
+        if (!permission(BluetoothAction.AUTO_CONNECT)) return
+        start(false, address, automatic = true)
+    }
+
+    private fun start(demo: Boolean, address: String?, automatic: Boolean = false) {
         pendingAdapterAddress = null
         if (exporting) {
             model.notice(tr("Espera a que termine la exportación", "Wait for the export to finish"))
@@ -319,12 +348,12 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
             !prefs.getBoolean("notification_permission_asked", false)) {
-            pendingNotificationStart = demo to address
+            pendingNotificationStart = PendingStart(demo, address, automatic)
             prefs.edit().putBoolean("notification_permission_asked", true).apply()
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2)
             return
         }
-        if (runtime.start(demo, address)) {
+        if (runtime.start(demo, address, automatic)) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             wasRunning = true
         }
@@ -332,6 +361,7 @@ class MainActivity : Activity() {
 
     private fun stop() {
         pendingNotificationStart = null
+        pendingBluetoothAction = null
         pendingAdapterAddress = null
         val active = runtime.active
         runtime.stop()
@@ -348,9 +378,10 @@ class MainActivity : Activity() {
                 tr("Sonido: retardo > 3° o temperatura alta", "Sound: retard > 3° or high temperature"),
                 tr("Pantalla completa", "Fullscreen"),
                 tr("Optimizar tiempos del adaptador (próxima conexión)", "Optimize adapter timings (next connection)"),
+                tr("Conectar al último OBD al abrir (3 intentos)", "Connect to the last OBD on launch (3 attempts)"),
             )
-        val keys = arrayOf("sound", "fullscreen", "adapter_tuning")
-        val values = BooleanArray(keys.size) { prefs.getBoolean(keys[it], true) }
+        val keys = arrayOf("sound", "fullscreen", "adapter_tuning", "auto_connect")
+        val values = BooleanArray(keys.size) { prefs.getBoolean(keys[it], keys[it] != "auto_connect") }
         AlertDialog.Builder(this)
             .setTitle(tr("Ajustes · MercedesOBD", "Settings · MercedesOBD"))
             .setMultiChoiceItems(names, values) { _, i, value -> values[i] = value }
@@ -480,10 +511,12 @@ class MainActivity : Activity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        pendingNotificationStart?.let { (demo, address) ->
+        pendingNotificationStart?.let { (demo, address, automatic) ->
             outState.putBoolean("pending_notification_demo", demo)
             outState.putString("pending_notification_address", address)
+            outState.putBoolean("pending_notification_automatic", automatic)
         }
+        pendingBluetoothAction?.let { outState.putString("pending_bluetooth_action", it.name) }
         pendingExport?.let { outState.putStringArrayList("pending_export", arrayListOf(it.parentFile!!.name, it.name)) }
         super.onSaveInstanceState(outState)
     }

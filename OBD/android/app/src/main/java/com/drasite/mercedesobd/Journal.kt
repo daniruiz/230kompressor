@@ -8,23 +8,29 @@ import java.time.format.DateTimeFormatter
 import org.json.JSONArray
 import org.json.JSONObject
 
-class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = true) : Events, Closeable {
+class Journal(
+    private val root: File,
+    private val demo: Boolean,
+    adapterTuning: Boolean = true,
+    deferUntilConnected: Boolean = false,
+) : Events, Closeable {
     private val stamp =
         DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS")
             .withZone(ZoneOffset.UTC)
             .format(Instant.now())
     val jsonFile: File? = if (demo) null else File(root, "me21_${stamp}_${System.nanoTime()}.jsonl")
     val csvFile: File? = jsonFile?.let { File(root, it.nameWithoutExtension + ".csv") }
-    private val json: java.io.BufferedWriter?
-    private val csv: java.io.BufferedWriter?
+    private var json: java.io.BufferedWriter? = null
+    private var csv: java.io.BufferedWriter? = null
+    private val pending = ArrayList<String>()
+    private var pendingSize = 0
+    private var awaitingConnection = deferUntilConnected && !demo
+    private var closed = false
     private var flushed = 0L
     private var csvStartedAt: Long? = null
 
     init {
-        if (!demo) root.mkdirs()
-        json = jsonFile?.bufferedWriter()
-        csv = csvFile?.bufferedWriter(Charsets.UTF_8)
-        csv?.write(CsvLog.row(CsvLog.fields))
+        if (!awaitingConnection) beginLogging()
         event(
             "session",
             "demo" to demo,
@@ -54,15 +60,51 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
         )
     }
 
+    /** Auto-connect keeps the handshake in memory until the first valid sample.
+     * A failed attempt never creates files or even the log directory.
+     */
+    @Synchronized
+    fun beginLogging() {
+        if (demo || closed || json != null) return
+        root.mkdirs()
+        val jsonWriter = requireNotNull(jsonFile).bufferedWriter(Charsets.UTF_8)
+        val csvWriter = try {
+            requireNotNull(csvFile).bufferedWriter(Charsets.UTF_8)
+        } catch (e: Exception) {
+            jsonWriter.close()
+            throw e
+        }
+        json = jsonWriter
+        csv = csvWriter
+        csvWriter.write(CsvLog.row(CsvLog.fields))
+        pending.forEach { jsonWriter.appendLine(it) }
+        pending.clear()
+        pendingSize = 0
+        awaitingConnection = false
+    }
+
     @Synchronized
     override fun event(type: String, vararg values: Pair<String, Any?>) {
-        val jsonWriter = json ?: return
+        if (demo || closed) return
         val row = JSONObject().put("utc", CsvLog.utc()).put("type", type)
         for ((key, value) in values) row.put(
             key,
             if (value is Collection<*>) JSONArray(value) else value ?: JSONObject.NULL,
         )
-        jsonWriter.appendLine(row.toString())
+        val line = row.toString()
+        val jsonWriter = json
+        if (jsonWriter == null) {
+            if (awaitingConnection) {
+                pending.add(line)
+                pendingSize += line.length
+                // Preserve the session header while bounding failed handshakes.
+                while (pending.size > 1 && (pending.size > 1024 || pendingSize > 1_048_576)) {
+                    pendingSize -= pending.removeAt(1).length
+                }
+            }
+            return
+        }
+        jsonWriter.appendLine(line)
         if (monoMs() - flushed > 1000) {
             jsonWriter.flush()
             csv?.flush()
@@ -123,10 +165,16 @@ class Journal(root: File, private val demo: Boolean, adapterTuning: Boolean = tr
 
     @Synchronized
     override fun close() {
+        if (closed) return
+        closed = true
+        pending.clear()
+        pendingSize = 0
         try {
             csv?.close()
         } finally {
             json?.close()
+            csv = null
+            json = null
         }
     }
 }

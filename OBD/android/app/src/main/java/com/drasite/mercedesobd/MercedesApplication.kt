@@ -18,7 +18,9 @@ class MercedesApplication : Application() {
     internal var serviceStopping = false
     private var stopping = false
     val session: Session by lazy {
-        Session(File(filesDir, "logs"), model) {
+        Session(File(filesDir, "logs"), model, connected = { address ->
+            prefs.edit().putString("last_connected_address", address).apply()
+        }) {
             val generation = startGeneration
             handler.post {
                 if (generation == startGeneration && !stopping && session.running && prefs.getBoolean("sound", true)) alerts.play(demoMode)
@@ -32,14 +34,15 @@ class MercedesApplication : Application() {
         I18n.localeProvider = { resources.configuration.locales[0] }
     }
 
-    fun start(demo: Boolean, address: String?): Boolean {
+    fun start(demo: Boolean, address: String?, automatic: Boolean = false): Boolean {
         if (active) return false
         startGeneration++
         startRequested = true
         stopping = false
         try {
             startForegroundService(Intent(this, DashboardService::class.java)
-                .putExtra("demo", demo).putExtra("address", address).putExtra("generation", startGeneration))
+                .putExtra("demo", demo).putExtra("address", address).putExtra("automatic", automatic && !demo)
+                .putExtra("generation", startGeneration))
         } catch (e: RuntimeException) {
             startRequested = false
             model.notice(tr("No se pudo iniciar la sesión: ${e.message}", "Could not start session: ${e.message}"))

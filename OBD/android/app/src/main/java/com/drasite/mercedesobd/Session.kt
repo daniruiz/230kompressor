@@ -11,7 +11,12 @@ import java.util.concurrent.ArrayBlockingQueue
 import kotlin.math.round
 import kotlin.math.sin
 
-class Session(private val root: File, val model: Model, private val alert: () -> Unit) {
+class Session(
+    private val root: File,
+    val model: Model,
+    private val connected: (String) -> Unit = {},
+    private val alert: () -> Unit,
+) {
     @Volatile private var thread: Thread? = null
     @Volatile private var socket: BluetoothSocket? = null
     @Volatile private var stopped = false
@@ -24,13 +29,13 @@ class Session(private val root: File, val model: Model, private val alert: () ->
         get() = thread?.isAlive == true
 
     @Synchronized
-    fun start(demo: Boolean, address: String?, adapterTuning: Boolean = true): Boolean {
+    fun start(demo: Boolean, address: String?, adapterTuning: Boolean = true, automatic: Boolean = false): Boolean {
         if (running) return false
         model.clear()
         stopped = false
         diagnosticsReady = false
         thread =
-            Thread({ run(demo, address, adapterTuning) }, "MercedesOBD acquisition").also {
+            Thread({ run(demo, address, adapterTuning, automatic && !demo) }, "MercedesOBD acquisition").also {
                 it.start()
             }
         return true
@@ -90,16 +95,54 @@ class Session(private val root: File, val model: Model, private val alert: () ->
         }
     }
 
+    private fun run(demo: Boolean, address: String?, adapterTuning: Boolean, automatic: Boolean) {
+        val attempts = if (automatic) 3 else 1
+        var didConnect = false
+        try {
+            for (attempt in 1..attempts) {
+                if (stopped) return
+                if (attempt > 1) model.clear()
+                didConnect = runAttempt(demo, address, adapterTuning, automatic, attempt)
+                // Retry only the initial connection. A session that delivered data never
+                // reconnects by itself after loss of the link or an explicit Stop.
+                if (didConnect || stopped || !automatic) return
+                if (attempt < attempts) {
+                    model.notice(tr("Reintentando conexión automática ($attempt/$attempts)…", "Retrying automatic connection ($attempt/$attempts)…"))
+                    try {
+                        Thread.sleep(1000)
+                    } catch (_: InterruptedException) {
+                        return
+                    }
+                } else {
+                    val reason = model.snapshot(0).status
+                    model.notice(tr("Sin conexión tras $attempts intentos: $reason", "No connection after $attempts attempts: $reason"))
+                }
+            }
+        } finally {
+            if (stopped) {
+                model.stop()
+                if (automatic && !didConnect) model.notice(tr("Conexión cancelada · sin registros", "Connection cancelled · no logs"))
+            }
+        }
+    }
+
     @SuppressLint("MissingPermission")
-    private fun run(demo: Boolean, address: String?, adapterTuning: Boolean) {
+    private fun runAttempt(demo: Boolean, address: String?, adapterTuning: Boolean, automatic: Boolean, attempt: Int): Boolean {
         var journal: Journal? = null
         var wire: BluetoothWire? = null
+        var didConnect = false
         try {
-            val j = Journal(root, demo, adapterTuning)
+            val j = Journal(root, demo, adapterTuning, deferUntilConnected = automatic)
             journal = j
             val temperatureAlerts = TemperatureAlerts()
             val demoFaults = mutableListOf(FaultCode("P0300", 0, "DEMO"))
             fun publish(s: Sample) {
+                if (stopped) throw InterruptedException()
+                if (!demo && !didConnect) {
+                    didConnect = true
+                    connected(requireNotNull(address))
+                    j.beginLogging()
+                }
                 val (sample, raised) = model.accept(s)
                 j.sample(sample, model.snapshot(0), raised)
                 val temperatureRaised = temperatureAlerts.accept(sample)
@@ -145,9 +188,11 @@ class Session(private val root: File, val model: Model, private val alert: () ->
                     last = now
                     Thread.sleep(125)
                 }
-                return
+                return true
             }
-            model.notice(tr("Conectando Bluetooth SPP…", "Connecting Bluetooth SPP…"))
+            model.notice(if (automatic)
+                tr("Conexión automática ($attempt/3): Bluetooth SPP…", "Automatic connection ($attempt/3): Bluetooth SPP…")
+                else tr("Conectando Bluetooth SPP…", "Connecting Bluetooth SPP…"))
             val adapter =
                 BluetoothAdapter.getDefaultAdapter()
                     ?: throw DiagnosticException(tr("Bluetooth no disponible", "Bluetooth unavailable"))
@@ -256,7 +301,7 @@ class Session(private val root: File, val model: Model, private val alert: () ->
             } catch (e: Exception) {
                 model.reject(tr("Error cerrando registros: ${e.message}", "Error closing logs: ${e.message}"))
             }
-            if (stopped) model.stop()
         }
+        return didConnect
     }
 }
