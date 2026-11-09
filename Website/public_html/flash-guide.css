@@ -76,6 +76,21 @@
 .guide-points p {
   max-width: 64ch;
 }
+.guide-software {
+  max-width: 600px;
+  margin: 24px auto;
+}
+.guide-software img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.guide-software figcaption {
+  padding-top: 8px;
+  font-size: 13px;
+  text-align: center;
+}
 .guide-finish {
   border-left: 3px solid var(--accent);
   border-radius: 0 12px 12px 0;

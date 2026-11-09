@@ -1,81 +1,597 @@
 <svg
   xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 720 330"
+  viewBox="0 0 720 660"
   role="img"
   aria-labelledby="title desc"
 >
-  <title id="title">Puerto Mercedes de 38 pines: puente para escritura</title>
-  <desc
+<title id="title">Puerto Mercedes de 38 pines: 3 / 5</title><desc
     id="desc"
-  >Esquema conceptual del puente entre los terminales numerados 3 y 5. No representa la posición física ni la orientación del conector de 38 pines.</desc>
-  <defs>
-    <linearGradient id="metal" x2="1" y2="1">
-      <stop stop-color="#eff1f4" />
-      <stop offset="1" stop-color="#dce0e5" />
-    </linearGradient>
-  </defs>
-  <rect width="720" height="330" rx="24" fill="url(#metal)" />
-  <g font-family="Arial, sans-serif" text-anchor="middle">
-    <text
+  >Vista frontal del conector X11/4 del coche, con la guía central en U abierta hacia arriba. El pin 3 es el de la derecha de la fila superior; el pin 5, el segundo desde la izquierda en la segunda fila. Ambos están resaltados y unidos por el puente de escritura.</desc>
+<!-- Contact numbering: Snap-on Mercedes-Benz Vehicle Communication Software Manual, Fig. 3-4; SECONS StarCOM manual section 4.2. Physical key orientation: Mercedes drawing P54-0766-57, X11/4. Original illustration, not to scale. -->
+<defs><linearGradient id="metal" x2="1" y2="1"><stop
+        stop-color="#eff1f4"
+      /><stop offset="1" stop-color="#dce0e5" /></linearGradient></defs>
+<rect width="720" height="660" rx="24" fill="url(#metal)" />
+<g font-family="Arial, sans-serif" text-anchor="middle">
+<text
       x="360"
-      y="44"
-      font-size="34"
+      y="42"
+      font-size="32"
       font-weight="700"
       fill="#303641"
     >Puerto Mercedes de 38 pines</text>
-    <text
+<text
       x="360"
-      y="86"
-      font-size="32"
+      y="76"
+      font-size="25"
       fill="#485361"
-    >Puente para escritura</text>
-    <path
-      d="M300 158H420"
+    >Vista frontal · puerto del vehículo</text>
+<!-- Housing lugs and keyed face, looking into the vehicle socket. -->
+<g fill="#cbd2dc" stroke="#778493" stroke-width="3">
+<path
+        d="M320 110V91H338V110M350 108V88H370V108M382 110V91H400V110 M320 558V579H338V558M350 560V583H370V560M382 558V579H400V558 M139 300H116V318H139M135 325H112V345H135M139 352H116V370H139 M581 300H604V318H581M585 325H608V345H585M581 352H604V370H581"
+      />
+<circle cx="360" cy="335" r="230" />
+<circle cx="360" cy="335" r="214" fill="#e9edf2" />
+<!-- Two lower diagonal locating features and the central U-shaped guide. -->
+<path
+        d="M230 486L253 503L243 518L261 531L272 511L243 489Z M490 486L467 503L477 518L459 531L448 511L477 489Z"
+      />
+<path d="M313 347V319H329V311H343V333H377V311H391V319H407V347Z" />
+</g>
+<!-- The bridge terminates only at the two highlighted contacts. -->
+<path
+      d="M440 150V123Q440 101 418 101H279Q255 101 255 125V177Q255 197 280 210"
+      fill="none"
       stroke="#b8174c"
-      stroke-width="8"
+      stroke-width="6"
       stroke-linecap="round"
+      stroke-linejoin="round"
     />
-    <circle
-      cx="260"
-      cy="158"
-      r="40"
-      fill="#eff1f4"
-      stroke="#b8174c"
-      stroke-width="4"
-    />
-    <circle
-      cx="460"
-      cy="158"
-      r="40"
-      fill="#eff1f4"
-      stroke="#b8174c"
-      stroke-width="4"
-    />
-    <text
-      x="260"
-      y="173"
-      font-size="44"
-      font-weight="700"
-      fill="#303641"
-    >3</text>
-    <text
-      x="460"
-      y="173"
-      font-size="44"
-      font-weight="700"
-      fill="#303641"
-    >5</text>
-    <text
+<g id="pin-1"><circle
+        cx="280"
+        cy="150"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="280"
+        y="150"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >1</text></g><g id="pin-2"><circle
+        cx="360"
+        cy="150"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="360"
+        y="150"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >2</text></g><g id="pin-3"><circle
+        cx="440"
+        cy="150"
+        r="21"
+        fill="#b8174c"
+        stroke="#95113e"
+        stroke-width="3"
+      /><text
+        x="440"
+        y="150"
+        dy=".35em"
+        fill="#fff"
+        font-size="29"
+        font-weight="700"
+      >3</text></g><g id="pin-4"><circle
+        cx="226"
+        cy="210"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="226"
+        y="210"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >4</text></g><g id="pin-5"><circle
+        cx="280"
+        cy="210"
+        r="21"
+        fill="#b8174c"
+        stroke="#95113e"
+        stroke-width="3"
+      /><text
+        x="280"
+        y="210"
+        dy=".35em"
+        fill="#fff"
+        font-size="29"
+        font-weight="700"
+      >5</text></g><g id="pin-6"><circle
+        cx="334"
+        cy="210"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="334"
+        y="210"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >6</text></g><g id="pin-7"><circle
+        cx="387"
+        cy="210"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="387"
+        y="210"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >7</text></g><g id="pin-8"><circle
+        cx="440"
+        cy="210"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="440"
+        y="210"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >8</text></g><g id="pin-9"><circle
+        cx="494"
+        cy="210"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="494"
+        y="210"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >9</text></g><g id="pin-10"><circle
+        cx="200"
+        cy="270"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="200"
+        y="270"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >10</text></g><g id="pin-11"><circle
+        cx="253"
+        cy="270"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="253"
+        y="270"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >11</text></g><g id="pin-12"><circle
+        cx="307"
+        cy="270"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="307"
+        y="270"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >12</text></g><g id="pin-13"><circle
+        cx="360"
+        cy="270"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="360"
+        y="270"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >13</text></g><g id="pin-14"><circle
+        cx="414"
+        cy="270"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="414"
+        y="270"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >14</text></g><g id="pin-15"><circle
+        cx="467"
+        cy="270"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="467"
+        y="270"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >15</text></g><g id="pin-16"><circle
+        cx="521"
+        cy="270"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="521"
+        y="270"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >16</text></g><g id="pin-17"><circle
+        cx="173"
+        cy="330"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="173"
+        y="330"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >17</text></g><g id="pin-18"><circle
+        cx="227"
+        cy="330"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="227"
+        y="330"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >18</text></g><g id="pin-19"><circle
+        cx="280"
+        cy="330"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="280"
+        y="330"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >19</text></g><g id="pin-20"><circle
+        cx="440"
+        cy="330"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="440"
+        y="330"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >20</text></g><g id="pin-21"><circle
+        cx="494"
+        cy="330"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="494"
+        y="330"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >21</text></g><g id="pin-22"><circle
+        cx="547"
+        cy="330"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="547"
+        y="330"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >22</text></g><g id="pin-23"><circle
+        cx="200"
+        cy="395"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="200"
+        y="395"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >23</text></g><g id="pin-24"><circle
+        cx="253"
+        cy="395"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="253"
+        y="395"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >24</text></g><g id="pin-25"><circle
+        cx="307"
+        cy="395"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="307"
+        y="395"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >25</text></g><g id="pin-26"><circle
+        cx="360"
+        cy="395"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="360"
+        y="395"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >26</text></g><g id="pin-27"><circle
+        cx="414"
+        cy="395"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="414"
+        y="395"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >27</text></g><g id="pin-28"><circle
+        cx="467"
+        cy="395"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="467"
+        y="395"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >28</text></g><g id="pin-29"><circle
+        cx="521"
+        cy="395"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="521"
+        y="395"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >29</text></g><g id="pin-30"><circle
+        cx="226"
+        cy="455"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="226"
+        y="455"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >30</text></g><g id="pin-31"><circle
+        cx="280"
+        cy="455"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="280"
+        y="455"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >31</text></g><g id="pin-32"><circle
+        cx="334"
+        cy="455"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="334"
+        y="455"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >32</text></g><g id="pin-33"><circle
+        cx="387"
+        cy="455"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="387"
+        y="455"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >33</text></g><g id="pin-34"><circle
+        cx="440"
+        cy="455"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="440"
+        y="455"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >34</text></g><g id="pin-35"><circle
+        cx="494"
+        cy="455"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="494"
+        y="455"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >35</text></g><g id="pin-36"><circle
+        cx="307"
+        cy="515"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="307"
+        y="515"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >36</text></g><g id="pin-37"><circle
+        cx="360"
+        cy="515"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="360"
+        y="515"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >37</text></g><g id="pin-38"><circle
+        cx="414"
+        cy="515"
+        r="18"
+        fill="#f8fafc"
+        stroke="#778493"
+        stroke-width="2"
+      /><text
+        x="414"
+        y="515"
+        dy=".35em"
+        fill="#485361"
+        font-size="20"
+        font-weight="400"
+      >38</text></g>
+<text
       x="360"
-      y="258"
-      font-size="32"
-      fill="#485361"
-    >Diagrama del puente; verifica los</text>
-    <text
+      y="612"
+      font-size="31"
+      font-weight="700"
+      fill="#95113e"
+    >3 ↔ 5 · Puente para escritura</text>
+<text
       x="360"
-      y="298"
-      font-size="32"
+      y="646"
+      font-size="25"
       fill="#485361"
-    >números del conector</text>
-  </g>
-</svg>
+    >Guía central abierta hacia arriba</text>
+</g></svg>
