@@ -7,7 +7,7 @@
     <title>Cómo grabar un mapa en una ECU ME2.1 | Mercedes CLK, SLK y C</title>
     <meta
       name="description"
-      content="Guía ilustrada para leer, guardar y grabar un mapa en una Bosch ME2.1 de Mercedes 200 y 230 Kompressor: equipo, copia original, conexión y comprobaciones."
+      content="Guía rápida de grabación Bosch ME2.1: Galletto 1260 o Kess, voltaje estable, electroventilador desconectado y puente entre los pines 3 y 5 del puerto de 38 pines."
     />
     <link
       rel="canonical"
@@ -37,7 +37,7 @@
     />
     <meta
       property="og:description"
-      content="Del archivo original a la comprobación final. Guía sencilla para Mercedes CLK, SLK y Clase C Kompressor con ME2.1."
+      content="Guía rápida de grabación Bosch ME2.1: Galletto 1260 o Kess, voltaje estable, electroventilador desconectado y puente entre los pines 3 y 5 del puerto de 38 pines."
     />
     <meta
       property="og:url"
@@ -60,14 +60,14 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css?v=20261104-language" />
-    <link rel="stylesheet" href="flash-guide.css?v=20261109" />
+    <link rel="stylesheet" href="flash-guide.css?v=20261109-compact" />
     <script src="language.js?v=20261109-guide"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "TechArticle",
         "headline": "Cómo grabar un mapa en una ECU Bosch ME2.1",
-        "description": "Guía ilustrada de lectura, copia de seguridad y grabación para Mercedes CLK, SLK y Clase C Kompressor con Bosch ME2.1.",
+        "description": "Guía rápida de grabación Bosch ME2.1: Galletto 1260 o Kess, voltaje estable, electroventilador desconectado y puente entre los pines 3 y 5 del puerto de 38 pines.",
         "inLanguage": "es",
         "url": "https://m111kompressor.drasite.com/flash-me21-es.html",
         "mainEntityOfPage": "https://m111kompressor.drasite.com/flash-me21-es.html",
@@ -111,358 +111,91 @@
       <section class="guide-hero" aria-labelledby="guide-title">
         <div>
           <p class="eyebrow">
-            <span class="signal-dot"></span>GUÍA / BOSCH ME2.1
+            <span class="signal-dot"></span>GUÍA RÁPIDA / BOSCH ME2.1
           </p>
-          <h1 id="guide-title">Cómo grabar<br /><span>tu ME2.1.</span></h1>
+          <h1 id="guide-title">
+            Grabar tu ECU.<br /><span>Cuatro claves.</span>
+          </h1>
           <p class="guide-lead">
-            Cómo leer y grabar la centralita de un Mercedes CLK, SLK o Clase C
-            200 / 230 Kompressor equipado con Bosch ME2.1.
+            Mercedes CLK, SLK y Clase C Kompressor con Bosch ME2.1 y puerto de
+            diagnosis de 38 pines.
           </p>
         </div>
         <figure>
           <img
-            src="assets/clk-on-track-960.webp"
-            alt="Mercedes CLK Kompressor del proyecto en circuito"
-            width="960"
-            height="721"
+            src="assets/me21-connection-es.svg?v=20261109-compact"
+            alt="Puente entre los pines 3 y 5 del puerto Mercedes de 38 pines para habilitar la escritura"
+            width="720"
+            height="330"
             fetchpriority="high"
           />
           <figcaption>
-            La compatibilidad la determina la centralita, no solo el modelo del
-            coche.
+            <a href="assets/me21-connection-es.svg?v=20261109-compact"
+              >Ampliar el esquema ↗</a
+            >
           </figcaption>
         </figure>
       </section>
-      <div class="guide-overview">
-        <p>Identificar → Leer → Preparar → Grabar → Comprobar</p>
-        <a href="#equipment">Qué necesitas ↓</a>
-      </div>
-      <div class="guide-layout">
-        <aside class="guide-index" aria-label="Índice de la guía">
-          <p class="eyebrow">EN ESTA GUÍA</p>
-          <ol>
-            <li><a href="#equipment">Antes de empezar</a></li>
-            <li><a href="#identify">01 · Identificar la ECU</a></li>
-            <li><a href="#connect">02 · Preparar la conexión</a></li>
-            <li><a href="#read">03 · Guardar el original</a></li>
-            <li><a href="#file">04 · Preparar el archivo</a></li>
-            <li><a href="#write">05 · Grabar el mapa</a></li>
-            <li><a href="#verify">06 · Comprobar el resultado</a></li>
-            <li><a href="#questions">Dudas habituales</a></li>
-          </ol>
-        </aside>
-        <article
-          class="guide-article"
-          aria-label="Lectura y grabación de una Bosch ME2.1"
-        >
-          <section id="equipment">
-            <h2>Antes de empezar</h2>
+      <ol class="guide-points" aria-label="Preparación y grabación">
+        <li id="equipment">
+          <span class="step-number" aria-hidden="true">01</span>
+          <div>
+            <h2>Galletto 1260 o Kess</h2>
             <p>
-              Grabar un mapa significa escribir en la memoria de la ECU el
-              archivo que contiene su programa y calibraciones. Esta guía
-              explica cómo pasar de tu archivo original a uno preparado para tu
-              coche; no explica cómo modificar las tablas de combustible o
-              encendido.
+              Utiliza uno de estos programadores con soporte para
+              <strong>Bosch ME2.1</strong> y un archivo preparado para tu ECU.
+              Conserva una copia del original.
             </p>
-            <div class="guide-kit">
-              <div>
-                <h3>Un programador compatible</h3>
-                <p>
-                  Interfaz, programa y controladores que admitan tu ME2.1.
-                  Galletto 1260 es una opción documentada: su lista incluye
-                  <strong>Mercedes Bosch ME2.1 / 28F200BB / R/W</strong>
-                  (lectura y escritura). Confirma el soporte de tu equipo antes
-                  de comprarlo. <a href="#source-protocol">[1]</a>
-                </p>
-              </div>
-              <div>
-                <h3>La conexión adecuada</h3>
-                <p>
-                  Cable para la toma de diagnosis de tu coche y conexión de
-                  habilitación de programación según el manual. Si lleva toma
-                  Mercedes de 38 contactos, confirma también el cableado del
-                  adaptador.
-                </p>
-              </div>
-              <div>
-                <h3>Alimentación estable</h3>
-                <p>
-                  Una fuente de apoyo adecuada para programación y el portátil
-                  con alimentación y suspensión desactivada. Mantén la tensión
-                  indicada por el fabricante del equipo.
-                  <a href="#source-power">[2]</a>
-                </p>
-              </div>
-              <div>
-                <h3>Tu archivo preparado</h3>
-                <p>
-                  Una copia original de tu ECU y una versión modificada
-                  expresamente para ella. El dashboard y el ELM327 sirven para
-                  diagnosis; no sustituyen al programador.
-                </p>
-              </div>
-            </div>
-          </section>
-          <section class="guide-step" id="identify">
-            <h2><span class="step-number">01</span>Identifica tu centralita</h2>
+          </div>
+        </li>
+        <li id="power">
+          <span class="step-number" aria-hidden="true">02</span>
+          <div>
+            <h2>Voltaje estable: 13 V</h2>
             <p>
-              Fotografía la etiqueta y guarda las referencias Bosch y Mercedes.
-              Después, usa la función de identificación del programador para
-              anotar la versión de software. Comprueba que el protocolo
-              seleccionado corresponde a
-              <strong>Bosch ME2.1 de Mercedes</strong>.
+              Usa una fuente de apoyo y mantén
+              <strong>al menos 13 V estables con el contacto dado</strong> y el
+              motor parado. No dejes que la tensión caiga por debajo de 12,8 V
+              durante la escritura.
             </p>
+          </div>
+        </li>
+        <li id="fan">
+          <span class="step-number" aria-hidden="true">03</span>
+          <div>
+            <h2>Desconecta el electroventilador</h2>
             <p>
-              Un CLK, SLK o Clase C de otro año puede llevar una ECU diferente.
-              Esta guía no se aplica automáticamente a ME2.0, ME2.8 ni a Siemens
-              de los modelos EVO. Si la identificación no coincide, resuelve esa
-              diferencia antes de leer o escribir.
+              <strong>Antes de hacer el puente</strong>, desconecta el
+              electroventilador o retira su fusible. De lo contrario, se activa
+              al <strong>100 %</strong> al habilitar la escritura y aumenta el
+              consumo.
             </p>
-          </section>
-          <section class="guide-step" id="connect">
-            <h2><span class="step-number">02</span>Prepara la conexión</h2>
+          </div>
+        </li>
+        <li id="write">
+          <span class="step-number" aria-hidden="true">04</span>
+          <div>
+            <h2>Puente entre los pines 3 y 5</h2>
             <p>
-              Con el motor parado, conecta el equipo siguiendo su manual:
-              alimentación de apoyo, interfaz al ordenador y cable de diagnosis
-              al coche. Cierra el dashboard y cualquier otra aplicación que
-              pueda intentar comunicarse con la ECU. Pon o quita el contacto
-              cuando lo indique el programa.
-            </p>
-            <figure class="guide-figure">
-              <img
-                src="assets/me21-connection-es.svg"
-                alt="Esquema funcional: ordenador, programador y ECU por diagnosis, con habilitación de programación adicional según el manual"
-                width="720"
-                height="500"
-                loading="lazy"
-              />
-              <figcaption>
-                La línea de diagnosis transmite los datos. La habilitación de
-                programación permite preparar la ECU para escribir.
-                <a href="assets/me21-connection-es.svg">Ampliar el esquema ↗</a>
-              </figcaption>
-            </figure>
-            <div class="guide-note">
-              <strong
-                >Leer correctamente no garantiza que ya puedas grabar.</strong
-              >
-              <p>
-                Los procedimientos documentados de ME2.1 requieren habilitar la
-                programación mediante una conexión adicional. El pin, la tensión
-                y el momento de activación deben salir del manual de tu
-                programador para esa ECU. Un adaptador que sirve para diagnosis
-                puede no incluir esa conexión.
-                <a href="#source-programming">[3]</a>
-              </p>
-            </div>
-            <p>
-              La ilustración explica el recorrido, no la posición de los pines.
-              Si falta el esquema correspondiente a tu ECU, pide al proveedor el
-              cable o las instrucciones antes de continuar. Las conexiones en
-              banco también requieren su esquema específico.
-            </p>
-          </section>
-          <section class="guide-step" id="read">
-            <h2><span class="step-number">03</span>Lee y guarda el original</h2>
-            <ol>
-              <li>
-                Selecciona la función de lectura (<strong>Read</strong>) y
-                espera a que el programa confirme que ha terminado.
-              </li>
-              <li>
-                Guarda el archivo con un nombre reconocible, por ejemplo
-                <code>CLK230_SW404_original.bin</code>. Añade en la misma
-                carpeta la foto de la etiqueta y la identificación leída.
-              </li>
-              <li>
-                Conserva otra copia fuera del portátil. Trabaja siempre sobre un
-                duplicado.
-              </li>
-            </ol>
-            <p>
-              Como comprobación adicional, haz una segunda lectura y compara
-              ambos archivos completos. Si difieren, investiga la causa antes de
-              usar uno como base. No confundas el tiempo de identificación con
-              el de lectura: leer el archivo de programa y calibraciones puede
-              tardar bastante más.
-            </p>
-          </section>
-          <section class="guide-step" id="file">
-            <h2>
-              <span class="step-number">04</span>Prepara el archivo correcto
-            </h2>
-            <p>
-              Entrega tu lectura original a quien prepare la calibración, junto
-              con las modificaciones del coche y el combustible utilizado. El
-              archivo final debe corresponder a tu hardware y software: que
-              proceda de otro «230 Kompressor» no basta.
-            </p>
-            <figure class="guide-figure">
-              <img
-                src="assets/me21-files-es.svg"
-                alt="Conservar original.bin sin modificar, revisar la versión preparada tuned.bin y escribirla en la ECU"
-                width="720"
-                height="500"
-                loading="lazy"
-              />
-              <figcaption>
-                Conserva el original y graba una copia preparada para tu
-                versión.
-                <a href="assets/me21-files-es.svg">Ampliar el esquema ↗</a>
-              </figcaption>
-            </figure>
-            <p>
-              Los binarios ME2.1 incluidos en este proyecto ocupan
-              <strong>262.144 bytes (256 KiB)</strong>. Ese tamaño es una
-              referencia, no una prueba de compatibilidad. Un archivo
-              <code>.xdf</code>, <code>.kp</code> o <code>.csv</code> contiene
-              definiciones de mapas; no es el binario que se graba.
-            </p>
-            <p>
-              Confirma también el <strong>checksum</strong>, la comprobación
-              interna de integridad del archivo. No des por hecho que el
-              programador lo corrige: la lista histórica de FGTech no marca
-              corrección automática para estas ME2.1.
-              <a href="#source-checksum">[4]</a>
-            </p>
-          </section>
-          <section class="guide-step" id="write">
-            <h2><span class="step-number">05</span>Graba el nuevo mapa</h2>
-            <div class="guide-checklist">
-              <h3>Antes de pulsar «Write»</h3>
-              <ul>
-                <li>Original guardado y archivo final comprobado.</li>
-                <li>ECU identificada y protocolo correcto.</li>
-                <li>Conexión de programación preparada según el manual.</li>
-                <li>Alimentación estable y portátil sin suspensión.</li>
-              </ul>
-            </div>
-            <p>
-              Abre el archivo final y selecciona la función de escritura
-              (<strong>Write / Program</strong>). Sigue los avisos del equipo
-              para habilitar la programación y cambiar el estado del contacto.
-              Los nombres de los botones y el orden exacto dependen del
+              Para <strong>escribir</strong>, conecta el
+              <strong>pin 3 con el pin 5</strong> del puerto de diagnosis de
+              <strong>38 pines</strong>. Comprueba los números marcados en el
+              conector y sigue la secuencia de contacto y escritura del
               programador.
             </p>
-            <p>
-              Espera a la confirmación final, incluida la verificación si el
-              equipo la realiza. Durante la escritura, no arranques, desenchufes
-              cables ni cortes la alimentación. No interpretes una pausa de la
-              barra de progreso como permiso para desconectarlo.
-            </p>
-          </section>
-          <section class="guide-step" id="verify">
-            <h2><span class="step-number">06</span>Comprueba el resultado</h2>
-            <p>
-              Al terminar, realiza la secuencia de contacto que indique el
-              programa. Retira la conexión de habilitación y restaura el
-              cableado normal cuando lo indique el manual.
-            </p>
-            <p>
-              Comprueba que la ECU sigue respondiendo, lee y guarda los errores
-              y después verifica el arranque y el ralentí. Si el equipo permite
-              volver a leer la misma región escrita, compara esa lectura con el
-              archivo final. Una grabación correcta confirma la transferencia;
-              no valida por sí sola la calibración a plena carga.
-            </p>
-            <p>
-              Para las comprobaciones de funcionamiento puedes usar nuestros
-              <a href="es.html#dashboards">dashboards de PC y Android</a>.
-              Valida la mezcla y el encendido con la instrumentación adecuada
-              antes de exigir carga al motor.
-            </p>
-          </section>
-          <section id="questions">
-            <h2>Dudas habituales</h2>
-            <details>
-              <summary>¿Se puede hacer sin abrir la ECU?</summary>
-              <p>
-                Hay procedimientos de ME2.1 por diagnosis que no requieren abrir
-                la carcasa. Eso no elimina la conexión de habilitación de
-                programación. Confirma el procedimiento de tu referencia y
-                equipo antes de desmontar nada.
-                <a href="#source-programming">[3]</a>
-              </p>
-            </details>
-            <details>
-              <summary>Lee bien, pero no me deja escribir. ¿Por qué?</summary>
-              <p>
-                Comprueba la habilitación de programación, el protocolo, la
-                alimentación y la compatibilidad del archivo. Un enlace de
-                diagnosis operativo solo confirma la comunicación; no demuestra
-                que se cumplan los requisitos de escritura.
-              </p>
-            </details>
-            <details>
-              <summary>¿Qué hago si falla durante la grabación?</summary>
-              <p>
-                Guarda el mensaje de error y sigue el procedimiento de
-                recuperación del fabricante. No cortes la alimentación por tu
-                cuenta ni pruebes archivos o puentes al azar. Una escritura
-                incompleta puede impedir el arranque y necesitar recuperación
-                especializada.
-              </p>
-            </details>
-            <details>
-              <summary>¿Cuánto tarda?</summary>
-              <p>
-                Depende del equipo y del protocolo. Reserva tiempo para terminar
-                sin prisas y toma como referencia los avisos del programa, no un
-                tiempo fijo encontrado en un tutorial.
-              </p>
-            </details>
-          </section>
-          <section
-            class="guide-contact metal-panel"
-            aria-labelledby="help-title"
-          >
-            <h2 id="help-title">Empieza por tu original.</h2>
-            <p>
-              Para consultar la compatibilidad o preparar un mapa, indica el
-              modelo, las modificaciones, la referencia de la ECU y el
-              programador que vas a utilizar.
-            </p>
-            <a class="button accent-button" href="es.html#contact"
-              >Consultar mi configuración <span aria-hidden="true">↗</span></a
-            >
-          </section>
-          <section class="guide-sources" id="sources">
-            <h2>Fuentes y alcance</h2>
-            <p>
-              Resumen del proceso, acompañado de ilustraciones propias. El
-              conexionado exacto y la secuencia de programación deben
-              consultarse en el manual del equipo para la ECU identificada.
-            </p>
-            <ol>
-              <li id="source-protocol">
-                <a
-                  href="https://www.carsdiag.bg/media/dev/galletto_1260_car_list.pdf#page=18"
-                  >Lista histórica Galletto 1260</a
-                >: protocolo ME2.1 / 28F200BB, lectura y escritura.
-              </li>
-              <li id="source-power">
-                <a href="https://www.alientech-tools.com/en/faq/"
-                  >Alientech, preguntas frecuentes</a
-                >: compatibilidad, modalidades de conexión y alimentación
-                estable.
-              </li>
-              <li id="source-programming">
-                <a
-                  href="https://mhhauto.com/Thread-Advice-for-mercedes-bosch-ME2-0-and-ME2-1-read-write-tool?mode=linear&amp;pid=733938"
-                  >Experiencia de programación ME2.1 en MHH Auto</a
-                >: habilitación adicional. El caso publicado es un S500; su
-                pinout no se extrapola aquí a CLK, SLK o C.
-              </li>
-              <li id="source-checksum">
-                <a
-                  href="https://carmod.ru/docs/FGTech_Galletto_cars_support.pdf#page=12"
-                  >Lista FG Technology, septiembre de 2012</a
-                >: soporte de escritura y columna de checksum.
-              </li>
-            </ol>
-          </section>
-        </article>
-      </div>
+          </div>
+        </li>
+      </ol>
+      <p class="guide-finish">
+        <strong>Al terminar:</strong> quita el contacto, retira el puente y
+        reconecta el electroventilador o su fusible antes de arrancar.
+      </p>
+      <p class="guide-source">
+        <a
+          href="https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431/"
+          >Ver el procedimiento original en BenzWorld ↗</a
+        >
+      </p>
     </main>
     <footer class="wrap guide-footer">
       <a class="brand" href="es.html"
