@@ -42,8 +42,7 @@
   padding-top: 8px;
   font-size: 13px;
 }
-.guide-hero figcaption a,
-.guide-source a {
+.guide-hero figcaption a {
   color: var(--accent-dark);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -76,6 +75,9 @@
 .guide-points p {
   max-width: 64ch;
 }
+.guide-points p + p {
+  margin-top: 12px;
+}
 .guide-software {
   max-width: 600px;
   margin: 24px auto;
@@ -96,11 +98,7 @@
   border-radius: 0 12px 12px 0;
   background: #f5f6f880;
   padding: 18px 22px;
-  margin-top: 8px;
-}
-.guide-source {
-  font-size: 13px;
-  padding-block: 20px 32px;
+  margin-block: 8px 32px;
 }
 .guide-footer {
   border-top: 1px solid var(--line);
