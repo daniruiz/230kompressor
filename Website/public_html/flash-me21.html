@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#b8174c" />
+    <title>
+      How to flash a Bosch ME2.1 ECU | Mercedes CLK, SLK and C-Class
+    </title>
+    <meta
+      name="description"
+      content="An illustrated guide to reading, backing up and flashing a Mercedes 200 or 230 Kompressor Bosch ME2.1 ECU: equipment, original file, connection and checks."
+    />
+    <link
+      rel="canonical"
+      href="https://m111kompressor.drasite.com/flash-me21.html"
+    />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://m111kompressor.drasite.com/flash-me21.html"
+    />
+    <link
+      rel="alternate"
+      hreflang="es"
+      href="https://m111kompressor.drasite.com/flash-me21-es.html"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://m111kompressor.drasite.com/flash-me21.html"
+    />
+    <meta property="og:type" content="article" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:site_name" content="M111Kompressor" />
+    <meta property="og:title" content="How to flash a Bosch ME2.1 ECU" />
+    <meta
+      property="og:description"
+      content="From the original file to the final checks. A straightforward guide for Mercedes CLK, SLK and C-Class Kompressor models with ME2.1."
+    />
+    <meta
+      property="og:url"
+      content="https://m111kompressor.drasite.com/flash-me21.html"
+    />
+    <meta
+      property="og:image"
+      content="https://m111kompressor.drasite.com/assets/m111-kompressor-social.jpg"
+    />
+    <meta property="og:image:alt" content="Mercedes CLK Kompressor on track" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=20261104-language" />
+    <link rel="stylesheet" href="flash-guide.css?v=20261109" />
+    <script src="language.js?v=20261109-guide"></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "How to flash a Bosch ME2.1 ECU",
+        "description": "An illustrated guide to reading, backing up and flashing Bosch ME2.1 ECUs in Mercedes CLK, SLK and C-Class Kompressor models.",
+        "inLanguage": "en",
+        "url": "https://m111kompressor.drasite.com/flash-me21.html",
+        "mainEntityOfPage": "https://m111kompressor.drasite.com/flash-me21.html",
+        "image": "https://m111kompressor.drasite.com/assets/m111-kompressor-social.jpg",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "M111Kompressor",
+          "url": "https://m111kompressor.drasite.com/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header class="site-header wrap guide-header">
+      <a class="brand" href="./" aria-label="M111Kompressor, home"
+        ><span class="brand-model">M111</span><span>Kompressor</span></a
+      >
+      <a class="guide-back" href="./">← Back to home</a>
+      <div class="language-switch" role="group" aria-label="Language / Idioma">
+        <a
+          href="flash-me21.html?lang=en"
+          lang="en"
+          hreflang="en"
+          data-language="en"
+          aria-label="English"
+          aria-current="page"
+          >EN</a
+        >
+        <a
+          href="flash-me21-es.html?lang=es"
+          lang="es"
+          hreflang="es"
+          data-language="es"
+          aria-label="Castellano"
+          >ES</a
+        >
+      </div>
+    </header>
+    <main id="content" class="wrap">
+      <section class="guide-hero" aria-labelledby="guide-title">
+        <div>
+          <p class="eyebrow">
+            <span class="signal-dot"></span>GUIDE / BOSCH ME2.1
+          </p>
+          <h1 id="guide-title">How to flash<br /><span>your ME2.1.</span></h1>
+          <p class="guide-lead">
+            How to read and flash the ECU in a Mercedes CLK, SLK or C-Class 200
+            / 230 Kompressor equipped with Bosch ME2.1.
+          </p>
+        </div>
+        <figure>
+          <img
+            src="assets/clk-on-track-960.webp"
+            alt="The project's Mercedes CLK Kompressor on track"
+            width="960"
+            height="721"
+            fetchpriority="high"
+          />
+          <figcaption>
+            Compatibility depends on the ECU, not just the car model.
+          </figcaption>
+        </figure>
+      </section>
+      <div class="guide-overview">
+        <p>Identify → Read → Prepare → Write → Check</p>
+        <a href="#equipment">What you need ↓</a>
+      </div>
+      <div class="guide-layout">
+        <aside class="guide-index" aria-label="Guide contents">
+          <p class="eyebrow">IN THIS GUIDE</p>
+          <ol>
+            <li><a href="#equipment">Before you start</a></li>
+            <li><a href="#identify">01 · Identify the ECU</a></li>
+            <li><a href="#connect">02 · Set up the connection</a></li>
+            <li><a href="#read">03 · Save the original</a></li>
+            <li><a href="#file">04 · Prepare the file</a></li>
+            <li><a href="#write">05 · Write the tune</a></li>
+            <li><a href="#verify">06 · Check the result</a></li>
+            <li><a href="#questions">Common questions</a></li>
+          </ol>
+        </aside>
+        <article
+          class="guide-article"
+          aria-label="Reading and flashing a Bosch ME2.1 ECU"
+        >
+          <section id="equipment">
+            <h2>Before you start</h2>
+            <p>
+              Flashing a tune means writing the file containing the ECU's
+              program and calibrations to its memory. This guide explains how to
+              go from your original file to one prepared for your car; it does
+              not cover editing fuel or ignition tables.
+            </p>
+            <div class="guide-kit">
+              <div>
+                <h3>A compatible programmer</h3>
+                <p>
+                  An interface, software and drivers that support your ME2.1.
+                  Galletto 1260 is one documented option: its list includes
+                  <strong>Mercedes Bosch ME2.1 / 28F200BB / R/W</strong> (read
+                  and write). Confirm support before buying your equipment.
+                  <a href="#source-protocol">[1]</a>
+                </p>
+              </div>
+              <div>
+                <h3>The right connection</h3>
+                <p>
+                  A cable for your car's diagnostic socket and the
+                  programming-enable connection specified in the manual. If your
+                  car has the Mercedes 38-pin socket, also check the adapter
+                  wiring.
+                </p>
+              </div>
+              <div>
+                <h3>A stable power supply</h3>
+                <p>
+                  A suitable power support unit for programming, with the laptop
+                  plugged in and sleep disabled. Maintain the voltage specified
+                  by the tool manufacturer. <a href="#source-power">[2]</a>
+                </p>
+              </div>
+              <div>
+                <h3>Your prepared file</h3>
+                <p>
+                  An original backup from your ECU and a modified version
+                  prepared specifically for it. The dashboard and ELM327 are
+                  diagnostic tools; they do not replace a programmer.
+                </p>
+              </div>
+            </div>
+          </section>
+          <section class="guide-step" id="identify">
+            <h2><span class="step-number">01</span>Identify your ECU</h2>
+            <p>
+              Photograph the label and save the Bosch and Mercedes part numbers.
+              Then use the programmer's identification function to record the
+              software version. Check that the selected protocol is for
+              <strong>Mercedes Bosch ME2.1</strong>.
+            </p>
+            <p>
+              A CLK, SLK or C-Class from another model year may use a different
+              ECU. This guide does not automatically apply to ME2.0, ME2.8 or
+              the Siemens ECUs in EVO models. If the identification does not
+              match, resolve that difference before reading or writing.
+            </p>
+          </section>
+          <section class="guide-step" id="connect">
+            <h2><span class="step-number">02</span>Set up the connection</h2>
+            <p>
+              With the engine off, connect the equipment as instructed in its
+              manual: power support, interface to computer and diagnostic cable
+              to the car. Close the dashboard and any other application that
+              might try to communicate with the ECU. Switch the ignition on or
+              off when prompted by the software.
+            </p>
+            <figure class="guide-figure">
+              <img
+                src="assets/me21-connection-en.svg"
+                alt="Functional diagram: computer, programmer and ECU diagnostic connection, with additional programming enable as specified in the manual"
+                width="720"
+                height="500"
+                loading="lazy"
+              />
+              <figcaption>
+                The diagnostic line carries the data. Programming enable allows
+                the ECU to be prepared for writing.
+                <a href="assets/me21-connection-en.svg"
+                  >Enlarge the diagram ↗</a
+                >
+              </figcaption>
+            </figure>
+            <div class="guide-note">
+              <strong
+                >A successful read does not mean you are ready to write.</strong
+              >
+              <p>
+                Documented ME2.1 procedures require an additional connection to
+                enable programming. The pin, voltage and activation timing must
+                come from your programmer's manual for that ECU. An adapter that
+                works for diagnostics may not include this connection.
+                <a href="#source-programming">[3]</a>
+              </p>
+            </div>
+            <p>
+              The illustration shows the connection path, not the pin positions.
+              If you do not have the diagram for your ECU, ask the supplier for
+              the cable or instructions before continuing. Bench connections
+              also require their own specific diagram.
+            </p>
+          </section>
+          <section class="guide-step" id="read">
+            <h2>
+              <span class="step-number">03</span>Read and save the original
+            </h2>
+            <ol>
+              <li>
+                Select the <strong>Read</strong> function and wait for the
+                software to confirm completion.
+              </li>
+              <li>
+                Save the file with a recognisable name, such as
+                <code>CLK230_SW404_original.bin</code>. Keep the label photo and
+                identification details in the same folder.
+              </li>
+              <li>
+                Keep another backup somewhere other than the laptop. Always work
+                on a duplicate.
+              </li>
+            </ol>
+            <p>
+              As an extra check, read the ECU a second time and compare both
+              complete files. If they differ, investigate before using either as
+              a starting point. Identification time is not reading time: reading
+              the program and calibration file can take much longer.
+            </p>
+          </section>
+          <section class="guide-step" id="file">
+            <h2><span class="step-number">04</span>Prepare the correct file</h2>
+            <p>
+              Send your original read to whoever prepares the calibration, along
+              with the car's modifications and the fuel you use. The finished
+              file must match your hardware and software: coming from another
+              “230 Kompressor” is not enough.
+            </p>
+            <figure class="guide-figure">
+              <img
+                src="assets/me21-files-en.svg"
+                alt="Keep original.bin unchanged, check the prepared tuned.bin file and write it to the ECU"
+                width="720"
+                height="500"
+                loading="lazy"
+              />
+              <figcaption>
+                Keep the original and write a copy prepared for your ECU
+                version.
+                <a href="assets/me21-files-en.svg">Enlarge the diagram ↗</a>
+              </figcaption>
+            </figure>
+            <p>
+              The ME2.1 binaries included in this project are
+              <strong>262,144 bytes (256 KiB)</strong>. That size is a
+              reference, not proof of compatibility. An <code>.xdf</code>,
+              <code>.kp</code> or <code>.csv</code> file contains map
+              definitions; it is not the binary to flash.
+            </p>
+            <p>
+              Also confirm the <strong>checksum</strong>, the file's internal
+              integrity check. Do not assume the programmer corrects it: the
+              historical FGTech list does not indicate automatic correction for
+              these ME2.1 ECUs. <a href="#source-checksum">[4]</a>
+            </p>
+          </section>
+          <section class="guide-step" id="write">
+            <h2><span class="step-number">05</span>Write the new tune</h2>
+            <div class="guide-checklist">
+              <h3>Before pressing “Write”</h3>
+              <ul>
+                <li>Original backed up and final file checked.</li>
+                <li>ECU identified and correct protocol selected.</li>
+                <li>
+                  Programming connection prepared according to the manual.
+                </li>
+                <li>Stable power supply and laptop sleep disabled.</li>
+              </ul>
+            </div>
+            <p>
+              Open the final file and select the write function (<strong
+                >Write / Program</strong
+              >). Follow the tool's prompts to enable programming and switch the
+              ignition. Button names and the exact sequence depend on the
+              programmer.
+            </p>
+            <p>
+              Wait for the final confirmation, including verification if the
+              tool performs it. While writing, do not start the engine, unplug
+              cables or cut the power. A pause in the progress bar is not a
+              signal that it is safe to disconnect.
+            </p>
+          </section>
+          <section class="guide-step" id="verify">
+            <h2><span class="step-number">06</span>Check the result</h2>
+            <p>
+              Once complete, follow the ignition sequence shown by the software.
+              Remove the programming-enable connection and restore the normal
+              wiring when instructed by the manual.
+            </p>
+            <p>
+              Check that the ECU still responds, read and save the fault codes,
+              then check that the engine starts and idles correctly. If the tool
+              can read back the same region that was written, compare that read
+              with the final file. A successful flash confirms the transfer; it
+              does not, by itself, validate the calibration at full load.
+            </p>
+            <p>
+              You can use our
+              <a href="./#dashboards">PC and Android dashboards</a> for running
+              checks. Validate fuelling and ignition with suitable
+              instrumentation before putting the engine under load.
+            </p>
+          </section>
+          <section id="questions">
+            <h2>Common questions</h2>
+            <details>
+              <summary>Can I do this without opening the ECU?</summary>
+              <p>
+                There are ME2.1 procedures through the diagnostic connection
+                that do not require opening the case. That does not eliminate
+                the programming-enable connection. Confirm the procedure for
+                your ECU part number and tool before dismantling anything.
+                <a href="#source-programming">[3]</a>
+              </p>
+            </details>
+            <details>
+              <summary>It reads correctly but will not write. Why?</summary>
+              <p>
+                Check programming enable, the protocol, the power supply and
+                file compatibility. A working diagnostic link only confirms
+                communication; it does not prove that the requirements for
+                writing are met.
+              </p>
+            </details>
+            <details>
+              <summary>What if writing fails?</summary>
+              <p>
+                Save the error message and follow the manufacturer's recovery
+                procedure. Do not cut the power on your own or try random files
+                or jumper connections. An incomplete write can prevent the
+                engine from starting and may require specialist recovery.
+              </p>
+            </details>
+            <details>
+              <summary>How long does it take?</summary>
+              <p>
+                It depends on the tool and protocol. Allow enough time to finish
+                without rushing and follow the software's messages rather than a
+                fixed time quoted in a tutorial.
+              </p>
+            </details>
+          </section>
+          <section
+            class="guide-contact metal-panel"
+            aria-labelledby="help-title"
+          >
+            <h2 id="help-title">Start with your original.</h2>
+            <p>
+              To check compatibility or have a tune prepared, include your
+              model, modifications, ECU part number and the programmer you plan
+              to use.
+            </p>
+            <a class="button accent-button" href="./#contact"
+              >Discuss my setup <span aria-hidden="true">↗</span></a
+            >
+          </section>
+          <section class="guide-sources" id="sources">
+            <h2>Sources and scope</h2>
+            <p>
+              An overview of the process with original illustrations. Consult
+              the tool's manual for the identified ECU for the exact wiring and
+              programming sequence.
+            </p>
+            <ol>
+              <li id="source-protocol">
+                <a
+                  href="https://www.carsdiag.bg/media/dev/galletto_1260_car_list.pdf#page=18"
+                  >Historical Galletto 1260 list</a
+                >: ME2.1 / 28F200BB protocol, read and write.
+              </li>
+              <li id="source-power">
+                <a href="https://www.alientech-tools.com/en/faq/"
+                  >Alientech FAQs</a
+                >: compatibility, connection modes and stable power.
+              </li>
+              <li id="source-programming">
+                <a
+                  href="https://mhhauto.com/Thread-Advice-for-mercedes-bosch-ME2-0-and-ME2-1-read-write-tool?mode=linear&amp;pid=733938"
+                  >Firsthand ME2.1 programming account on MHH Auto</a
+                >: additional programming enable. The published example is an
+                S500; its pinout is not applied here to CLK, SLK or C-Class
+                models.
+              </li>
+              <li id="source-checksum">
+                <a
+                  href="https://carmod.ru/docs/FGTech_Galletto_cars_support.pdf#page=12"
+                  >FG Technology list, September 2012</a
+                >: write support and checksum column.
+              </li>
+            </ol>
+          </section>
+        </article>
+      </div>
+    </main>
+    <footer class="wrap guide-footer">
+      <a class="brand" href="./"
+        ><span class="brand-model">M111</span><span>Kompressor</span></a
+      ><a href="#content">Back to top ↑</a>
+    </footer>
+  </body>
+</html>

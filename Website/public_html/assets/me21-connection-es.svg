@@ -1,0 +1,121 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 720 500"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">Conexión para leer y grabar</title>
+  <desc
+    id="desc"
+  >Un ordenador se conecta por USB a un programador y este a la diagnosis de una ECU ME2.1. Una rama discontinua indica la habilitación de programación según el manual del equipo. Es un esquema funcional, no un pinout.</desc>
+  <defs>
+    <linearGradient id="metal" x2="1" y2="1"><stop stop-color="#eff1f4" /><stop
+        offset="1"
+        stop-color="#dce0e5"
+      /></linearGradient>
+    <marker
+      id="arrow"
+      viewBox="0 0 10 10"
+      refX="8"
+      refY="5"
+      markerWidth="7"
+      markerHeight="7"
+      orient="auto-start-reverse"
+    ><path
+        d="M1 1 9 5 1 9"
+        fill="none"
+        stroke="#b8174c"
+        stroke-width="2"
+        stroke-linejoin="round"
+      /></marker>
+    <style
+    >text { font-family: Arial, sans-serif; fill: #303641; } .muted { fill: #485361; } .accent { fill: #b8174c; } .panel { fill: #eff1f4; stroke: #b8c0cb; stroke-width: 2; } .route { fill: none; stroke: #b8174c; stroke-width: 3; marker-end: url(#arrow); } .icon { fill: none; stroke: #485361; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }</style>
+  </defs>
+  <rect width="720" height="500" rx="24" fill="url(#metal)" />
+  <text
+    x="36"
+    y="49"
+    font-size="32"
+    font-weight="700"
+  >Conexión para leer y grabar</text>
+  <rect class="panel" x="24" y="104" width="180" height="140" rx="18" />
+  <rect class="panel" x="270" y="104" width="180" height="140" rx="18" />
+  <rect class="panel" x="516" y="104" width="180" height="140" rx="18" />
+  <g class="icon"><rect x="81" y="130" width="66" height="42" rx="4" /><path
+      d="M73 182h82l-8-10H81Z"
+    />
+  <rect x="335" y="128" width="50" height="54" rx="8" /><path
+      d="M350 128v-7m20 7v-7m-20 61v7m20-7v7"
+    />
+  <rect x="575" y="129" width="62" height="53" rx="7" /><path
+      d="M583 136h46m-46 12h46m-46 12h46m-39 22v7m12-7v7m12-7v7"
+    /></g>
+  <text
+    x="114"
+    y="219"
+    text-anchor="middle"
+    font-size="28"
+    font-weight="700"
+  >Ordenador</text>
+  <text
+    x="360"
+    y="219"
+    text-anchor="middle"
+    font-size="28"
+    font-weight="700"
+  >Programador</text>
+  <text
+    x="606"
+    y="219"
+    text-anchor="middle"
+    font-size="28"
+    font-weight="700"
+  >ME2.1</text>
+  <path class="route" d="M210 164h48" />
+  <path class="route" d="M456 164h48" />
+  <text
+    x="237"
+    y="89"
+    text-anchor="middle"
+    font-size="24"
+    class="muted"
+  >USB</text>
+  <text
+    x="483"
+    y="89"
+    text-anchor="middle"
+    font-size="24"
+    class="muted"
+  >Diagnosis</text>
+  <text
+    x="360"
+    y="284"
+    text-anchor="middle"
+    font-size="26"
+    class="muted"
+  >Conector de 16 / 38 pines según el vehículo</text>
+  <path class="route" stroke-dasharray="8 7" d="M360 244v12m0 42v27h246v-70" />
+  <text
+    x="360"
+    y="369"
+    text-anchor="middle"
+    font-size="30"
+    font-weight="700"
+    class="accent"
+  >Habilitación de programación</text>
+  <text
+    x="360"
+    y="407"
+    text-anchor="middle"
+    font-size="26"
+    class="muted"
+  >Según manual del equipo</text>
+  <path d="M36 435h648" stroke="#b8c0cb" />
+  <text
+    x="360"
+    y="470"
+    text-anchor="middle"
+    font-size="24"
+    class="muted"
+  >Esquema funcional; no es un pinout</text>
+</svg>
