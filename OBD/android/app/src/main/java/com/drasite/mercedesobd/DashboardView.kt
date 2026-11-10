@@ -690,13 +690,14 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             else "—",
             320f,
         )
+        val mafFlow = if (valid) sample?.mafGramsPerSecond else null
         row(
             tr("Caudalímetro", "Airflow"),
-            if (valid)
+            if (mafFlow != null)
                 formatValue(
                     "%s%.1f g/s",
-                    if (sample!!.maf == 255) "≥" else "~",
-                    sample.maf * Decoder.MAF_SCALE,
+                    if (sample?.maf == 1023) "≥" else "~",
+                    mafFlow,
                 )
             else "—",
             350f,
@@ -780,12 +781,10 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             val text = TextUtils.ellipsize(value, footerPaint, footerWidth, TextUtils.TruncateAt.END)
             canvas.drawText(text.toString(), margin, baseline, footerPaint)
         }
-        val volts =
-            if (valid) formatValue("~%.2f V", sample!!.voltage * Decoder.VOLT_SCALE) else "— V"
         val software = if (display.ecuIdentificationStatus == "demo") "" else
             tr(" · SW ${display.ecuSoftware ?: "no identificada"}", " · SW ${display.ecuSoftware ?: "unidentified"}")
         val perf =
-            tr("${sample?.cycleMs?:"—"} ms/ciclo · ECU $volts$software", "${sample?.cycleMs?:"—"} ms/cycle · ECU $volts$software") +
+            tr("${sample?.cycleMs?:"—"} ms/ciclo$software", "${sample?.cycleMs?:"—"} ms/cycle$software") +
                 " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
         val status = display.status.replace('\r', ' ').replace('\n', ' ').take(180)
         drawLine(if (valid) "$perf · $status" else "$status · $perf", firstBaseline, if (valid) green else amber)

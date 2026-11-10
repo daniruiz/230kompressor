@@ -12,7 +12,9 @@ data class EcuProfile(
 
 /** References and RAM layouts verified in the ten analysed original binaries.
  * A calibration edit may retain the software reference. This selects correction
- * addresses, not a different injection calibration or timer scale.
+ * addresses and identifies whether the software is known. MAF conversion uses
+ * the shared original curve even for unverified software. This does not verify
+ * modified calibrations or select a different injection calibration/timer scale.
  */
 object EcuProfiles {
     val all = listOf(

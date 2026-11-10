@@ -57,7 +57,8 @@ object Injection {
     /** Reproduce 3C504 + 3C4DA/3C4EE, then multiply by 15.
      * Round the magnitude of the delta with ties upward before adding/subtracting;
      * rounding the interpolated value would disagree on descending half steps.
-     * This uses the already-read F734 byte, not physical volts or a RAM read of F8C6.
+     * Requires an F734 byte supplied by the caller. The current fixed group omits
+     * voltage, so its samples leave this estimate unavailable.
      */
     fun deadtimeTicks(voltageRaw: Int?, cal: InjectorCalibration = calibration): Int? {
         if (voltageRaw == null) return null

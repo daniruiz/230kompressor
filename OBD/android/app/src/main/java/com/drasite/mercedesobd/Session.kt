@@ -163,9 +163,8 @@ class Session(
                     val load = (60 + 175 * (.5 + .5 * sin(t / 2.2))).toInt()
                     val rpm = (900 + 5200 * (.5 + .5 * sin(t / 3 - 1.5))).toInt()
                     val c = if (phase >= 2) maxOf(0, 8 - ((phase - 2) * 2).toInt()) else 0
-                    val voltage = round((14 + .2 * sin(t / 5)) / Decoder.VOLT_SCALE).toInt().coerceIn(0, 255)
-                    val injection = requireNotNull(Injection.deadtimeTicks(voltage)) +
-                        Injection.calibration.minimumTicks + round(7500 * (.5 + .5 * sin(t / 3 - 1))).toInt()
+                    val mafAdc = (256 + 767 * (load / 255.0) * (rpm / 6500.0)).toInt().coerceIn(0, 1023)
+                    val injection = 700 + round(7500 * (.5 + .5 * sin(t / 3 - 1))).toInt()
                     publish(
                         Sample(
                             rpm,
@@ -176,11 +175,14 @@ class Session(
                             ltft = 34000,
                             coolant = (140 + 18 * sin(t / 4 - 1.5)).toInt(),
                             iat = (98 + 20 * sin(t / 4 - 2.5)).toInt(),
-                            maf = minOf(255, load * rpm / 100000),
+                            maf = mafAdc,
+                            mafAdcWord = mafAdc,
+                            mafGramsPerSecond = MafCalibration.gramsPerSecond(mafAdc),
+                            mafCalibrationStatus = "demo",
                             advance = ((-15 + 20 * sin(t / 4) + 66) / .75).toInt(),
                             throttle = (255 * (.5 + .5 * sin(t / 3))).toInt(),
                             oxygen = (0x2456 * (1 + .7 * sin(t * 4))).toInt(),
-                            voltage = voltage,
+                            diagnosticIds = Decoder.ids.toList(),
                             at = now,
                             acquisitionMs = (now - last).toDouble(),
                         )

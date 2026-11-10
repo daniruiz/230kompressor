@@ -19,10 +19,10 @@ class NegativeResponse(val service: Int, val code: Int) :
     DiagnosticException("ECU: 7F %02X %02X".format(service, code))
 
 object Decoder {
-    val ids = intArrayOf(0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x07, 0x0B, 0x0A, 0x1F, 0x10)
+    // All twelve readings stay in the group; no slot redefinition is needed per cycle.
+    // 1143 is raw MAF ADC; 1107 returns processed ECU MAF and load together.
+    val ids = intArrayOf(0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x43, 0x0B, 0x0A, 0x1F, 0x07)
     const val TICK_US = 8.0 / 3
-    const val VOLT_SCALE = 3.0 / 32
-    const val MAF_SCALE = 1.1108
     const val KNOCK_ALERT_THRESHOLD_DEG = 3.0
 
     fun word(b: ByteArray, i: Int) = b[i].u() or (b[i + 1].u() shl 8)
@@ -44,33 +44,50 @@ object Decoder {
         throw DiagnosticException(tr("Respuesta inválida o incompleta: ${reply.take(160)}", "Invalid or incomplete response: ${reply.take(160)}"))
     }
 
-    fun pairs(b: ByteArray): Sample {
+    fun pairs(
+        b: ByteArray,
+        at: Long,
+        ecuProfile: EcuProfile?,
+    ): Sample {
         if (b.size != 24) throw DiagnosticException(tr("Se esperaban doce pares", "Expected twelve pairs"))
+        val signals = ids.mapIndexed { i, id -> id to b.copyOfRange(i * 2, i * 2 + 2) }.toMap()
+        fun pair(id: Int): ByteArray = signals[id]
+            ?: throw DiagnosticException(tr("Falta la lectura 11%02X", "Missing reading 11%02X").format(id))
+        fun value(id: Int) = word(pair(id), 0)
+        val mafWord = value(0x43)
         return Sample(
-            rpm = word(b, 0),
-            injection = word(b, 2),
-            corrections = intArrayOf(b[4].u(), b[5].u(), b[6].u(), b[7].u()),
-            stft = word(b, 8),
-            ltft = word(b, 10),
-            coolant = b[12].u(),
-            iat = b[13].u(),
-            maf = b[14].u(),
-            load = b[15].u(),
-            advance = b[16].u(),
-            throttle = b[18].u(),
-            oxygen = word(b, 20),
-            voltage = b[22].u(),
+            rpm = value(0x04),
+            injection = value(0x0D),
+            corrections = (pair(0x2B) + pair(0x2D)).map { it.u() }.toIntArray(),
+            stft = value(0x1B),
+            ltft = value(0x23),
+            coolant = pair(0x01)[0].u(),
+            iat = pair(0x01)[1].u(),
+            maf = mafWord and 0x03FF,
+            mafAdcWord = mafWord,
+            mafGramsPerSecond = MafCalibration.gramsPerSecond(mafWord),
+            mafCalibrationStatus = if (ecuProfile != null) "stock_curve_assumed"
+                else "stock_curve_assumed_unverified_software",
+            mafEcuRaw = pair(0x07)[0].u(),
+            load = pair(0x07)[1].u(),
+            advance = pair(0x0B)[0].u(),
+            throttle = pair(0x0A)[0].u(),
+            oxygen = value(0x1F),
+            diagnosticIds = ids.toList(),
             pairs = b.hex(),
+            at = at,
         )
     }
-
-    fun grouped(reply: String) = pairs(positive(reply, 0x2A, "6A01", 26).copyOfRange(2, 26))
 
     fun trim(raw: Int) = ((16384.0 + (raw shr 1)) / 32768 - 1) * 100
 
     fun oxygen(raw: Int) = ((raw - 3512).coerceIn(0, 0x3FBE) shr 6) / 200.0
 
     fun advance(raw: Int) = raw * .75 - 66
+
+    // F74C = min(255, floor(processed flow / 40)); one flow unit is 0.02777 g/s.
+    // This quantized diagnostic value follows ECU load selection/filtering.
+    fun ecuMaf(raw: Int?): Double? = raw?.let { it * 11108 / 10000.0 }
 
     fun definition(slot: Int, id: Int): String {
         require(slot in 1..12 && id in 1..255)
@@ -88,16 +105,21 @@ data class Sample(
     val coolant: Int = 130,
     val iat: Int = 78,
     val maf: Int = 0,
+    val mafAdcWord: Int? = null,
+    val mafGramsPerSecond: Double? = null,
+    val mafCalibrationStatus: String = "unverified_software",
+    val mafEcuRaw: Int? = null,
     val advance: Int = 60,
     val throttle: Int = 0,
     val oxygen: Int = 0,
-    val voltage: Int = 149,
+    val diagnosticIds: List<Int> = emptyList(),
     val pairs: String = "",
     val at: Long = monoMs(),
     val acquisitionMs: Double = 0.0,
     val cycleMs: Long? = null,
 ) {
-    val injectionMetrics = Injection.metrics(injection, rpm, voltage)
+    // Voltage is no longer sampled, so only total injection and duty are available.
+    val injectionMetrics = Injection.metrics(injection, rpm, null)
 
     val injectionMs
         get() = injectionMetrics.totalMs
@@ -341,19 +363,24 @@ class Elm(
         }
     }
 
+    private fun decodePairs(bytes: ByteArray): Sample = Decoder.pairs(bytes, now(), ecuProfile)
+
+    private fun decodeGroup(reply: String): Sample =
+        decodePairs(Decoder.positive(reply, 0x2A, "6A01", 26).copyOfRange(2, 26))
+
     fun defineGroup(): Sample {
         Decoder.ids.forEachIndexed { i, id ->
             // Send each definition explicitly; only read services may retry NO DATA.
             Decoder.positive(query(Decoder.definition(i + 1, id)), 0x2C, "6C01D2", 3)
         }
         // One frame contains this group's twelve pairs; validate its full length.
-        return readSingleFrame("2A0101", Decoder::grouped)
+        return readSingleFrame("2A0101") { decodeGroup(it) }
     }
 
     fun acquire(group: Boolean): Sample {
         val start = now()
         val sample =
-            if (group) Decoder.grouped(query("2A0101"))
+            if (group) decodeGroup(query("2A0101"))
             else {
                 val pairs =
                     Decoder.ids
@@ -368,7 +395,7 @@ class Elm(
                                 .toList()
                         }
                         .toByteArray()
-                Decoder.pairs(pairs)
+                decodePairs(pairs)
             }
         val end = now()
         return sample.copy(at = end, acquisitionMs = (end - start).toDouble())
@@ -424,6 +451,9 @@ class Elm(
                     "ltft_low_address" to addressHex(selected.ltftLowAddress),
                     "ltft_high_address" to addressHex(selected.ltftHighAddress),
                     "stored_corrections_available" to true,
+                    "maf_conversion_available" to true,
+                    "maf_calibration_source" to MafCalibration.SOURCE,
+                    "maf_curve_sha256" to MafCalibration.SHA256,
                     "additive_address" to addressHex(selected.additiveAddress),
                     "corrections_read_policy" to "on_demand",
                 )
@@ -450,6 +480,10 @@ class Elm(
             "reason" to reason,
             "method" to "ROM",
             "stored_corrections_available" to false,
+            "maf_conversion_available" to true,
+            "maf_calibration_status" to "stock_curve_assumed_unverified_software",
+            "maf_calibration_source" to MafCalibration.SOURCE,
+            "maf_curve_sha256" to MafCalibration.SHA256,
         )
         notice(tr("ECU sin perfil verificado · lectura de correcciones no disponible", "ECU profile unverified · correction readings unavailable"))
         return null

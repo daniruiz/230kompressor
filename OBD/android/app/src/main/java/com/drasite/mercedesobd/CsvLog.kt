@@ -10,12 +10,12 @@ internal object CsvLog {
     // Engine plots only; Journal keeps the full sample and diagnostics in JSONL.
     // Load stays in ECU units because its physical scale is not verified.
     val fields = listOf(
-        "Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s_est",
+        "Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s_est", "maf_ecu_g_s_est",
         "injection_ms_est", "injector_duty_est_pct", "advance_deg",
     ) + (1..4).map { "knock_channel_${it}_deg_est" } +
         listOf(
             "stft_a_pct", "ltft_a_pct",
-            "coolant_C", "iat_C", "oxygen_voltage_V", "ecu_voltage_V_est",
+            "coolant_C", "iat_C", "oxygen_voltage_V",
         )
 
     private val utcSeconds = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss", Locale.ROOT)
