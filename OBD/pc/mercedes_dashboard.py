@@ -1047,14 +1047,19 @@ class ELM:
         return okay
 
     def enable_adapter_voltage_polling(self):
-        # Start only after ECU setup and transport benchmarks have completed.
-        self.adapter_voltage_polling = True
-        self.next_adapter_voltage_at = time.monotonic()
+        # Resume after timing optimisation without repeating an unsupported
+        # command or discarding the schedule set by the startup reading.
+        self.adapter_voltage_polling = self.adapter_voltage_status != 'unsupported'
 
     def _poll_adapter_voltage(self):
-        started = time.monotonic()
-        if not self.adapter_voltage_polling or started < self.next_adapter_voltage_at:
+        if not self.adapter_voltage_polling:
             return
+        if self.next_adapter_voltage_at is not None and time.monotonic() < self.next_adapter_voltage_at:
+            return
+        self._read_adapter_voltage()
+
+    def _read_adapter_voltage(self):
+        started = time.monotonic()
         # Schedule from this attempt, never catch up with a burst of requests.
         self.next_adapter_voltage_at = started + ADAPTER_VOLTAGE_INTERVAL_S
         try:
@@ -1141,14 +1146,24 @@ class ELM:
                            group_ids=[f'11{x:02X}' for x in IDS],
                            decoder_revision='12_ids_sensor_maf_1143_ecu_maf_load_1107_fixed_ltft_v6')
         self.at('ATPC')
+        # Let a previous ECU session expire before starting another slow init.
+        # ATRV is local to the adapter: use the last second of this idle window
+        # for the first voltage reading without extending the six-second wait.
+        idle_deadline = time.monotonic() + 6
+        notice(tr('Cerrando sesión anterior · 6 s', 'Closing previous session · 6 s'))
+        if self.stop.wait(5):
+            raise InterruptedError
+        self._read_adapter_voltage()
+        idle_remaining = idle_deadline - time.monotonic()
+        if idle_remaining > 0 and self.stop.wait(idle_remaining):
+            raise InterruptedError
         for cmd in ('ATD', 'ATE0', 'ATL0', 'ATS0', 'ATH0', 'ATM0', 'ATSP4',
                     'ATIIA01', 'ATSH8101F1', 'ATKW0', 'ATSW00',
                     'ATAT'+self.adaptive, 'ATST'+self.response_timeout):
             self.at(cmd)
         # Group packets exceed the 7-byte limit of some ELM implementations.
         self.at('ATAL', optional=True)
-        # A fresh ECU may accept slow init immediately. Only let an old session
-        # expire if the first init/read fails with the adapter prompt intact.
+        # Keep one more idle retry for init/read failures with the prompt intact.
         for attempt in range(2):
             if attempt:
                 self.at('ATPC')
@@ -1176,7 +1191,7 @@ class ELM:
                 self.journal.write('connection_retry', reason=str(exc), wait_ms=6000)
             else:
                 self.journal.write('ecu_link_verified', keywords=kw, attempts=attempt+1,
-                                   startup_wait_ms=attempt*6000)
+                                   startup_wait_ms=(attempt+1)*6000)
                 notice(tr('Sesión lista · palabras clave ', 'Session ready · keywords ') + kw)
                 return
 

@@ -227,13 +227,18 @@ class Elm(
     }
 
     fun enableAdapterVoltagePolling() {
-        adapterVoltagePolling = true
-        nextAdapterVoltageAt = now()
+        // Resume after timing optimisation without repeating an unsupported
+        // command or discarding the schedule set by the startup reading.
+        adapterVoltagePolling = adapterVoltageStatus != "unsupported"
     }
 
     private fun pollAdapterVoltage() {
+        if (!adapterVoltagePolling || now() < nextAdapterVoltageAt) return
+        readAdapterVoltage()
+    }
+
+    private fun readAdapterVoltage() {
         val start = now()
-        if (!adapterVoltagePolling || start < nextAdapterVoltageAt) return
         nextAdapterVoltageAt = start + 5000
         // A local AT command does not reset lastBus. The next ECU request waits
         // only for any bus gap left after ATRV, on this same acquisition thread.
@@ -315,6 +320,15 @@ class Elm(
             "hardware" to hardware,
         )
         at("ATPC")
+        // Let a previous ECU session expire before starting another slow init.
+        // ATRV is local to the adapter: use the last second of this idle window
+        // for the first voltage reading without extending the six-second wait.
+        val idleDeadline = now() + 6000
+        notice(tr("Cerrando sesión anterior · 6 s", "Closing previous session · 6 s"))
+        pause(5000)
+        readAdapterVoltage()
+        val idleRemaining = idleDeadline - now()
+        if (idleRemaining > 0) pause(idleRemaining)
         for (cmd in
             listOf(
                 "ATD",
@@ -337,8 +351,7 @@ class Elm(
         }
         log.event("keyword_check", "disabled_acknowledged" to kwDisabled)
         at("ATAL", true)
-        // Try a fresh session immediately; reserve the idle period for one
-        // retry after an init/read failure with the adapter prompt intact.
+        // Keep one more idle retry for init/read failures with the prompt intact.
         for (attempt in 0..1) {
             if (attempt > 0) {
                 at("ATPC")
@@ -359,7 +372,7 @@ class Elm(
                     "keywords" to keywords,
                     "keyword_disable_acknowledged" to kwDisabled,
                     "attempts" to attempt + 1,
-                    "startup_wait_ms" to attempt * 6000,
+                    "startup_wait_ms" to (attempt + 1) * 6000,
                 )
                 return
             } catch (e: LinkTimeout) {
@@ -422,13 +435,19 @@ class Elm(
     private fun decodeGroup(reply: String): Sample =
         decodePairs(Decoder.positive(reply, 0x2A, "6A01", 26).copyOfRange(2, 26))
 
+    private fun withAdapterVoltage(sample: Sample): Sample = sample.copy(
+        adapterVoltage = adapterVoltage,
+        adapterVoltageAgeMs = adapterVoltageAt?.let { (sample.at - it).coerceAtLeast(0) },
+        adapterVoltageStatus = adapterVoltageStatus,
+    )
+
     fun defineGroup(): Sample {
         Decoder.ids.forEachIndexed { i, id ->
             // Send each definition explicitly; only read services may retry NO DATA.
             Decoder.positive(query(Decoder.definition(i + 1, id)), 0x2C, "6C01D2", 3)
         }
         // One frame contains this group's twelve pairs; validate its full length.
-        return readSingleFrame("2A0101") { decodeGroup(it) }
+        return withAdapterVoltage(readSingleFrame("2A0101") { decodeGroup(it) })
     }
 
     fun acquire(group: Boolean): Sample {
@@ -453,13 +472,10 @@ class Elm(
                 decodePairs(pairs)
             }
         val end = now()
-        return sample.copy(
+        return withAdapterVoltage(sample.copy(
             at = end,
             acquisitionMs = (end - start).toDouble(),
-            adapterVoltage = adapterVoltage,
-            adapterVoltageAgeMs = adapterVoltageAt?.let { (end - it).coerceAtLeast(0) },
-            adapterVoltageStatus = adapterVoltageStatus,
-        )
+        ))
     }
 
     private fun readMemoryWord(address: Int): Int {
