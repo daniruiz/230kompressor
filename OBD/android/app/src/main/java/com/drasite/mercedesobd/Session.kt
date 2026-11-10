@@ -249,6 +249,7 @@ class Session(
                 group = false
             }
             if (adapterTuning) elm.optimize(group, ::publish, model::notice)
+            elm.enableAdapterVoltagePolling()
             diagnosticsReady = true
             var consecutive = 0
             while (!stopped) {

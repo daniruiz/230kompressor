@@ -6,8 +6,9 @@ Car:  python3 mercedes_dashboard.py /dev/ttyUSB0
 The alert counter tracks observed rises in candidate knock corrections, NOT a
 validated ECU knock counter. F746 is the common requested injection duration,
 not a measured electrical pulse. Milliseconds use a provisional timer scale.
-Supply voltage is not polled. Voltage-dependent injection breakdown fields
-remain unavailable; total injection duration and duty use F746 and RPM.
+ECU supply voltage is not polled. The adapter's ATRV voltage is logged every
+five seconds, independently of the fixed ECU group. Voltage-dependent injection
+breakdown fields remain unavailable; total injection and duty use F746 and RPM.
 The ECU knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, STFT, temperatures, RPM, injection,
 load, raw sensor MAF, ignition advance, throttle and narrowband oxygen.
@@ -87,6 +88,8 @@ MIN_HEIGHT = 29
 # 1143 -> raw MAF ADC word; low ten bits feed the stock sensor curve.
 IDS = (0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x43, 0x0B, 0x0A, 0x1F, 0x07)
 # The fixed layout is configured once, before the first grouped read.
+ADAPTER_VOLTAGE_INTERVAL_S = 5.0
+ADAPTER_VOLTAGE_TIMEOUT_S = 1.0
 # Provisional physical scale, NOT established by the disassembly.
 # F734 is an ADC-derived byte; ROM 42A2 substitutes 149 below threshold 47.
 # 149 * 3/32 = 13.97 V is plausible, but is not proof of the divider ratio.
@@ -661,6 +664,9 @@ class Sample:
     voltage_raw: int | None = None
     diagnostic_ids: tuple[int, ...] = ()
     maf_ecu_raw: int | None = None
+    adapter_voltage_v: float | None = None
+    adapter_voltage_age_ms: float | None = None
+    adapter_voltage_status: str = 'pending'
 
     @property
     def high_retard(self):
@@ -695,6 +701,21 @@ def ecu_maf_g_s(raw: int | None) -> float | None:
 def ecu_voltage_est(raw: int | None, scale: float = VOLTAGE_V_PER_RAW_EST) -> float | None:
     """Processed ECU supply estimate, possibly substituted; not adapter ATRV."""
     return None if raw is None else raw * scale
+
+
+def adapter_voltage_reading(reply: str) -> tuple[float | None, str]:
+    """Parse ATRV independently of the ECU's F734 voltage byte."""
+    lines = [line.strip() for line in reply.replace('>', '').splitlines() if line.strip()]
+    lines = [line for line in lines if re.sub(r'\s+', '', line).upper() != 'ATRV']
+    if lines == ['?']:
+        return None, 'unsupported'
+    if len(lines) == 1:
+        match = re.fullmatch(r'([0-9]+(?:\.[0-9]+)?)\s*V', lines[0], re.IGNORECASE)
+        if match:
+            value = float(match[1])
+            if math.isfinite(value) and 0 <= value <= 30:
+                return value, 'ok'
+    return None, 'invalid_response'
 
 
 
@@ -834,7 +855,7 @@ class Journal:
                 'injection_ms_est','injector_duty_est_pct','advance_deg']
             self.csv_fields += [f'knock_channel_{i}_deg_est' for i in range(1,5)]
             self.csv_fields += ['stft_a_pct','ltft_a_pct',
-                                'coolant_C','iat_C','oxygen_voltage_V']
+                                'coolant_C','iat_C','oxygen_voltage_V','adapter_voltage_V']
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
@@ -856,6 +877,10 @@ class Journal:
         values.update(ecu_voltage_raw=sample.voltage_raw,
                       ecu_voltage_V_est=ecu_voltage_est(sample.voltage_raw, args.voltage_scale),
                       ecu_voltage_scale_V_per_raw=args.voltage_scale if sample.voltage_raw is not None else None,
+                      adapter_voltage_V=sample.adapter_voltage_v,
+                      adapter_voltage_age_ms=sample.adapter_voltage_age_ms,
+                      adapter_voltage_status=sample.adapter_voltage_status,
+                      adapter_voltage_source='ATRV',
                       throttle_raw=sample.throttle_raw,
                       throttle_pct=sample.throttle_raw*100/255 if sample.throttle_raw is not None else None,
                       oxygen_raw=sample.oxygen_raw,
@@ -937,6 +962,11 @@ class ELM:
         self.ecu_profile = None
         self.ecu_software = None
         self.ecu_identification_status = 'pending'
+        self.adapter_voltage_polling = False
+        self.next_adapter_voltage_at = None
+        self.adapter_voltage_v = None
+        self.adapter_voltage_at = None
+        self.adapter_voltage_status = 'pending'
         self.serial.reset_input_buffer()
 
     def command(self, command: str, timeout=6, allow_repeat=False):
@@ -1015,6 +1045,37 @@ class ELM:
         if not okay and not optional:
             raise DiagnosticError(command + tr(' rechazado: ', ' rejected: ') + repr(reply))
         return okay
+
+    def enable_adapter_voltage_polling(self):
+        # Start only after ECU setup and transport benchmarks have completed.
+        self.adapter_voltage_polling = True
+        self.next_adapter_voltage_at = time.monotonic()
+
+    def _poll_adapter_voltage(self):
+        started = time.monotonic()
+        if not self.adapter_voltage_polling or started < self.next_adapter_voltage_at:
+            return
+        # Schedule from this attempt, never catch up with a burst of requests.
+        self.next_adapter_voltage_at = started + ADAPTER_VOLTAGE_INTERVAL_S
+        try:
+            reply = self.command('ATRV', timeout=ADAPTER_VOLTAGE_TIMEOUT_S, allow_repeat=False)
+        except LinkTimeout:
+            self.adapter_voltage_status = 'timeout'
+            self.journal.write('adapter_voltage', adapter_voltage_V=None, status='timeout',
+                               elapsed_ms=(time.monotonic()-started)*1000)
+            # Without a prompt the stream is unsynchronised; do not send a group.
+            raise
+        ended = time.monotonic()
+        value, status = adapter_voltage_reading(reply)
+        self.adapter_voltage_status = status
+        if status == 'ok':
+            self.adapter_voltage_v = value
+            self.adapter_voltage_at = ended
+        elif status == 'unsupported':
+            self.adapter_voltage_polling = False
+        # A complete but invalid reply preserves the last valid reading and its age.
+        self.journal.write('adapter_voltage', adapter_voltage_V=value, status=status,
+                           elapsed_ms=(ended-started)*1000)
 
     def query(self, payload, optimized=True, allow_repeat=True):
         command = payload + ' 1' if self.fast and optimized else payload
@@ -1332,10 +1393,17 @@ class ELM:
             sample.maf_calibration_status = 'missing_adc_sample'
         sample.at = ended
         sample.duration_ms = (ended-start)*1000
+        sample.adapter_voltage_v = self.adapter_voltage_v
+        sample.adapter_voltage_age_ms = (max(0.0, (ended-self.adapter_voltage_at)*1000)
+                                        if self.adapter_voltage_at is not None else None)
+        sample.adapter_voltage_status = self.adapter_voltage_status
         return sample
 
     def acquire(self, mode):
         start = time.monotonic()
+        # ATRV is local: run it before the next ECU request so its duration can
+        # consume the remaining bus gap. command() waits only for the remainder.
+        self._poll_adapter_voltage()
         if mode == 'grouped':
             sample = grouped(self.query('2A0101'))
         else:
@@ -1682,6 +1750,7 @@ def worker(args, model, stop, journal, faults=None, corrections=None):
                 elm.optimize_elm_transport(mode, model.notice, publish_probe)
         model.mode = mode
         model.adapter_profile = elm.adapter_profile
+        elm.enable_adapter_voltage_polling()
         consecutive = 0
         if faults:
             faults.ready = True
@@ -2019,6 +2088,8 @@ def main(argv=None):
                   decoder_revision='12_ids_sensor_maf_1143_ecu_maf_load_1107_fixed_ltft_v6',
                   group_read_policy='fixed 12 identifiers; one grouped request per acquisition',
                   ecu_voltage_acquired=False,
+                  adapter_voltage_source='ATRV',
+                  adapter_voltage_interval_ms=int(ADAPTER_VOLTAGE_INTERVAL_S*1000),
                   maf_source='grouped_1143_adc', maf_calibration_source=MAF_CALIBRATION_SOURCE,
                   maf_curve_sha256=MAF_CURVE_SHA256,
                   maf_conversion_basis='instantaneous stock curve; excludes ECU averaging and conditional correction',

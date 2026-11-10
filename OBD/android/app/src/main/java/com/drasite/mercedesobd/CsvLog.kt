@@ -15,7 +15,7 @@ internal object CsvLog {
     ) + (1..4).map { "knock_channel_${it}_deg_est" } +
         listOf(
             "stft_a_pct", "ltft_a_pct",
-            "coolant_C", "iat_C", "oxygen_voltage_V",
+            "coolant_C", "iat_C", "oxygen_voltage_V", "adapter_voltage_V",
         )
 
     private val utcSeconds = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss", Locale.ROOT)

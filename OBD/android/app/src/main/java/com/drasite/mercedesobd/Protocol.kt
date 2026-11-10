@@ -89,6 +89,20 @@ object Decoder {
     // This quantized diagnostic value follows ECU load selection/filtering.
     fun ecuMaf(raw: Int?): Double? = raw?.let { it * 11108 / 10000.0 }
 
+    fun adapterVoltage(reply: String): Pair<Double?, String> {
+        val lines = reply.replace('>', ' ').replace('\r', '\n').lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.replace(Regex("\\s+"), "").equals("ATRV", true) }
+            .toList()
+        if (lines == listOf("?")) return null to "unsupported"
+        if (lines.size != 1) return null to "invalid_response"
+        val match = Regex("([0-9]+(?:\\.[0-9]+)?)\\s*V", RegexOption.IGNORE_CASE)
+            .matchEntire(lines.single())
+        val value = match?.groupValues?.get(1)?.toDoubleOrNull()
+            ?.takeIf { it.isFinite() && it in 0.0..30.0 }
+        return value to if (value == null) "invalid_response" else "ok"
+    }
+
     fun definition(slot: Int, id: Int): String {
         require(slot in 1..12 && id in 1..255)
         return "2C01D2%02X11%02X".format(slot, id)
@@ -117,8 +131,11 @@ data class Sample(
     val at: Long = monoMs(),
     val acquisitionMs: Double = 0.0,
     val cycleMs: Long? = null,
+    val adapterVoltage: Double? = null,
+    val adapterVoltageAgeMs: Long? = null,
+    val adapterVoltageStatus: String = "pending",
 ) {
-    // Voltage is no longer sampled, so only total injection and duty are available.
+    // ATRV measures the adapter supply, not the ECU's F734 byte for dead time.
     val injectionMetrics = Injection.metrics(injection, rpm, null)
 
     val injectionMs
@@ -177,6 +194,11 @@ class Elm(
     private var elmTimingProbeDisabled = false
     private var elmTimingProbeCompleted = false
     private var fallbacks = 0
+    private var adapterVoltagePolling = false
+    private var nextAdapterVoltageAt = 0L
+    private var adapterVoltage: Double? = null
+    private var adapterVoltageAt: Long? = null
+    private var adapterVoltageStatus = "pending"
 
     fun command(cmd: String, timeout: Long = 6000): String {
         if (Thread.currentThread().isInterrupted) throw InterruptedException()
@@ -202,6 +224,38 @@ class Elm(
         val ok = reply.uppercase(Locale.ROOT).split(Regex("\\s+")).contains("OK")
         if (!ok && !optional) throw DiagnosticException(tr("$cmd rechazado: ${reply.take(120)}", "$cmd rejected: ${reply.take(120)}"))
         return ok
+    }
+
+    fun enableAdapterVoltagePolling() {
+        adapterVoltagePolling = true
+        nextAdapterVoltageAt = now()
+    }
+
+    private fun pollAdapterVoltage() {
+        val start = now()
+        if (!adapterVoltagePolling || start < nextAdapterVoltageAt) return
+        nextAdapterVoltageAt = start + 5000
+        // A local AT command does not reset lastBus. The next ECU request waits
+        // only for any bus gap left after ATRV, on this same acquisition thread.
+        val reply = try {
+            command("ATRV", 1000)
+        } catch (e: LinkTimeout) {
+            adapterVoltageStatus = "timeout"
+            log.event("adapter_voltage", "adapter_voltage_V" to null,
+                "status" to adapterVoltageStatus, "elapsed_ms" to now() - start)
+            // Without a prompt the stream is unsynchronized; do not send a group.
+            throw e
+        }
+        val end = now()
+        val (value, status) = Decoder.adapterVoltage(reply)
+        adapterVoltageStatus = status
+        if (value != null) {
+            adapterVoltage = value
+            adapterVoltageAt = end
+        }
+        if (status == "unsupported") adapterVoltagePolling = false
+        log.event("adapter_voltage", "adapter_voltage_V" to value,
+            "status" to status, "elapsed_ms" to end - start)
     }
 
     fun rollback(reason: String): Boolean {
@@ -379,6 +433,7 @@ class Elm(
 
     fun acquire(group: Boolean): Sample {
         val start = now()
+        pollAdapterVoltage()
         val sample =
             if (group) decodeGroup(query("2A0101"))
             else {
@@ -398,7 +453,13 @@ class Elm(
                 decodePairs(pairs)
             }
         val end = now()
-        return sample.copy(at = end, acquisitionMs = (end - start).toDouble())
+        return sample.copy(
+            at = end,
+            acquisitionMs = (end - start).toDouble(),
+            adapterVoltage = adapterVoltage,
+            adapterVoltageAgeMs = adapterVoltageAt?.let { (end - it).coerceAtLeast(0) },
+            adapterVoltageStatus = adapterVoltageStatus,
+        )
     }
 
     private fun readMemoryWord(address: Int): Int {
