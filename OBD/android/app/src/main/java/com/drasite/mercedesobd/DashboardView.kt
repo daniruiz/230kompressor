@@ -781,10 +781,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             val text = TextUtils.ellipsize(value, footerPaint, footerWidth, TextUtils.TruncateAt.END)
             canvas.drawText(text.toString(), margin, baseline, footerPaint)
         }
+        val voltage = sample?.takeIf { valid && it.adapterVoltageStatus == "ok" }?.adapterVoltage
+        val volts = voltage?.let { formatValue("%.1f V", it) } ?: "— V"
         val software = if (display.ecuIdentificationStatus == "demo") "" else
             tr(" · SW ${display.ecuSoftware ?: "no identificada"}", " · SW ${display.ecuSoftware ?: "unidentified"}")
         val perf =
-            tr("${sample?.cycleMs?:"—"} ms/ciclo$software", "${sample?.cycleMs?:"—"} ms/cycle$software") +
+            tr("${sample?.cycleMs?:"—"} ms/ciclo · OBD $volts$software", "${sample?.cycleMs?:"—"} ms/cycle · OBD $volts$software") +
                 " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
         val status = display.status.replace('\r', ' ').replace('\n', ' ').take(180)
         drawLine(if (valid) "$perf · $status" else "$status · $perf", firstBaseline, if (valid) green else amber)

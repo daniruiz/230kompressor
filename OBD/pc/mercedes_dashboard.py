@@ -2018,6 +2018,9 @@ def render(model, args, width=110, height=44, now=None):
         footer.append(tr(' salir', ' exit'))
         mode_label = tr('DEMO · SIN COCHE', 'DEMO · NO CAR') if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
         footer.append('\n')
+        voltage = s.adapter_voltage_v if shown and s.adapter_voltage_status == 'ok' else None
+        voltage_text = f'{voltage:.1f} V' if voltage is not None else '— V'
+        footer.append('OBD '+voltage_text+' · ', style=f'bold {CYAN}')
         if not args.demo:
             software_label = model.ecu_software or tr('no identificada', 'unidentified')
             footer.append('SW '+software_label+' · ', style=f'bold {CYAN}')
