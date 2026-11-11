@@ -74,6 +74,7 @@ The map packs cover the following areas. Coverage and naming vary by software ve
 | **Fuel / injection** | Fuel correction tables for investigating mixture behavior across engine speed and load, including wide-open throttle (WOT). The table represents the percentage of fuel correction to the value calculated by the ECU based on the MAF sensor reading. |
 | **Injector factor** | Percentage multiplier in the injection calculation. |
 | **Spark advance** | Ignition calibration tables for partial throttle and wide-open throttle (WOT). |
+| **Camshaft adjustment** | Controls camshaft adjustment by RPM and throttle, with separate command bits for automatic/manual transmission and cold/warm operation. Values encode actuator commands rather than camshaft angles in degrees. |
 | **Supercharger bypass valve position** | Bypass valve calibration relevant to how much compressed air reaches the engine. |
 | **Knock retard — bypass command reduction** | Reduces the bypass command according to the mean knock retard across all four cylinders, allowing boost to be reduced. Values express a reduction in the full command range, not a percentage of boost pressure. |
 | **Supercharger clutch state** | RPM- and throttle-dependent clutch commands: disengaged, engaged, or hold the previous state. Defined where the software uses a clutch control table. |
