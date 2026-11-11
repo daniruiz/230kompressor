@@ -65,20 +65,24 @@ These are the versions currently represented in the `Original Binaries` director
 
 For the reading and flashing process, see the community [Bosch ME2.0 / ME2.1 read-and-flash guide](https://m111kompressor.drasite.com/flash-me21.html).
 
-## Fuel, ignition, load and limiter maps
+## Fuel, ignition, supercharger and limiter maps
 
 The map packs cover the following areas. Coverage and naming vary by software version, and some names describe an observed effect rather than a fully established function.
 
 | Map family | Relevance to calibration and diagnosis |
 | --- | --- |
 | **Fuel / injection** | Fuel correction tables for investigating mixture behavior across engine speed and load, including wide-open throttle (WOT). The table represents the percentage of fuel correction to the value calculated by the ECU based on the MAF sensor reading. |
-| **Spark advance** | Ignition calibration tables, including maps labeled for WOT. |
+| **Injector factor** | Percentage multiplier in the injection calculation. |
+| **Spark advance** | Ignition calibration tables for partial throttle and wide-open throttle (WOT). |
 | **Supercharger bypass valve position** | Bypass valve calibration relevant to how much compressed air reaches the engine. |
+| **Knock retard — bypass command reduction** | Reduces the bypass command according to the mean knock retard across all four cylinders, allowing boost to be reduced. Values express a reduction in the full command range, not a percentage of boost pressure. |
+| **Supercharger clutch state** | RPM- and throttle-dependent clutch commands: disengaged, engaged, or hold the previous state. Defined where the software uses a clutch control table. |
 | **Rev limiter** | Engine-speed limit settings. |
 | **Launch rev limiter** | Engine-speed limit when stationary. |
 | **Warm-up Bypass command minimum** | Minimum boost bypass valve position during warm-up. |
 | **Fallback RPM Limiter** | Tables associated in project testing with the approximate 5,700 rpm limit when the ABS signal is unavailable. |
 | **Temperature ignition correction** | Tables associated with coolant and intake air temperature (IAT), with load-dependent weighting. |
+| **MAF sensor linearization (shared)** | Converts the MAF sensor signal into airflow (kg/h), using a curve shared by both calibration banks. |
 | **MAF reading upper limit** | Airflow plausibility threshold indexed by RPM and throttle. A confirmed excess can trigger substitution of the measured airflow with the Engine Load Model. |
 | **Engine Load Model — supercharger OFF / ON** | Estimates load from RPM and throttle for MAF fallback and other control/diagnostic functions. Intake temperature and learned adaptation further correct the result. |
 | **Engine Load Model — ON coding variants** | Additional ON models selected by ECU configuration: coding **2**, coding **5**, or the **default** for other values. |
