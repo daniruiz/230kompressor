@@ -580,6 +580,49 @@
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
+  <XDFTABLE uniqueid="0x003D" flags="0x0">
+    <title>Camshaft adjustment</title>
+    <description>Packed command bits, not cam degrees. AT warm bits 0/1, AT cold 2/3, MT warm 4/5, MT cold 6/7. Prior OFF selects the lower bit, prior ON the upper. Pair 00=OFF, 10=hold, 11=ON, 01=toggles. No interpolation of states. Display uses RPM axis 0. Actual selector 0x8fd4.bits1:0 selects axes 0,1,2,3. RPM node addresses: 0x4ccb, 0x4cd7, 0x4ce3, 0x4cef. Hexadecimal display in CSV, XDF and KP: FF=255, CF=207, EF=239. For MT warm only, FF to CF requests OFF, FF to EF holds, preserving other bits. ON/OFF denotes software command, not measured cam angle. Enable and diagnostic conditions still apply.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4ccb" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM (axis 0) (rpm)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4d97" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle (normalized) (% FS)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x6a1e" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>bits</units>
+      <decimalpl>0</decimalpl>
+      <min>0</min>
+      <max>255</max>
+      <outputtype>3</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
   <XDFTABLE uniqueid="0x0007" flags="0x0">
     <title>Injection (Main)</title>
 
@@ -2156,6 +2199,49 @@
       <max>100.011</max>
       <outputtype>1</outputtype>
       <MATH equation="X*0.3922">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x004B" flags="0x0">
+    <title>Camshaft adjustment</title>
+    <description>Packed command bits, not cam degrees. AT warm bits 0/1, AT cold 2/3, MT warm 4/5, MT cold 6/7. Prior OFF selects the lower bit, prior ON the upper. Pair 00=OFF, 10=hold, 11=ON, 01=toggles. No interpolation of states. Display uses RPM axis 0. Actual selector 0x8fd4.bits1:0 selects axes 0,1,2,3. RPM node addresses: 0x30ccb, 0x30cd7, 0x30ce3, 0x30cef. Hexadecimal display in CSV, XDF and KP: FF=255, CF=207, EF=239. For MT warm only, FF to CF requests OFF, FF to EF holds, preserving other bits. ON/OFF denotes software command, not measured cam angle. Enable and diagnostic conditions still apply.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30ccb" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>RPM (axis 0) (rpm)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*25">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30d97" mmedelementsizebits="8" mmedcolcount="8" mmedmajorstridebits="8" mmedminorstridebits="0" />
+      <units>Throttle (normalized) (% FS)</units>
+      <indexcount>8</indexcount>
+      <decimalpl>2</decimalpl>
+      <outputtype>1</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <embedinfo type="1" />
+      <MATH equation="X*0.392156862745098">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x32a1e" mmedelementsizebits="8" mmedrowcount="8" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>bits</units>
+      <decimalpl>0</decimalpl>
+      <min>0</min>
+      <max>255</max>
+      <outputtype>3</outputtype>
+      <MATH equation="X">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
