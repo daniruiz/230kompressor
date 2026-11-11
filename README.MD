@@ -21,7 +21,7 @@ The project focuses on the Bosch ME2.1-equipped M111 Kompressor engines found in
 
 
 > [!IMPORTANT]
-> **Do not flash a different binary version on the ECU.**. It is possible to install a different binary version on your ECU, but the key can stop working for some versions.
+> **Do not flash a different binary version on the ECU.** You may lock the ECU and the engine won't crank
 
 > [!IMPORTANT]
 > The supplied tuned binary `230k_ME21.BIN` is a reference calibration, not a universal file to flash. Start with a backup of your own ECU and transfer relevant changes using definitions that match its software.
@@ -37,7 +37,6 @@ The project focuses on the Bosch ME2.1-equipped M111 Kompressor engines found in
 | [Text hex dump](230k_ME21.BIN.XXD) | A text representation of the tuned binary for reviewing changes. |
 | [Map comparison images](tables/) | Rendered calibration tables grouped for comparison between binaries. |
 | [Checksum tool](me21_checksum.py) | Verify and correct the two calibration checksums implemented by the script. |
-| [Table image exporter](ecu_tables.py) | Generate PNG map images from binary files and WinOLS CSV definitions. |
 
 ### ECU software versions and available definitions
 
@@ -64,7 +63,7 @@ These are the versions currently represented in the `Original Binaries` director
 4. Check table addresses, dimensions, axes and units before editing. Use the [comparison images](tables/) to explore differences between versions.
 5. Save changes to a separate file, verify the applicable checksums and keep a record of each calibration revision.
 
-For the reading and flashing process, see the community [Bosch ME2.0 / ME2.1 read-and-flash guide](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431).
+For the reading and flashing process, see the community [Bosch ME2.0 / ME2.1 read-and-flash guide](https://m111kompressor.drasite.com/flash-me21.html).
 
 ## Fuel, ignition, load and limiter maps
 
@@ -209,16 +208,9 @@ By installing the **CobraRTP FlashOnline board, you can add real-time tuning cap
 
 After modifications, the checksum should normally be corrected, but I just found out that the car doesn't care about it. If you tune your ECU live and forget to update the checksum, the next time you start the engine it will work anyway. So the checksum doesn't seem to be relevant for this ECU (it didn't even show a CEL code via OBD).
 
-## Further reading
-
-- [Bosch ME2.0 / ME2.1 boost-limiter discussion and ECU reading/flashing guide](https://www.benzworld.org/threads/kompressor-bosch-me2-0-me2-1-ecu-boost-limiter-and-how-to-remove-it-without-maf-clamp-including-read-and-flash-guide.3069431).
-- [Eaton M62 supercharger porting discussion](https://www.benzworld.org/threads/home-port-job-of-the-eaton-m62-s-c.1516156/).
-
 ## Python tools
 
 ### Verify and correct calibration checksums
-
-The [checksum script](me21_checksum.py) uses Python's standard library and expects a **256 KiB binary** with the checksum layout implemented in the script.
 
 Verify a file without modifying it:
 
@@ -231,15 +223,3 @@ Write a corrected copy:
 ```bash
 python3 me21_checksum.py your_modified.BIN -o your_corrected.BIN
 ```
-
-The tool handles the two calibration regions defined in its source; it is not a generic checker for every Bosch ECU. Its exit status describes whether the input checksums matched, so re-run verification on the corrected output when using it in automation.
-
-### Generate map comparison images
-
-The [image exporter](ecu_tables.py) requires Python, NumPy and Matplotlib. With those dependencies installed, run it from the repository root:
-
-```bash
-python3 ecu_tables.py "Original Binaries" "Map Definitions" -o tables
-```
-
-The script matches binaries and CSV files using software identifiers in their filenames. It exports converted table values as PNG images and leaves the binaries unchanged. Output folders use each table's position in memory-address order and its name. Unmatched versions are reported; use `--assign BINARY=CSV` only after establishing that the selected definitions match the binary.
