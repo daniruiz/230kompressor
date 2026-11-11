@@ -50,7 +50,7 @@ class Journal(
             "adapter_voltage_interval_ms" to 5000,
             "correction_deg_per_raw_nominal" to 0.75,
             "detector" to "observed_correction_increase_NOT_ECU_knock_counter",
-            "transport_revision" to "native_spp_elm_auto_host_gap_and_chunk_timestamps_v2",
+            "transport_revision" to "native_spp_stn_p3_and_elm_host_gap_v3",
             "adapter_tuning" to (adapterTuning && !demo),
             "elm_timing_probe" to (adapterTuning && !demo),
             "adaptive" to "0",

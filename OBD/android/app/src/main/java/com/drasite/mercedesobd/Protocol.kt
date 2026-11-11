@@ -188,6 +188,7 @@ class Elm(
     private var gap = 60L
     private var lastBus: Long? = null
     private var p3 = false
+    private var p3Ms: Long? = null
     private var p4 = false
     private var hostGapTuned = false
     private var hostGapProbing = false
@@ -266,6 +267,11 @@ class Elm(
     fun rollback(reason: String): Boolean {
         val elmGapActive = hostGapTuned || hostGapProbing
         if (!p3 && !p4 && !elmGapActive) return false
+        // Volatile adapter settings only; no ECU calibration or timing writes.
+        if (p3 && (p3Ms ?: 60L) < 60L) {
+            at("STPTRQ 60")
+            p3Ms = 60
+        }
         if (p4) {
             at("STIP4 5")
             p4 = false
@@ -282,17 +288,22 @@ class Elm(
             "reason" to reason,
             "host_gap_ms" to 60,
             "p4_ms" to if (stn) 5 else null,
+            "p3_ms" to p3Ms,
             "elm_timing_probe_disabled" to elmTimingProbeDisabled,
         )
         return true
     }
 
     fun query(payload: String, optimized: Boolean = true): String {
+        // The shorter STN gap is validated only for the fixed polling group.
+        if (p3 && (p3Ms ?: 60L) < 60L && payload != "2A0101")
+            rollback(tr("Consulta fuera del grupo", "Request outside the group"))
         fun request() = payload + if (fast && optimized) " 1" else ""
         var reply = command(request())
         if (reply.trim() == "?" && fast && optimized) {
             fast = false
-            if (hostGapTuned || hostGapProbing) rollback(tr("Sufijo de una respuesta rechazado", "Single-response suffix rejected"))
+            if (p3 || p4 || hostGapTuned || hostGapProbing)
+                rollback(tr("Sufijo de una respuesta rechazado", "Single-response suffix rejected"))
             reply = command(payload)
         }
         if (
@@ -583,12 +594,21 @@ class Elm(
             optimizeElm(group, publish, notice)
             return
         }
+        if (fallbacks > 0) return
         profile = "STN compatible"
         if (at("STPTRQ 60", true)) {
             p3 = true
+            p3Ms = 60
             gap = 0
             profile = "STN P3 adaptador"
         }
+        log.event(
+            "transport_profile",
+            "profile" to profile,
+            "host_gap_ms" to gap,
+            "p3_ms" to p3Ms,
+            "response_timeout_hex" to "80",
+        )
         if (!group) return
         notice(tr("OBDLink · midiendo tiempos", "OBDLink · measuring timings"))
         try {
@@ -600,35 +620,128 @@ class Elm(
                 base.add(s.acquisitionMs)
                 if (fallbacks > 0 || !fast) return
             }
-            if (!at("STIP4 0", true)) return
-            p4 = true
-            repeat(6) {
-                val s = acquire(true)
-                publish(s)
-                trial.add(s.acquisitionMs)
-                if (fallbacks > 0 || !fast) {
-                    rollback(tr("Atajo rechazado", "Shortcut rejected"))
-                    return
+            if (at("STIP4 0", true)) {
+                p4 = true
+                repeat(6) {
+                    val s = acquire(true)
+                    publish(s)
+                    trial.add(s.acquisitionMs)
+                    if (fallbacks > 0 || !fast) {
+                        rollback(tr("Atajo rechazado", "Shortcut rejected"))
+                        return
+                    }
                 }
+                val b = median(base.drop(1))
+                val t = median(trial.drop(1))
+                val accept = t < b * .97
+                if (accept) profile = "STN rápido P4=0"
+                else {
+                    at("STIP4 5")
+                    p4 = false
+                }
+                log.event(
+                    "transport_benchmark",
+                    "baseline_ms" to base,
+                    "trial_ms" to trial,
+                    "baseline_median_ms" to b,
+                    "trial_median_ms" to t,
+                    "p4_zero_accepted" to accept,
+                    "profile" to profile,
+                )
             }
-            val b = median(base.drop(1))
-            val t = median(trial.drop(1))
-            val accept = t < b * .97
-            if (accept) profile = "STN rápido P4=0"
-            else {
-                at("STIP4 5")
-                p4 = false
-            }
-            log.event(
-                "transport_benchmark",
-                "baseline_ms" to base,
-                "trial_ms" to trial,
-                "p4_zero_accepted" to accept,
-            )
+            optimizeStnRequestGap(group, publish)
         } catch (e: LinkTimeout) {
+            // No prompt: never send recovery commands into an unsynchronised stream.
             throw e
         } catch (e: DiagnosticException) {
             rollback(e.message ?: tr("Error prueba", "Trial error"))
+            log.event("transport_benchmark_error", "error" to e.toString())
+        }
+        notice(I18n.profile(profile) + tr(" · lectura preparada", " · ready to read"))
+    }
+
+    /** Match Python's STN trial: P3=25 must beat both 60 ms controls by >=3% and >=8 ms.
+     * STPTRQ measures from the actual ECU response; hold P4 fixed throughout.
+     * SW404 03B714/000CA8 reports P3min=0x2C*0.5=22 ms in its timing limits.
+     * Thus 25 ms is a trial candidate, not a guarantee for every ECU.
+     * Never change ECU timing parameters or retry a failed profile.
+     * Reference: https://www.obdlink.com/frpm (STPTRQ and STIP4).
+     */
+    private fun optimizeStnRequestGap(group: Boolean, publish: (Sample) -> Unit) {
+        if (!p3 || !fast || !group || fallbacks > 0) return
+        val baseline = ArrayList<Double>()
+        val trial = ArrayList<Double>()
+        val control = ArrayList<Double>()
+        val fallbackCount = fallbacks
+        val outcome = linkedMapOf<String, Any?>(
+            "accepted" to false,
+            "failed" to false,
+            "reason" to null,
+        )
+
+        fun collect(count: Int, values: MutableList<Double>) {
+            repeat(count + 1) { index ->
+                val sample = acquire(true)
+                publish(sample)
+                if (fallbacks != fallbackCount || !fast)
+                    throw DiagnosticException(tr("Prueba cancelada tras recuperar la comunicación", "Trial cancelled after recovering communication"))
+                if (!sample.acquisitionMs.isFinite() || sample.acquisitionMs <= 0)
+                    throw DiagnosticException(tr("Duración de adquisición inválida durante la prueba", "Invalid acquisition duration during trial"))
+                // Exclude the first request after each local adapter command.
+                if (index > 0) values.add(sample.acquisitionMs)
+            }
+        }
+
+        try {
+            collect(3, baseline)
+            if (!at("STPTRQ 25", true)) {
+                outcome["reason"] = "STPTRQ 25 unsupported"
+                return
+            }
+            p3Ms = 25
+            collect(6, trial)
+            at("STPTRQ 60")
+            p3Ms = 60
+            collect(3, control)
+            val base = median(baseline)
+            val last = median(control)
+            val candidate = median(trial)
+            val reference = minOf(base, last)
+            val accept = reference - candidate >= 8.0 && candidate <= reference * .97
+            if (accept) {
+                at("STPTRQ 25")
+                p3Ms = 25
+                profile = "STN P3=25 ms" + if (p4) " · P4=0" else ""
+            }
+            outcome.putAll(mapOf(
+                "accepted" to accept,
+                "baseline_median_ms" to base,
+                "control_median_ms" to last,
+                "trial_median_ms" to candidate,
+                "gain_ms" to reference - candidate,
+                "gain_pct" to (reference - candidate) / reference * 100,
+            ))
+        } catch (e: InterruptedException) {
+            outcome["failed"] = true
+            outcome["reason"] = tr("Prueba interrumpida por el usuario", "Trial interrupted by user")
+            throw e
+        } catch (e: DiagnosticException) {
+            // The caller restores timings only while the prompt is intact.
+            outcome["failed"] = true
+            outcome["reason"] = e.message
+            throw e
+        } finally {
+            log.event(
+                "stn_p3_benchmark",
+                "baseline_ms" to baseline,
+                "trial_ms" to trial,
+                "control_ms" to control,
+                *outcome.toList().toTypedArray(),
+                "selected_p3_ms" to p3Ms,
+                "p4_ms" to if (p4) 0 else 5,
+                "profile" to profile,
+                "timing_basis" to "host_acquisition_not_kline",
+            )
         }
     }
 

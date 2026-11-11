@@ -13,7 +13,7 @@ The ECU knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, STFT, temperatures, RPM, injection,
 load, raw sensor MAF, ignition advance, throttle and narrowband oxygen.
 LTFT occupies the remaining slot: twelve fixed IDs, one group read per cycle.
-STN/OBDLink: adapter-managed P3 and measured P4 trial with automatic rollback.
+STN/OBDLink: measured P4 and 60/25 ms P3 trials with automatic rollback.
 ELM clones: automatically benchmark shorter host-side waits on grouped reads.
 Use --no-adapter-tuning to disable automatic timing optimisation.
 Stored LTFT endpoints and learned additive adaptation are read only on demand
@@ -949,6 +949,7 @@ class ELM:
         self.is_stn = False
         self.adapter_profile = 'ELM compatible'
         self.adapter_p3 = False
+        self.adapter_p3_ms = None
         self.p4_fast = False
         self.host_gap_tuned = False
         self.host_gap_probing = False
@@ -1083,12 +1084,15 @@ class ELM:
                            elapsed_ms=(ended-started)*1000)
 
     def query(self, payload, optimized=True, allow_repeat=True):
+        # The shorter STN gap is validated only for the fixed polling group.
+        if self.adapter_p3 and self.adapter_p3_ms < 60 and payload != '2A0101':
+            self.restore_transport(tr('Consulta fuera del grupo', 'Request outside the group'))
         command = payload + ' 1' if self.fast and optimized else payload
         reply = self.command(command, allow_repeat=optimized and allow_repeat)
         if reply.strip() == '?' and command != payload:
             # An older clone may not accept the response-count suffix.
             self.fast = False
-            if self.host_gap_tuned or self.host_gap_probing:
+            if self.adapter_p3 or self.p4_fast or self.host_gap_tuned or self.host_gap_probing:
                 self.restore_transport(tr('Sufijo de una respuesta rechazado', 'Single-response suffix rejected'))
             reply = self.command(payload)
         # Retry only read services, never replay group definitions or writes.
@@ -1201,6 +1205,9 @@ class ELM:
         if not (self.adapter_p3 or self.p4_fast or elm_gap_active):
             return False
         # These are volatile adapter settings, not ECU calibration writes.
+        if self.adapter_p3 and self.adapter_p3_ms < 60:
+            self.at('STPTRQ 60')
+            self.adapter_p3_ms = 60
         if self.p4_fast:
             self.at('STIP4 5')
             self.p4_fast = False
@@ -1215,27 +1222,29 @@ class ELM:
         self.adapter_profile = 'STN compatible' if self.is_stn else 'ELM compatible'
         self.journal.write('transport_fallback', reason=reason,
                            host_gap_ms=60, p4_ms=5 if self.is_stn else None,
+                           p3_ms=self.adapter_p3_ms,
                            elm_timing_probe_disabled=self.elm_timing_probe_disabled)
         return True
 
     def optimize_transport(self, mode, notice, publish):
-        """Use documented STN timing controls; trial P4=0 on validated reads only.
+        """Benchmark STN P4 first, then a shorter P3 on validated grouped reads.
 
         Reference: https://www.obdlink.com/frpm, STPTRQ and STIP4.
-        Keep the established 60 ms P3 floor. Benchmark P4=5 versus P4=0,
-        retain zero only with six valid responses and >=3% measured improvement.
+        Start with the established 60 ms P3. Retain P4=0 only with six valid
+        responses and >=3% improvement; test P3=25 separately at the chosen P4.
         This short startup test is not proof of long-term link reliability.
         """
-        if not self.is_stn or not self.fast:
+        if not self.is_stn or not self.fast or self.timing_fallbacks:
             return
         self.adapter_profile = 'STN compatible'
         # Configure after ATD/ATSP/ATSI, which can reset protocol settings.
         if self.at('STPTRQ 60', optional=True):
             self.adapter_p3 = True
+            self.adapter_p3_ms = 60
             self.request_gap = 0.0
             self.adapter_profile = 'STN P3 adaptador'
         self.journal.write('transport_profile', profile=self.adapter_profile,
-                           host_gap_ms=self.request_gap*1000, p3_ms=60,
+                           host_gap_ms=self.request_gap*1000, p3_ms=self.adapter_p3_ms,
                            response_timeout_hex=self.response_timeout)
         # Avoid dozens of individual requests just to benchmark startup.
         if mode != 'grouped':
@@ -1249,30 +1258,30 @@ class ELM:
                 baseline.append(sample.duration_ms)
                 if self.timing_fallbacks or not self.fast:
                     return
-            if not self.at('STIP4 0', optional=True):
-                return
-            self.p4_fast = True
-            trial = []
-            for _ in range(6):
-                sample = self.acquire(mode)
-                publish(sample)
-                trial.append(sample.duration_ms)
-                if self.timing_fallbacks or not self.fast:
-                    self.restore_transport(tr('Atajo de respuesta rechazado durante prueba', 'Response shortcut rejected during trial'))
-                    return
-            # Exclude first request after a local AT/ST command from each set.
-            base_ms = statistics.median(baseline[1:])
-            trial_ms = statistics.median(trial[1:])
-            accepted = trial_ms < base_ms * 0.97
-            if accepted:
-                self.adapter_profile = 'STN rápido P4=0'
-            else:
-                self.at('STIP4 5')
-                self.p4_fast = False
-            self.journal.write('transport_benchmark', baseline_ms=baseline,
-                               trial_ms=trial, baseline_median_ms=base_ms,
-                               trial_median_ms=trial_ms, p4_zero_accepted=accepted,
-                               profile=self.adapter_profile)
+            if self.at('STIP4 0', optional=True):
+                self.p4_fast = True
+                trial = []
+                for _ in range(6):
+                    sample = self.acquire(mode)
+                    publish(sample)
+                    trial.append(sample.duration_ms)
+                    if self.timing_fallbacks or not self.fast:
+                        self.restore_transport(tr('Atajo de respuesta rechazado durante prueba', 'Response shortcut rejected during trial'))
+                        return
+                # Exclude first request after a local AT/ST command from each set.
+                base_ms = statistics.median(baseline[1:])
+                trial_ms = statistics.median(trial[1:])
+                accepted = trial_ms < base_ms * 0.97
+                if accepted:
+                    self.adapter_profile = 'STN rápido P4=0'
+                else:
+                    self.at('STIP4 5')
+                    self.p4_fast = False
+                self.journal.write('transport_benchmark', baseline_ms=baseline,
+                                   trial_ms=trial, baseline_median_ms=base_ms,
+                                   trial_median_ms=trial_ms, p4_zero_accepted=accepted,
+                                   profile=self.adapter_profile)
+            self._optimize_stn_request_gap(mode, publish)
         except LinkTimeout:
             # No prompt: do not send more commands into an unsynchronised stream.
             raise
@@ -1280,6 +1289,65 @@ class ELM:
             self.restore_transport(str(exc))
             self.journal.write('transport_benchmark_error', error=str(exc))
         notice(profile_text(self.adapter_profile) + tr(' · lectura preparada', ' · ready to read'))
+
+    def _optimize_stn_request_gap(self, mode, publish):
+        """Keep P3=25 only if it beats both 60 ms controls by >=3% and >=8 ms.
+
+        STPTRQ measures from the actual ECU response, unlike the host wait.
+        Hold P4 fixed and discard the first cycle after each local command.
+        SW404 03B714/000CA8 reports P3min=0x2C*0.5=22 ms in its timing
+        limits; 25 ms is a trial candidate, not a guarantee for every ECU.
+        Never change ECU timing parameters or retry a failed profile.
+        """
+        if not self.adapter_p3 or not self.fast or mode != 'grouped' or self.timing_fallbacks:
+            return
+        results = dict(baseline_ms=[], trial_ms=[], control_ms=[])
+        outcome = dict(accepted=False, failed=False, reason=None)
+        fallback_count = self.timing_fallbacks
+
+        def collect(count, values):
+            for index in range(count+1):
+                sample = self.acquire(mode)
+                publish(sample)
+                if self.timing_fallbacks != fallback_count or not self.fast:
+                    raise DiagnosticError(tr('Prueba cancelada tras recuperar la comunicación', 'Trial cancelled after recovering communication'))
+                if not math.isfinite(sample.duration_ms) or sample.duration_ms <= 0:
+                    raise DiagnosticError(tr('Duración de adquisición inválida durante la prueba', 'Invalid acquisition duration during trial'))
+                if index:
+                    values.append(sample.duration_ms)
+
+        try:
+            collect(3, results['baseline_ms'])
+            if not self.at('STPTRQ 25', optional=True):
+                outcome['reason'] = 'STPTRQ 25 unsupported'
+                return
+            self.adapter_p3_ms = 25
+            collect(6, results['trial_ms'])
+            self.at('STPTRQ 60')
+            self.adapter_p3_ms = 60
+            collect(3, results['control_ms'])
+            baseline = statistics.median(results['baseline_ms'])
+            control = statistics.median(results['control_ms'])
+            trial = statistics.median(results['trial_ms'])
+            reference = min(baseline, control)
+            accepted = reference-trial >= 8.0 and trial <= reference*0.97
+            if accepted:
+                self.at('STPTRQ 25')
+                self.adapter_p3_ms = 25
+                self.adapter_profile = 'STN P3=25 ms' + (' · P4=0' if self.p4_fast else '')
+            outcome.update(accepted=accepted, baseline_median_ms=baseline,
+                           control_median_ms=control, trial_median_ms=trial,
+                           gain_ms=reference-trial, gain_pct=(reference-trial)/reference*100)
+        except (DiagnosticError, InterruptedError) as exc:
+            # The caller restores timings only while the prompt is intact.
+            outcome.update(failed=True, reason=str(exc))
+            raise
+        finally:
+            self.journal.write('stn_p3_benchmark', **results, **outcome,
+                               selected_p3_ms=self.adapter_p3_ms,
+                               p4_ms=0 if self.p4_fast else 5,
+                               profile=self.adapter_profile,
+                               timing_basis='host_acquisition_not_kline')
 
     def optimize_elm_transport(self, mode, notice, publish):
         """Automatic timing trial using the normal fixed-group acquisition.
