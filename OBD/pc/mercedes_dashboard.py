@@ -1646,7 +1646,8 @@ def worker(args, model, stop, journal, faults=None, corrections=None,
                 sample.injection = 600 + round(7500*(0.5+0.5*math.sin(t/3-1)))
                 sample.diagnostic_ids = IDS
                 sample.advance_raw = round((-15 + 20*math.sin(t/4) + 66)/0.75)
-                sample.temperatures = (130, 78)
+                sample.temperatures = (int(140 + 18*math.sin(t/4-1.5)),
+                                       int(98 + 20*math.sin(t/4-2.5)))
                 sample.trims = (int(32768+2500*math.sin(t)),34000)
                 prev_at = now
                 event = model.accept(sample, args.tick_us)
