@@ -753,6 +753,15 @@ class Journal:
                           ecu_identification_status=model.ecu_identification_status,
                           ltft_low_address=f'0x{profile.ltft_low_address:04X}' if profile else None,
                           ltft_high_address=f'0x{profile.ltft_high_address:04X}' if profile else None)
+        if sample.measurements is not None:
+            # Other readers must not inherit ME2.1 addresses or sensor-curve claims.
+            legacy = {'diagnostic_ids', 'maf_ecu_source', 'maf_ecu_at_limit', 'maf_source',
+                      'maf_calibration_status', 'maf_calibration_source', 'maf_curve_sha256',
+                      'ltft_low_address', 'ltft_high_address', 'maf_adc_word',
+                      'ecu_voltage_V_est', 'ecu_voltage_scale_V_per_raw'}
+            values = {key: value for key, value in values.items()
+                      if not key.endswith('_raw') and key not in legacy}
+            values.update(load_value=readings.load, load_unit=readings.load_unit)
         self.write('csv_sample', csv_sample_at=sample.at, **values)
 
     def write(self, kind, *, csv_sample_at=None, **values):
@@ -1687,11 +1696,13 @@ def worker(args, model, stop, journal, faults=None, corrections=None,
                 event = model.accept(sample, args.tick_us)
                 journal.sample(sample, args, model, event)
                 consecutive = 0
-                journal.write('sample', demo=False, mode=elm.mode, rpm=sample.rpm,
-                              **injection_metrics(sample, args), load_raw=sample.load,
-                              correction_raw=sample.corrections, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms,
+                readings = sample.values(args.tick_us)
+                journal.write('sample', demo=False, mode=elm.mode, rpm=readings.rpm,
+                              **injection_metrics(sample, args), load_raw=sample.load if sample.measurements is None else None,
+                              correction_raw=sample.corrections if sample.measurements is None else None,
+                              cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms,
                               observed_event=event, observed_count=model.count,
-                              correction_deg_nominal=[n*0.75 for n in sample.corrections])
+                              correction_deg_nominal=list(readings.retard_degrees))
             except LinkTimeout:
                 raise
             except DiagnosticError as exc:
@@ -1838,7 +1849,7 @@ def render(model, args, width=110, height=44, now=None):
         duty = values.duty_percent or 0
         duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
         detail = (
-            (f'~{values.injection_ms:.2f} ms' + (f' · {s.injection} raw' if s.measurements is None else ''))
+            (f'~{values.injection_ms:.2f} ms' + (f' · {values.injection_raw} raw' if values.injection_raw is not None else ''))
             if shown and values.injection_ms is not None else tr('Sin lectura de inyección', 'No injection reading')
         )
         layout['inj'].update(metric(

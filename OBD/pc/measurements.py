@@ -10,13 +10,14 @@ class Measurements:
     load_maximum: float = 255.0
     load_unit: str = 'raw'
     injection_ms: float | None = None
+    injection_raw: int | None = None
     duty_percent: float | None = None
     retard_degrees: tuple[float, ...] = ()
     temperatures_c: tuple[float | None, float | None] = (None, None)
     trims_percent: tuple[float | None, float | None] = (None, None)
     throttle_percent: float | None = None
     maf_g_s: float | None = None
-    maf_at_limit: bool = False
+    maf_at_limit: bool | None = None
     ecu_maf_g_s: float | None = None
     advance_degrees: float | None = None
     oxygen_v: float | None = None

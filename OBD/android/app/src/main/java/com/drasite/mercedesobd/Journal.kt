@@ -194,6 +194,15 @@ class Journal(
         values.retardDegrees.forEachIndexed { i, n ->
             v["knock_channel_${i+1}_deg_est"] = n
         }
+        if (s.measurements != null) {
+            // A different reader must not inherit ME2.1 addresses or sensor-curve claims.
+            val legacyMetadata = setOf("diagnostic_ids", "maf_ecu_source", "maf_ecu_at_limit",
+                "maf_source", "maf_calibration_status", "maf_calibration_source", "maf_curve_sha256",
+                "ltft_low_address", "ltft_high_address")
+            v.keys.removeAll { it.endsWith("_raw") || it in legacyMetadata }
+            v["load_value"] = values.load
+            v["load_unit"] = values.loadUnit
+        }
         // Sample.at uses the monotonic acquisition clock; each log starts at zero.
         val start = csvStartedAt ?: s.at.also { csvStartedAt = it }
         csvWriter.write(CsvLog.sampleRow(v, s.at - start))

@@ -514,9 +514,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             RectF(802f, 8f, 1192f, 264f),
             tr("INYECCIÓN / DUTY EST.", "INJECTION / EST. DUTY"),
             duty?.let { formatValue("~%.1f %%", it) } ?: "—",
-            values?.injectionMs?.let {
-                if (sample?.measurements == null) formatValue("~%.2f ms · %d raw", it, sample!!.injection)
-                else formatValue("~%.2f ms", it)
+            values?.injectionMs?.let { ms ->
+                values?.injectionRaw?.let { raw -> formatValue("~%.2f ms · %d raw", ms, raw) }
+                    ?: formatValue("~%.2f ms", ms)
             } ?: tr("Sin lectura de inyección", "No injection reading"),
             display.duty,
             maxOf(100.0, display.duty.maxOrNull() ?: 100.0),

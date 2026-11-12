@@ -19,6 +19,7 @@ def measurements(sample, tick_us=8/3):
     return Measurements(
         rpm=sample.rpm, load=sample.load,
         injection_ms=sample.injection * tick_us / 1000,
+        injection_raw=sample.injection,
         duty_percent=duty_percent(sample.injection, sample.rpm, tick_us),
         retard_degrees=tuple(n * .75 for n in sample.corrections),
         temperatures_c=tuple(n - 40 for n in sample.temperatures),

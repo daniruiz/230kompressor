@@ -28,6 +28,13 @@ data class Sample(
     // Other ECU readers supply their own values, leaving unsupported quantities null.
     val measurements: Measurements? = null,
 ) {
+    companion object {
+        /** Construct a sample without inventing ME2.1 raw readings for another ECU. */
+        fun fromMeasurements(values: Measurements, at: Long = monoMs(), acquisitionMs: Double = 0.0): Sample =
+            Sample(rpm = values.rpm ?: 0, injection = 0, load = values.load ?: 0,
+                corrections = intArrayOf(), at = at, acquisitionMs = acquisitionMs, measurements = values)
+    }
+
     val values: Measurements = measurements ?: Me21Measurements.from(this)
 
     // ATRV measures the adapter supply, not the ECU's F734 byte for dead time.
