@@ -54,9 +54,11 @@ import time
 from contextlib import contextmanager
 
 if __package__:
+    from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
+    from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 
@@ -118,20 +120,6 @@ PEAK_COLORS = {
     GREEN: '#02d7fa',
     RED: '#ff7540',
 }
-
-
-class DiagnosticError(RuntimeError):
-    pass
-
-
-class NegativeResponse(DiagnosticError):
-    def __init__(self, service, code):
-        self.service, self.code = service, code
-        super().__init__(f'ECU: 7F {service:02X} {code:02X}')
-
-
-class LinkTimeout(DiagnosticError):
-    pass
 
 
 @dataclass(frozen=True)
