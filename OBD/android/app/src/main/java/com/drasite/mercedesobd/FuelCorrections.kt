@@ -21,7 +21,6 @@ data class FuelCorrections(val low: Int, val high: Int, val additive: Int,
     val additiveSigned: Int get() = additive.toShort().toInt()
     val values = measurements ?: CorrectionMeasurements(Decoder.trim(low), Decoder.trim(high),
         additiveSigned * Decoder.TICK_US / 1000, additiveSigned)
-    val additiveMs: Double? get() = values.additiveMs
 
     fun logValues(): Array<Pair<String, Any?>> = arrayOf(
         "ltft_low_raw" to low.takeIf { measurements == null },

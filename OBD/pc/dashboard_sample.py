@@ -9,9 +9,6 @@ else:
     from measurements import Measurements
     from me21_measurements import measurements as me21_measurements
 
-KNOCK_ALERT_THRESHOLD_DEG = 3.0
-
-
 @dataclass
 class Sample:
     rpm: int

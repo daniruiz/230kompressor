@@ -23,7 +23,6 @@ object Decoder {
     // 1143 is raw MAF ADC; 1107 returns processed ECU MAF and load together.
     val ids = intArrayOf(0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x43, 0x0B, 0x0A, 0x1F, 0x07)
     const val TICK_US = 8.0 / 3
-    const val KNOCK_ALERT_THRESHOLD_DEG = 3.0
 
     fun word(b: ByteArray, i: Int) = b[i].u() or (b[i + 1].u() shl 8)
 

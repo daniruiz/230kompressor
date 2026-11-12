@@ -56,10 +56,9 @@ from contextlib import contextmanager
 if __package__:
     from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from .me21_reader import Me21Reader
-    from .me21_measurements import injection_metrics
-    from .me21_measurements import ecu_voltage_est, duty_percent, InjectorCalibration, deadtime_ticks
-    from .me21_measurements import ecu_maf_g_s, advance_degrees, oxygen_voltage, oxygen_state, trim_percent
-    from .dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
+    from .me21_measurements import (InjectorCalibration, O2_SWITCH_RAW, VOLTAGE_V_PER_RAW_EST,
+                                    ecu_voltage_est, injection_metrics)
+    from .dashboard_sample import Sample
     from .measurements import Measurements
     from .fuel_corrections import FuelCorrections
     from .temperature_alerts import TemperatureAlerts
@@ -68,10 +67,9 @@ if __package__:
 else:
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from me21_reader import Me21Reader
-    from me21_measurements import injection_metrics
-    from me21_measurements import ecu_voltage_est, duty_percent, InjectorCalibration, deadtime_ticks
-    from me21_measurements import ecu_maf_g_s, advance_degrees, oxygen_voltage, oxygen_state, trim_percent
-    from dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
+    from me21_measurements import (InjectorCalibration, O2_SWITCH_RAW, VOLTAGE_V_PER_RAW_EST,
+                                   ecu_voltage_est, injection_metrics)
+    from dashboard_sample import Sample
     from measurements import Measurements
     from fuel_corrections import FuelCorrections
     from temperature_alerts import TemperatureAlerts
@@ -108,17 +106,6 @@ IDS = (0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x43, 0x0B, 0x0A, 0x1F, 0x07)
 # The fixed layout is configured once, before the first grouped read.
 ADAPTER_VOLTAGE_INTERVAL_S = 5.0
 ADAPTER_VOLTAGE_TIMEOUT_S = 1.0
-# Provisional physical scale, NOT established by the disassembly.
-# F734 is an ADC-derived byte; ROM 42A2 substitutes 149 below threshold 47.
-# 149 * 3/32 = 13.97 V is plausible, but is not proof of the divider ratio.
-VOLTAGE_V_PER_RAW_EST = 3 / 32
-# SW404 bank 1. Both stock and the analysed 230k_ME21 tune have this curve.
-# 47CA: pointer F734, offset 0, shift 4, count 17; data at 47D0..47E0.
-DEADTIME_NODES_404 = (112,112,112,112,112,63,43,33,26,21,21,21,21,21,21,21,21)
-# 111F -> 81C0; comparator at 159F0 uses ROM 41A8 = 0x2456.
-O2_SWITCH_RAW = 0x2456
-# 110A -> F74F: byte used directly for OBD throttle position.
-# A narrowband signal cannot be converted to measured lambda or AFR.
 BG = '#000000'
 MUTED = '#9aaec8'
 CYAN = '#57d8ed'

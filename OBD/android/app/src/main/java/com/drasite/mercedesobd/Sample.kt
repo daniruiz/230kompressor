@@ -35,21 +35,9 @@ data class Sample(
                 corrections = intArrayOf(), at = at, acquisitionMs = acquisitionMs, measurements = values)
     }
 
-    val values: Measurements = measurements ?: Me21Measurements.from(this)
-
     // ATRV measures the adapter supply, not the ECU's F734 byte for dead time.
-    val injectionMetrics: InjectionMetrics?
-        get() = if (measurements == null) Injection.metrics(injection, rpm, null) else null
+    val injectionMetrics: InjectionMetrics? =
+        if (measurements == null) Injection.metrics(injection, rpm, null) else null
 
-    val injectionMs
-        get() = values.injectionMs
-
-    val duty
-        get() = values.dutyPercent
-
-    val retard
-        get() = values.retard
-
-    val highRetard
-        get() = values.highRetard
+    val values: Measurements = measurements ?: Me21Measurements.from(this, requireNotNull(injectionMetrics))
 }

@@ -28,8 +28,7 @@ data class Measurements(
 
 /** The legacy ME2.1 conversions live here, rather than in dashboard rendering. */
 internal object Me21Measurements {
-    fun from(sample: Sample): Measurements {
-        val injection = Injection.metrics(sample.injection, sample.rpm, null)
+    fun from(sample: Sample, injection: InjectionMetrics): Measurements {
         return Measurements(
             rpm = sample.rpm,
             load = sample.load,
