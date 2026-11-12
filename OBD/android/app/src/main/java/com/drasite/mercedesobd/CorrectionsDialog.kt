@@ -71,10 +71,12 @@ internal class CorrectionsDialog(
             card.addView(values)
             rows.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = panel.dp(8) })
         }
-        row("LTFT low", String.format(I18n.locale, "%+.2f %%", Decoder.trim(value.low)))
-        row("LTFT high", String.format(I18n.locale, "%+.2f %%", Decoder.trim(value.high)))
-        row(tr("Corrección aditiva", "Additive correction"), String.format(I18n.locale, "~%+.3f ms", value.additiveMs),
-            String.format(I18n.locale, "%+d", value.additiveSigned) + tr(" unidades ECU", " ECU units"))
+        val readings = value.values
+        row("LTFT low", readings.lowPercent?.let { String.format(I18n.locale, "%+.2f %%", it) } ?: "—")
+        row("LTFT high", readings.highPercent?.let { String.format(I18n.locale, "%+.2f %%", it) } ?: "—")
+        row(tr("Corrección aditiva", "Additive correction"),
+            readings.additiveMs?.let { String.format(I18n.locale, "~%+.3f ms", it) } ?: "—",
+            readings.additiveRaw?.let { String.format(I18n.locale, "%+d", it) + tr(" unidades ECU", " ECU units") })
         rows.addView(panel.text(tr("Tiempo de la aditiva estimado. Actualiza para volver a consultar.",
             "Additive duration is estimated. Refresh to read again."), 13f, DialogPanel.MUTED))
         panel.content.addView(ScrollView(activity).apply { addView(rows) }, LinearLayout.LayoutParams(-1, -1))

@@ -61,6 +61,7 @@ if __package__:
     from .me21_measurements import ecu_maf_g_s, advance_degrees, oxygen_voltage, oxygen_state, trim_percent
     from .dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
     from .measurements import Measurements
+    from .fuel_corrections import FuelCorrections
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
@@ -71,6 +72,7 @@ else:
     from me21_measurements import ecu_maf_g_s, advance_degrees, oxygen_voltage, oxygen_state, trim_percent
     from dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
     from measurements import Measurements
+    from fuel_corrections import FuelCorrections
     from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 
@@ -158,24 +160,6 @@ ECU_PROFILES = (
     ECUProfile('114.236643.43', 0xD4DC, 0x920C, 0x9214, 0x9220),
 )
 ECU_PROFILES_BY_SOFTWARE = {p.software: p for p in ECU_PROFILES}
-
-
-@dataclass(frozen=True)
-class FuelCorrections:
-    low: int
-    high: int
-    additive: int
-
-    @property
-    def additive_signed(self):
-        return self.additive - 65536 if self.additive & 0x8000 else self.additive
-
-    def log_values(self, tick_us):
-        return dict(ltft_low_raw=self.low, ltft_high_raw=self.high,
-                    ltft_low_pct=trim_percent(self.low), ltft_high_pct=trim_percent(self.high),
-                    additive_raw=self.additive, additive_signed_raw=self.additive_signed,
-                    additive_ms_est=self.additive_signed * tick_us / 1000,
-                    additive_tick_us_assumed=tick_us)
 
 
 class KnockSound:
@@ -345,7 +329,7 @@ class FaultMenu:
         self.message = tr('Borrando errores…', 'Clearing faults…') if clear else tr('Leyendo memoria de averías…', 'Reading fault memory…')
         self.requests.put_nowait(clear)
 
-    def service(self, elm, journal):
+    def service(self, elm: EcuReader | None, journal):
         try:
             clear = self.requests.get_nowait()
         except queue.Empty:
@@ -513,7 +497,7 @@ class CorrectionsMenu:
             self.message = tr('Leyendo LTFT low, high y corrección aditiva…', 'Reading LTFT low, high and additive correction…')
             self.requests.put_nowait(self.generation)
 
-    def service(self, elm, journal):
+    def service(self, elm: EcuReader | None, journal):
         try:
             generation = self.requests.get_nowait()
         except queue.Empty:
@@ -570,11 +554,13 @@ class CorrectionsMenu:
                 table = Table.grid(expand=True, padding=(0, 1))
                 table.add_column(style=MUTED, ratio=1)
                 table.add_column(justify='right', style=f'bold {GREEN}')
-                table.add_row('LTFT low', f'{trim_percent(self.result.low):+.2f} %')
-                table.add_row('LTFT high', f'{trim_percent(self.result.high):+.2f} %')
+                values = self.result.values(self.tick_us)
+                table.add_row('LTFT low', f'{values.low_percent:+.2f} %' if values.low_percent is not None else '—')
+                table.add_row('LTFT high', f'{values.high_percent:+.2f} %' if values.high_percent is not None else '—')
                 table.add_row(tr('Corrección aditiva', 'Additive correction'),
-                              f'~{self.result.additive_signed * self.tick_us / 1000:+.3f} ms')
-                table.add_row(tr('Aditiva · unidades ECU', 'Additive · ECU units'), f'{self.result.additive_signed:+d}')
+                              f'~{values.additive_ms:+.3f} ms' if values.additive_ms is not None else '—')
+                table.add_row(tr('Aditiva · unidades ECU', 'Additive · ECU units'),
+                              f'{values.additive_raw:+d}' if values.additive_raw is not None else '—')
                 body.extend([table, ''])
             body.extend(['', Text(self.message, style=RED if self.error else CYAN if self.busy else MUTED)])
             content['body'].update(Group(*body))
