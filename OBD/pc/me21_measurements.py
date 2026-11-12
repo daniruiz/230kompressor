@@ -120,6 +120,12 @@ def deadtime_ticks(voltage_raw: int | None, calibration: InjectorCalibration) ->
 
 def injection_metrics(sample, args) -> dict:
     """Same calculation for UI, CSV and JSONL; no additional ECU requests."""
+    if sample.measurements is not None:
+        values = sample.measurements
+        return dict(injection_ms_est=values.injection_ms,
+                    injector_duty_est_pct=values.duty_percent,
+                    duty_over_100_est=values.duty_percent > 100 if values.duty_percent is not None else None,
+                    injection_breakdown_status='reader_values')
     cal = args.injector_calibration
     raw = sample.injection
     total_ms = raw*args.tick_us/1000

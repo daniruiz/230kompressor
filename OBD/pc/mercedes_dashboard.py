@@ -707,18 +707,20 @@ class Journal:
     def sample(self, sample, args, model, event):
         if self.stream is None:
             return
-        values = dict(demo=args.demo, rpm=sample.rpm, load_raw=sample.load,
+        readings = sample.values(args.tick_us)
+        values = dict(demo=args.demo, rpm=readings.rpm, load_raw=sample.load,
             **injection_metrics(sample, args),
             cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms, observed_count=model.count, observed_event=event,
-            coolant_C=sample.temperatures[0]-40, iat_C=sample.temperatures[1]-40,
+            coolant_C=readings.temperatures_c[0], iat_C=readings.temperatures_c[1],
             coolant_raw=sample.temperatures[0], iat_raw=sample.temperatures[1], pairs_raw=sample.pairs_raw,
             diagnostic_ids=[f'11{i:02X}' for i in sample.diagnostic_ids])
         for i,n in enumerate(sample.corrections,1):
             values[f'knock_channel_{i}_raw']=n
-            values[f'knock_channel_{i}_deg_est']=n*0.75
-        for name,n in zip(('stft_a','ltft_a'),sample.trims):
+        for i,n in enumerate(readings.retard_degrees,1):
+            values[f'knock_channel_{i}_deg_est']=n
+        for name,n,value in zip(('stft_a','ltft_a'),sample.trims,readings.trims_percent):
             values[name+'_raw']=n
-            values[name+'_pct']=trim_percent(n)
+            values[name+'_pct']=value
         values.update(ecu_voltage_raw=sample.voltage_raw,
                       ecu_voltage_V_est=ecu_voltage_est(sample.voltage_raw, args.voltage_scale),
                       ecu_voltage_scale_V_per_raw=args.voltage_scale if sample.voltage_raw is not None else None,
@@ -727,24 +729,24 @@ class Journal:
                       adapter_voltage_status=sample.adapter_voltage_status,
                       adapter_voltage_source='ATRV',
                       throttle_raw=sample.throttle_raw,
-                      throttle_pct=sample.throttle_raw*100/255 if sample.throttle_raw is not None else None,
+                      throttle_pct=readings.throttle_percent,
                       oxygen_raw=sample.oxygen_raw,
-                      oxygen_voltage_V=oxygen_voltage(sample.oxygen_raw),
-                      oxygen_state=oxygen_state(sample.oxygen_raw),
+                      oxygen_voltage_V=readings.oxygen_v,
+                      oxygen_state=('rico' if readings.oxygen_rich else 'pobre') if readings.oxygen_rich is not None else 'sin datos',
                       maf_raw=sample.maf_raw,
                       maf_adc_word=sample.maf_adc_word,
-                      maf_g_s_est=sample.maf_g_s_est,
+                      maf_g_s_est=readings.maf_g_s,
                       maf_source='grouped_1143_adc',
                       maf_calibration_status=sample.maf_calibration_status,
                       maf_calibration_source=MAF_CALIBRATION_SOURCE if sample.maf_g_s_est is not None else None,
                       maf_curve_sha256=MAF_CURVE_SHA256 if sample.maf_g_s_est is not None else None,
-                      maf_saturated=sample.maf_raw == 1023,
+                      maf_saturated=readings.maf_at_limit,
                       maf_ecu_raw=sample.maf_ecu_raw,
-                      maf_ecu_g_s_est=ecu_maf_g_s(sample.maf_ecu_raw),
+                      maf_ecu_g_s_est=readings.ecu_maf_g_s,
                       maf_ecu_source='grouped_1107_processed',
                       maf_ecu_at_limit=sample.maf_ecu_raw == 255 if sample.maf_ecu_raw is not None else None,
                       advance_raw=sample.advance_raw,
-                      advance_deg=advance_degrees(sample.advance_raw) if sample.advance_raw is not None else None)
+                      advance_deg=readings.advance_degrees)
         with model.lock:
             profile = model.ecu_profile
             values.update(ecu_software=model.ecu_software,

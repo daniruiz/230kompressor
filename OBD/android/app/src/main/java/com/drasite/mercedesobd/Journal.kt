@@ -132,41 +132,42 @@ class Journal(
     @Synchronized
     fun sample(s: Sample, d: Display, raised: Boolean) {
         val csvWriter = csv ?: return
+        val values = s.values
         val v =
             linkedMapOf<String, Any?>(
                 "utc" to CsvLog.utc(),
                 "demo" to demo,
-                "rpm" to s.rpm,
+                "rpm" to values.rpm,
                 "load_raw" to s.load,
                 "acquisition_ms" to s.acquisitionMs,
                 "cycle_ms" to s.cycleMs,
                 "observed_count" to d.count,
                 "observed_event" to raised,
-                "coolant_C" to s.coolant - 40,
-                "iat_C" to s.iat - 40,
+                "coolant_C" to values.coolantC,
+                "iat_C" to values.iatC,
                 "coolant_raw" to s.coolant,
                 "iat_raw" to s.iat,
                 "pairs_raw" to s.pairs,
                 "diagnostic_ids" to s.diagnosticIds.map { "11%02X".format(it) },
                 "throttle_raw" to s.throttle,
-                "throttle_pct" to s.throttle * 100.0 / 255,
+                "throttle_pct" to values.throttlePercent,
                 "oxygen_raw" to s.oxygen,
-                "oxygen_voltage_V" to Decoder.oxygen(s.oxygen),
-                "oxygen_state" to if (s.oxygen > 0x2456) "rico" else "pobre",
+                "oxygen_voltage_V" to values.oxygenVolts,
+                "oxygen_state" to values.oxygenRich?.let { if (it) "rico" else "pobre" },
                 "maf_raw" to s.maf,
                 "maf_adc_word" to s.mafAdcWord,
-                "maf_g_s_est" to s.mafGramsPerSecond,
+                "maf_g_s_est" to values.mafGramsPerSecond,
                 "maf_ecu_raw" to s.mafEcuRaw,
-                "maf_ecu_g_s_est" to Decoder.ecuMaf(s.mafEcuRaw),
+                "maf_ecu_g_s_est" to values.ecuMafGramsPerSecond,
                 "maf_ecu_source" to "grouped_1107_processed",
                 "maf_ecu_at_limit" to s.mafEcuRaw?.let { it == 255 },
-                "maf_saturated" to (s.maf == 1023),
+                "maf_saturated" to values.mafAtLimit,
                 "maf_source" to "grouped_1143_adc",
                 "maf_calibration_status" to s.mafCalibrationStatus,
                 "maf_calibration_source" to if (s.mafGramsPerSecond != null) MafCalibration.SOURCE else null,
                 "maf_curve_sha256" to if (s.mafGramsPerSecond != null) MafCalibration.SHA256 else null,
                 "advance_raw" to s.advance,
-                "advance_deg" to Decoder.advance(s.advance),
+                "advance_deg" to values.advanceDegrees,
                 "ecu_voltage_raw" to null,
                 "ecu_voltage_V_est" to null,
                 "ecu_voltage_scale_V_per_raw" to null,
@@ -179,14 +180,19 @@ class Journal(
                 "ltft_low_address" to d.ecuProfile?.let { addressHex(it.ltftLowAddress) },
                 "ltft_high_address" to d.ecuProfile?.let { addressHex(it.ltftHighAddress) },
                 "stft_a_raw" to s.stft,
-                "stft_a_pct" to Decoder.trim(s.stft),
+                "stft_a_pct" to values.stftPercent,
                 "ltft_a_raw" to s.ltft,
-                "ltft_a_pct" to Decoder.trim(s.ltft),
+                "ltft_a_pct" to values.ltftPercent,
             )
-        v.putAll(s.injectionMetrics.logValues())
+        s.injectionMetrics?.let { v.putAll(it.logValues()) }
+        v["injection_ms_est"] = values.injectionMs
+        v["injector_duty_est_pct"] = values.dutyPercent
+        v["duty_over_100_est"] = values.dutyPercent?.let { it > 100 }
         s.corrections.forEachIndexed { i, n ->
             v["knock_channel_${i+1}_raw"] = n
-            v["knock_channel_${i+1}_deg_est"] = n * .75
+        }
+        values.retardDegrees.forEachIndexed { i, n ->
+            v["knock_channel_${i+1}_deg_est"] = n
         }
         // Sample.at uses the monotonic acquisition clock; each log starts at zero.
         val start = csvStartedAt ?: s.at.also { csvStartedAt = it }
