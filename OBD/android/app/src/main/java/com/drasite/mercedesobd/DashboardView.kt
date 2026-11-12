@@ -480,43 +480,47 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     }
 
     private fun drawMetrics(canvas: Canvas, display: Display, sample: Sample?, valid: Boolean) {
-        val rpm = if (valid) sample!!.rpm else 0
-        val load = if (valid) sample!!.load else 0
-        val duty = if (valid) sample!!.duty else 0.0
+        val values = sample?.values?.takeIf { valid }
+        val rpm = values?.rpm
+        val load = values?.load
+        val loadMaximum = values?.loadMaximum ?: 255.0
+        val duty = values?.dutyPercent
         drawMetric(
             canvas,
             RectF(8f, 8f, 397f, 264f),
             tr("RÉGIMEN", "ENGINE SPEED"),
-            if (valid) formatValue("%,d rpm", rpm) else "—",
+            rpm?.let { formatValue("%,d rpm", it) } ?: "—",
             tr("0–6.500 rpm", "0–6,500 rpm"),
             display.rpm,
             6500.0,
-            rpm / 6500.0,
+            (rpm ?: 0) / 6500.0,
             cyan,
         )
         drawMetric(
             canvas,
             RectF(405f, 8f, 794f, 264f),
             tr("CARGA INTERNA", "INTERNAL LOAD"),
-            if (valid) "$load" else "—",
-            if (valid) formatValue(tr("Mariposa %.1f %%", "Throttle %.1f %%"), sample!!.throttle * 100.0 / 255)
-            else tr("Mariposa —", "Throttle —"),
+            load?.let { "$it${values?.loadUnit.orEmpty()}" } ?: "—",
+            values?.throttlePercent?.let { formatValue(tr("Mariposa %.1f %%", "Throttle %.1f %%"), it) }
+                ?: tr("Mariposa —", "Throttle —"),
             display.load,
-            255.0,
-            load / 255.0,
+            loadMaximum,
+            (load ?: 0) / loadMaximum,
             amber,
         )
-        val injColor = if (duty > 100) red else if (duty >= 90) amber else green
+        val injColor = if ((duty ?: 0.0) > 100) red else if ((duty ?: 0.0) >= 90) amber else green
         drawMetric(
             canvas,
             RectF(802f, 8f, 1192f, 264f),
             tr("INYECCIÓN / DUTY EST.", "INJECTION / EST. DUTY"),
-            if (valid) formatValue("~%.1f %%", duty) else "—",
-            if (valid) formatValue("~%.2f ms · %d raw", sample!!.injectionMs, sample.injection)
-            else tr("F746 sin lectura actual", "No current F746 reading"),
+            duty?.let { formatValue("~%.1f %%", it) } ?: "—",
+            values?.injectionMs?.let {
+                if (sample?.measurements == null) formatValue("~%.2f ms · %d raw", it, sample!!.injection)
+                else formatValue("~%.2f ms", it)
+            } ?: tr("Sin lectura de inyección", "No injection reading"),
             display.duty,
             maxOf(100.0, display.duty.maxOrNull() ?: 100.0),
-            duty / 100,
+            (duty ?: 0.0) / 100,
             injColor,
         )
     }
@@ -529,9 +533,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         now: Long,
     ) {
         drawTemperatureGauge(canvas, RectF(8f, 8f, 596f, 405f), tr("TEMPERATURA MOTOR", "ENGINE TEMPERATURE"),
-            if (valid) sample!!.coolant - 40 else null, TemperatureAlerts.MOTOR_LIMIT, 140, green, now)
+            if (valid) sample?.values?.coolantC else null, TemperatureAlerts.MOTOR_LIMIT, 140, green, now)
         drawTemperatureGauge(canvas, RectF(604f, 8f, 1192f, 405f), tr("TEMPERATURA ADMISIÓN", "INTAKE TEMPERATURE"),
-            if (valid) sample!!.iat - 40 else null, TemperatureAlerts.INTAKE_LIMIT, 100, cyan, now)
+            if (valid) sample?.values?.iatC else null, TemperatureAlerts.INTAKE_LIMIT, 100, cyan, now)
         drawKnock(canvas, display, sample, valid, now, compact = true)
     }
 
@@ -596,7 +600,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         compact: Boolean = false,
     ) {
         val flash = flashEnabled && now < display.alertUntil && (now / 250) % 2 == 0L
-        val alertColor = if (sample?.highRetard == true) red else orange
+        val alertColor = if (sample?.values?.highRetard == true) red else orange
         val kr = if (compact) RectF(8f, 417f, 1192f, 621f) else RectF(8f, 272f, 795f, 621f)
         val center = kr.centerX()
         val valueY = if (compact) 470f else 339f
@@ -606,7 +610,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             canvas,
             listOf(
                 TextRun(tr("Retardo de encendido: ", "Ignition retard: "), muted),
-                TextRun(if (valid) formatValue("%.2f°", sample!!.retard) else "—", lightPurple, true),
+                TextRun(sample?.values?.retard?.takeIf { valid }?.let { formatValue("%.2f°", it) } ?: "—", lightPurple, true),
             ),
             center,
             valueY,
@@ -635,10 +639,10 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             )
         }
         val channels =
-            if (valid)
+            if (valid && sample?.values?.retardDegrees?.isNotEmpty() == true)
                 sample!!
-                    .corrections
-                    .mapIndexed { i, v -> formatValue("C%d  %.2f°", i + 1, v * .75) }
+                    .values.retardDegrees
+                    .mapIndexed { i, v -> formatValue("C%d  %.2f°", i + 1, v) }
                     .joinToString("       ")
             else "C1 —       C2 —       C3 —       C4 —"
         drawText(canvas, channels, center, channelY, 15f, muted, false, kr.width() - 40f, Paint.Align.CENTER)
@@ -648,7 +652,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             display.knock,
             maxOf(3.0, display.knock.maxOrNull() ?: 3.0),
             purple,
-            latestValue = sample?.retard,
+            latestValue = sample?.values?.retard,
         )
         drawText(
             canvas,
@@ -674,6 +678,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         sample: Sample?,
         valid: Boolean,
     ) {
+        val values = sample?.values?.takeIf { valid }
         drawCard(canvas, RectF(803f, 272f, 1192f, 394f), tr("MEZCLA", "MIXTURE"), green)
         fun row(label: String, value: String, y: Float, color: Int = green) {
             drawText(canvas, label, 816f, y, 14f, muted, false, 145f)
@@ -681,22 +686,22 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         }
         row(
             "STFT / LTFT",
-            if (valid)
+            if (values?.stftPercent != null && values.ltftPercent != null)
                 formatValue(
                     "%+.2f / %+.2f %%",
-                    Decoder.trim(sample!!.stft),
-                    Decoder.trim(sample.ltft),
+                    values.stftPercent,
+                    values.ltftPercent,
                 )
             else "—",
             320f,
         )
-        val mafFlow = if (valid) sample?.mafGramsPerSecond else null
+        val mafFlow = values?.mafGramsPerSecond
         row(
             tr("Caudalímetro", "Airflow"),
             if (mafFlow != null)
                 formatValue(
                     "%s%.1f g/s",
-                    if (sample?.maf == 1023) "≥" else "~",
+                    if (values?.mafAtLimit == true) "≥" else "~",
                     mafFlow,
                 )
             else "—",
@@ -705,11 +710,15 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         )
         row(
             tr("Sonda λ", "O₂ sensor"),
-            if (valid)
+            if (values?.oxygenVolts != null)
                 formatValue(
                     "%s · %.3f V",
-                    if (sample!!.oxygen > 0x2456) tr("rico", "rich") else tr("pobre", "lean"),
-                    Decoder.oxygen(sample.oxygen),
+                    when (values.oxygenRich) {
+                        true -> tr("rico", "rich")
+                        false -> tr("pobre", "lean")
+                        null -> "—"
+                    },
+                    values.oxygenVolts,
                 )
             else "—",
             380f,
@@ -718,9 +727,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
     }
 
     private fun drawTemperaturesAndAdvance(canvas: Canvas, sample: Sample?, valid: Boolean, now: Long) {
-        val hot = valid && sample != null &&
-            (TemperatureAlerts.isHot(sample.coolant - 40, TemperatureAlerts.MOTOR_LIMIT) ||
-                TemperatureAlerts.isHot(sample.iat - 40, TemperatureAlerts.INTAKE_LIMIT))
+        val values = sample?.values?.takeIf { valid }
+        val hot = TemperatureAlerts.isHot(values?.coolantC, TemperatureAlerts.MOTOR_LIMIT) ||
+            TemperatureAlerts.isHot(values?.iatC, TemperatureAlerts.INTAKE_LIMIT)
         val temperatureColor = if (hot) red else amber
         drawCard(canvas, RectF(803f, 402f, 1192f, 473f), tr("TEMPERATURAS", "TEMPERATURES"),
             temperatureColor, temperatureFlashes(hot, now))
@@ -728,9 +737,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             canvas,
             listOf(
                 TextRun(tr("Admisión ", "Intake "), muted),
-                TextRun(if (valid) "${sample!!.iat - 40} °C" else "—", amber, true),
+                TextRun(values?.iatC?.let { "$it °C" } ?: "—", amber, true),
                 TextRun(tr("     Refrigerante ", "     Coolant "), muted),
-                TextRun(if (valid) "${sample!!.coolant - 40} °C" else "—", amber, true),
+                TextRun(values?.coolantC?.let { "$it °C" } ?: "—", amber, true),
             ),
             997f,
             455f,
@@ -738,7 +747,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             365f,
         )
         drawCard(canvas, RectF(803f, 481f, 1192f, 621f), tr("AVANCE DE ENCENDIDO", "IGNITION ADVANCE"), cyan)
-        val adv = if (valid) Decoder.advance(sample!!.advance) else null
+        val adv = values?.advanceDegrees
         drawText(
             canvas,
             adv?.let { formatValue("%+.1f°", it) } ?: "—",

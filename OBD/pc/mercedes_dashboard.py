@@ -60,6 +60,7 @@ if __package__:
     from .me21_measurements import ecu_voltage_est, duty_percent, InjectorCalibration, deadtime_ticks
     from .me21_measurements import ecu_maf_g_s, advance_degrees, oxygen_voltage, oxygen_state, trim_percent
     from .dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
+    from .measurements import Measurements
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
@@ -69,6 +70,7 @@ else:
     from me21_measurements import ecu_voltage_est, duty_percent, InjectorCalibration, deadtime_ticks
     from me21_measurements import ecu_maf_g_s, advance_degrees, oxygen_voltage, oxygen_state, trim_percent
     from dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
+    from measurements import Measurements
     from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 
@@ -1809,7 +1811,8 @@ def render(model, args, width=110, height=44, now=None):
         stale = model.failed or age > 2
         flashing = now < model.alert_until
         flash = flashing and not args.no_flash and int(now*2)%2 == 0
-        high_retard = s is not None and s.high_retard
+        values = s.values(args.tick_us) if s else Measurements()
+        high_retard = values.high_retard
         alert_color = RED if high_retard else ORANGE
         bg = ('#811c31' if high_retard else '#7d4315') if flash else BG
         layout = Layout()
@@ -1821,25 +1824,24 @@ def render(model, args, width=110, height=44, now=None):
         if width < MIN_WIDTH or height < MIN_HEIGHT:
             return Panel(Text(tr(f'Amplía la terminal a {MIN_WIDTH} columnas × {MIN_HEIGHT} filas como mínimo.\n', f'Resize the terminal to at least {MIN_WIDTH} columns × {MIN_HEIGHT} rows.\n')+model.status, style=CYAN), style=f'on {bg}')
         shown = s is not None and not stale
-        rpm, load, inj = (s.rpm,s.load,s.injection) if s else (0,0,0)
+        rpm, load = values.rpm or 0, values.load or 0
         trace_width = width//3-2
         layout['metrics'].split_row(Layout(name='rpm'),Layout(name='load'),Layout(name='inj'))
-        layout['rpm'].update(metric(tr('RÉGIMEN', 'ENGINE SPEED'), rpm_text(rpm) if shown else '—', 'rpm',
+        layout['rpm'].update(metric(tr('RÉGIMEN', 'ENGINE SPEED'), rpm_text(rpm) if shown and values.rpm is not None else '—', 'rpm',
             tr('0–6.500 rpm', '0–6,500 rpm'), CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
-        layout['load'].update(metric(tr('CARGA INTERNA', 'INTERNAL LOAD'), str(load) if shown else '—', 'raw',
-            (tr(f'Mariposa: {s.throttle_raw*100/255:.1f} %', f'Throttle: {s.throttle_raw*100/255:.1f} %') if shown and s.throttle_raw is not None else tr('Mariposa: —', 'Throttle: —')), AMBER, load/255,
-            spark(model.history['load'],255,trace_width,color=AMBER),bg))
-        injection = injection_metrics(s, args) if shown else None
-        duty = injection['injector_duty_est_pct'] if injection else 0
+        layout['load'].update(metric(tr('CARGA INTERNA', 'INTERNAL LOAD'), str(load) if shown and values.load is not None else '—', values.load_unit,
+            (tr(f'Mariposa: {values.throttle_percent:.1f} %', f'Throttle: {values.throttle_percent:.1f} %') if shown and values.throttle_percent is not None else tr('Mariposa: —', 'Throttle: —')), AMBER, load/values.load_maximum,
+            spark(model.history['load'],values.load_maximum,trace_width,color=AMBER),bg))
+        duty = values.duty_percent or 0
         duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
         detail = (
-            f"~{injection['injection_ms_est']:.2f} ms · {inj} raw"
-            if injection else tr('Sin lectura actual de F746', 'No current F746 reading')
+            (f'~{values.injection_ms:.2f} ms' + (f' · {s.injection} raw' if s.measurements is None else ''))
+            if shown and values.injection_ms is not None else tr('Sin lectura de inyección', 'No injection reading')
         )
         layout['inj'].update(metric(
             tr('INYECCIÓN / DUTY', 'INJECTION / DUTY'),
-            f'~{duty:.1f}' if shown else '—', '%',
+            f'~{duty:.1f}' if shown and values.duty_percent is not None else '—', '%',
             detail, duty_color, duty/100,
             spark(
                 model.history['duty'],
@@ -1849,14 +1851,14 @@ def render(model, args, width=110, height=44, now=None):
         ))
         table = Table.grid(expand=True, padding=(0,2))
         table.add_column(ratio=1)
-        correction = max(s.corrections) if s else 0
+        correction = values.retard
         indices = Table.grid(expand=True, padding=(0,2))
         for _ in range(4):
             indices.add_column(ratio=1)
         row=[]
         for i in range(4):
-            n=s.corrections[i] if s and i < len(s.corrections) else 0
-            row.append(Text(f'\nC{i+1}: {n*0.75:.2f}°' if shown else tr(f'CANAL {i+1}   —', f'CHANNEL {i+1}   —'),
+            n=values.retard_degrees[i] if i < len(values.retard_degrees) else None
+            row.append(Text(f'\nC{i+1}: {n:.2f}°' if shown and n is not None else tr(f'CANAL {i+1}   —', f'CHANNEL {i+1}   —'),
                             style=f'italic bold {MAGENTA}' if n and shown else MUTED))
         indices.add_row(*row)
         if model.count > 0:
@@ -1868,12 +1870,12 @@ def render(model, args, width=110, height=44, now=None):
         else:
             table.add_row(indices)
         retard_line = Text(('' if model.count > 0 else '\n') + tr('Retardo de encendido: ', 'Ignition retard: '), style=MUTED)
-        retard_line.append(f'{correction*0.75:.2f}°' if shown else '—',
+        retard_line.append(f'{correction:.2f}°' if shown and correction is not None else '—',
                            style=f'bold {MAGENTA}')
         body = [table,
                 Align.center(retard_line),
                 '',
-                spark(model.history['retard'],max(4,max(model.history['retard'],default=0)),
+                spark(model.history['retard'],max(3,max(model.history['retard'],default=0)),
                       max(20,width*2//3-6),height=max(6,height-33),color=MAGENTA,full=True)]
         if model.events:
             at,message=model.events[0]
@@ -1884,26 +1886,28 @@ def render(model, args, width=110, height=44, now=None):
         mixture = Table.grid(expand=True, padding=(0,1))
         mixture.add_column(style=MUTED)
         mixture.add_column(justify='right')
-        for label,raw in zip(('STFT','LTFT'),s.trims if s else (32768,)*2):
-            mixture.add_row(label, Text(f'{trim_percent(raw):+.2f} %' if shown else '—',
+        for label,value in zip(('STFT','LTFT'),values.trims_percent):
+            mixture.add_row(label, Text(f'{value:+.2f} %' if shown and value is not None else '—',
                                         style=f'bold {GREEN}'))
-        maf = (('≥' if s.maf_raw == 1023 else '~') + f'{s.maf_g_s_est:.1f} g/s'
-               if shown and s.maf_g_s_est is not None else '—')
+        maf = (('≥' if values.maf_at_limit else '~') + f'{values.maf_g_s:.1f} g/s'
+               if shown and values.maf_g_s is not None else '—')
         mixture.add_row(tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
-        oxygen_label = tr('rico', 'rich') if shown and s.oxygen_raw is not None and s.oxygen_raw > O2_SWITCH_RAW else tr('pobre', 'lean')
-        oxygen = f'{oxygen_label} · {oxygen_voltage(s.oxygen_raw):.3f} V' if shown and s.oxygen_raw is not None else '—'
+        oxygen_label = tr('rico', 'rich') if values.oxygen_rich else tr('pobre', 'lean')
+        oxygen = f'{values.oxygen_v:.3f} V' if shown and values.oxygen_v is not None else '—'
+        if shown and values.oxygen_v is not None and values.oxygen_rich is not None:
+            oxygen = f'{oxygen_label} · {oxygen}'
         mixture.add_row(tr('Sonda λ', 'O₂ sensor'), Text(oxygen, style=f'bold {AMBER}'))
         temperatures = Table.grid(expand=True, padding=(0,1))
         temperatures.add_column(style=MUTED)
         temperatures.add_column(justify='right')
-        for label,raw in zip((tr('ADMISIÓN', 'INTAKE'),tr('REFRIGERANTE', 'COOLANT')),reversed(s.temperatures if s else (40,40))):
-            temperatures.add_row(label, Text(f'{raw-40} °C' if shown else '—', style=f'bold {AMBER}'))
+        for label,value in zip((tr('ADMISIÓN', 'INTAKE'),tr('REFRIGERANTE', 'COOLANT')),reversed(values.temperatures_c)):
+            temperatures.add_row(label, Text(f'{value:g} °C' if shown and value is not None else '—', style=f'bold {AMBER}'))
         layout['extras'].split_column(Layout(name='mixture',size=6), Layout(name='temps',size=4), Layout(name='advance',minimum_size=3))
         layout['mixture'].update(Panel(mixture, title=tr('MEZCLA', 'MIXTURE'), border_style=GREEN,
                                        box=box.ROUNDED, style=f'on {bg}'))
         layout['temps'].update(Panel(temperatures, title=tr('TEMPERATURAS', 'TEMPERATURES'), border_style=AMBER,
                                      box=box.ROUNDED, style=f'on {bg}'))
-        adv = advance_degrees(s.advance_raw) if shown and s.advance_raw is not None else None
+        adv = values.advance_degrees if shown else None
         advance_text = Text(f'{adv:+5.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
         advance_bar = bar(abs(adv), 40, 24 if height > 36 else 15, color=CYAN) if adv is not None else Text('─'*24, style=MUTED)
