@@ -107,10 +107,13 @@ class Model {
     fun accept(input: Sample): Pair<Sample, Boolean> {
         val s = input.copy(cycleMs = sample?.let { input.at - it.at })
         val old = previous
+        val values = s.values
+        val oldValues = old?.values
         val raisedChannels =
-            if (old != null && s.at - old.at in 1..2000 && old.rpm >= 400 && s.rpm >= 400)
-                s.corrections.take(4).mapIndexedNotNull { i, value ->
-                    if (i < old.corrections.size && value > old.corrections[i]) i + 1 else null
+            if (old != null && oldValues != null && s.at - old.at in 1..2000 &&
+                (oldValues.rpm ?: 0) >= 400 && (values.rpm ?: 0) >= 400)
+                values.retardDegrees.take(4).mapIndexedNotNull { i, value ->
+                    if (i < oldValues.retardDegrees.size && value > oldValues.retardDegrees[i]) i + 1 else null
                 }
             else emptyList()
         val raised = raisedChannels.isNotEmpty()
@@ -124,14 +127,15 @@ class Model {
         sample = s
         failed = false
         status = if (raised) tr("Aumento de corrección observado", "Correction increase observed") else tr("Recibiendo datos", "Receiving data")
-        fun add(q: ArrayDeque<Double>, v: Double) {
+        fun add(q: ArrayDeque<Double>, v: Double?) {
+            if (v == null) { q.clear(); return }
             q.add(v)
             if (q.size > 90) q.removeFirst()
         }
-        add(rpm, s.rpm.toDouble())
-        add(load, s.load.toDouble())
-        add(duty, s.duty)
-        if (knock.isNotEmpty() || s.retard > 0) knock.add(s.retard)
+        add(rpm, values.rpm?.toDouble())
+        add(load, values.load?.toDouble())
+        add(duty, values.dutyPercent)
+        values.retard?.let { if (knock.isNotEmpty() || it > 0) knock.add(it) }
         times.add(s.at)
         if (times.size > 40) times.removeFirst()
         return s to raised

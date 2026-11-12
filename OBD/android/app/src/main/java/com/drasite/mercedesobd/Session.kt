@@ -147,7 +147,7 @@ class Session(
                 val (sample, raised) = model.accept(s)
                 j.sample(sample, model.snapshot(0), raised)
                 val temperatureRaised = temperatureAlerts.accept(sample)
-                if ((raised && sample.highRetard) || temperatureRaised) alert()
+                if ((raised && sample.values.highRetard) || temperatureRaised) alert()
             }
             if (demo) {
                 diagnosticsReady = true

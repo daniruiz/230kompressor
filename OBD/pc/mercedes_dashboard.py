@@ -1571,18 +1571,20 @@ class Model:
 
     def accept(self, sample, tick_us=8/3):
         with self.lock:
+            values = sample.values(tick_us)
             if self.sample is not None:
                 sample.interval_ms = (sample.at-self.sample.at)*1000
             old = self.previous
             # Initial/gapped samples establish a baseline; they are not events.
             continuous = old is not None and 0 < sample.at-old.at <= 2.0
             raised = []
-            if continuous and sample.rpm >= 400 and old.rpm >= 400:
+            old_values = old.values(tick_us) if old is not None else None
+            if continuous and (values.rpm or 0) >= 400 and (old_values.rpm or 0) >= 400:
                 # The ECU ignition routine indexes four active channel bytes.
-                raised = [i for i,(a,b) in enumerate(zip(old.corrections[:4], sample.corrections[:4])) if b > a]
+                raised = [i for i,(a,b) in enumerate(zip(old_values.retard_degrees[:4], values.retard_degrees[:4])) if b > a]
             if raised:
                 self.count += 1  # one observed update, NOT number of combustion knocks
-                if self.sound is not None and sample.high_retard:
+                if self.sound is not None and values.high_retard:
                     self.sound.notify()
                 self.alert_until = sample.at + 3.0
                 slots = ','.join(str(i+1) for i in raised)
@@ -1591,12 +1593,14 @@ class Model:
             self.failed = False
             self.samples += 1
             self.times.append(sample.at)
-            self.history['rpm'].append(sample.rpm)
-            self.history['load'].append(sample.load)
-            self.history['inj'].append(sample.injection)
-            self.history['duty'].append(duty_percent(sample.injection, sample.rpm, tick_us))
-            retard = max(sample.corrections, default=0)
-            if self.history['retard'] or retard > 0:
+            for key, value in (('rpm', values.rpm), ('load', values.load),
+                               ('inj', values.injection_ms), ('duty', values.duty_percent)):
+                if value is None:
+                    self.history[key].clear()
+                else:
+                    self.history[key].append(value)
+            retard = values.retard
+            if retard is not None and (self.history['retard'] or retard > 0):
                 self.history['retard'].append(retard)
             self.status = tr('Recibiendo datos', 'Receiving data') if not raised else tr('Aumento de corrección observado', 'Correction increase observed')
             return bool(raised)
