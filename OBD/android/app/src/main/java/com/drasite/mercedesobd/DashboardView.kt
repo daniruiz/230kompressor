@@ -686,13 +686,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         }
         row(
             "STFT / LTFT",
-            if (values?.stftPercent != null && values.ltftPercent != null)
-                formatValue(
-                    "%+.2f / %+.2f %%",
-                    values.stftPercent,
-                    values.ltftPercent,
-                )
-            else "â€”",
+            listOf(values?.stftPercent, values?.ltftPercent).joinToString(" / ") {
+                it?.let { value -> formatValue("%+.2f", value) } ?: "—"
+            } + " %",
             320f,
         )
         val mafFlow = values?.mafGramsPerSecond
