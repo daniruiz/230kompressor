@@ -15,6 +15,7 @@ class Session(
     private val root: File,
     val model: Model,
     private val connected: (String) -> Unit = {},
+    private val readerFactory: (Wire, Events) -> EcuReader = ::Me21Reader,
     private val alert: () -> Unit,
 ) {
     @Volatile private var thread: Thread? = null
@@ -57,7 +58,7 @@ class Session(
     fun corrections(active: () -> Boolean, done: (Result<FuelCorrections>) -> Unit): Boolean =
         running && !stopped && diagnosticsReady && correctionRequests.offer(CorrectionRequest(active, done))
 
-    private fun serviceCorrections(elm: Elm?, journal: Journal) {
+    private fun serviceCorrections(elm: EcuReader?, journal: Journal) {
         val request = correctionRequests.poll() ?: return
         if (!request.active()) return
         try {
@@ -78,7 +79,7 @@ class Session(
         }
     }
 
-    private fun serviceFaults(elm: Elm?, journal: Journal, demoFaults: MutableList<FaultCode>) {
+    private fun serviceFaults(elm: EcuReader?, journal: Journal, demoFaults: MutableList<FaultCode>) {
         val request = faultRequests.poll() ?: return
         try {
             if (elm == null) {
@@ -234,44 +235,25 @@ class Session(
                 "bluetooth_name" to device.name,
                 "bluetooth_address" to device.address,
             )
-            val elm = Elm(w, j)
-            elm.setup(model::notice)
-            val ecuProfile = elm.identifyEcu(model::notice)
-            model.setEcu(ecuProfile, elm.ecuSoftware, elm.ecuIdentificationStatus)
-            var group = true
-            try {
-                publish(elm.defineGroup())
-            } catch (e: LinkTimeout) {
-                throw e
-            } catch (e: DiagnosticException) {
-                j.event("fallback", "reason" to e.toString())
-                model.notice(tr("Grupo rechazado; lecturas individuales", "Group rejected; individual reads"))
-                group = false
-            }
-            if (adapterTuning) elm.optimize(group, ::publish, model::notice)
-            elm.enableAdapterVoltagePolling()
+            val reader = readerFactory(w, j)
+            reader.identify(model::notice)
+            model.setEcu(reader.ecuProfile, reader.ecuSoftware, reader.ecuIdentificationStatus)
+            reader.start(adapterTuning, ::publish, model::notice)
             diagnosticsReady = true
             var consecutive = 0
             while (!stopped) {
-                serviceFaults(elm, j, demoFaults)
-                serviceCorrections(elm, j)
+                serviceFaults(reader, j, demoFaults)
+                serviceCorrections(reader, j)
                 try {
-                    model.mode(if (group) "AGRUPADO" else "INDIVIDUAL", elm.profile)
-                    publish(elm.acquire(group))
+                    model.mode(reader.mode, reader.transportProfile)
+                    publish(reader.read())
                     consecutive = 0
                 } catch (e: LinkTimeout) {
                     throw e
                 } catch (e: DiagnosticException) {
                     consecutive++
                     model.reject(e.message ?: tr("Respuesta inválida", "Invalid response"))
-                    if (elm.rollback(e.message ?: "Error")) continue
-                    if (group && consecutive >= 3) {
-                        elm.verifyLink()
-                        group = false
-                        consecutive = 0
-                        j.event("fallback", "reason" to tr("3 errores de grupo; RPM individual válida", "3 errors de grupo; RPM individual válida"))
-                    } else if (consecutive >= 5)
-                        throw DiagnosticException(tr("Cinco ciclos sin datos válidos", "Five cycles without valid data"))
+                    consecutive = reader.recover(e, consecutive)
                 }
             }
         } catch (e: Exception) {

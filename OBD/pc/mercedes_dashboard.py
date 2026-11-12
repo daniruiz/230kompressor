@@ -55,10 +55,12 @@ from contextlib import contextmanager
 
 if __package__:
     from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
+    from .me21_reader import Me21Reader
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
+    from me21_reader import Me21Reader
     from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 
@@ -1747,7 +1749,12 @@ class Model:
             return bool(raised)
 
 
-def worker(args, model, stop, journal, faults=None, corrections=None):
+def create_reader(args, journal, stop, notice) -> EcuReader:
+    return Me21Reader(connect_adapter(args, journal, stop, notice), args, journal)
+
+
+def worker(args, model, stop, journal, faults=None, corrections=None,
+           reader_factory=create_reader):
     elm = None
     try:
         if args.demo:
@@ -1794,34 +1801,15 @@ def worker(args, model, stop, journal, faults=None, corrections=None):
                 if stop.wait(0.125):
                     break
             return
-        elm = connect_adapter(args, journal, stop, model.notice)
-        elm.setup(model.notice, args.adaptive)
-        elm.identify_ecu(model.notice)
+        elm = reader_factory(args, journal, stop, model.notice)
+        elm.identify(model.notice)
         model.set_ecu(elm)
-        mode = 'individual' if args.individual else 'grouped'
-        if mode == 'grouped':
-            model.notice(tr(f'Configurando {len(IDS)} entradas agrupadas · RAM de diagnóstico', f'Configuring {len(IDS)} grouped entries · diagnostic RAM'))
-            try:
-                first = elm.define_group()
-                event = model.accept(first, args.tick_us)
-                journal.sample(first, args, model, event)
-            except LinkTimeout:
-                raise
-            except DiagnosticError as exc:
-                journal.write('fallback', reason=str(exc))
-                model.reject(tr('Grupo rechazado; paso a lecturas individuales', 'Group rejected; switching to individual reads'))
-                mode = 'individual'
         def publish_probe(sample):
             event = model.accept(sample, args.tick_us)
             journal.sample(sample, args, model, event)
-        if not args.no_adapter_tuning:
-            if elm.is_stn:
-                elm.optimize_transport(mode, model.notice, publish_probe)
-            elif args.elm_timing_probe:
-                elm.optimize_elm_transport(mode, model.notice, publish_probe)
-        model.mode = mode
+        elm.start(model.notice, model.reject, publish_probe)
+        model.mode = elm.mode
         model.adapter_profile = elm.adapter_profile
-        elm.enable_adapter_voltage_polling()
         consecutive = 0
         if faults:
             faults.ready = True
@@ -1833,12 +1821,12 @@ def worker(args, model, stop, journal, faults=None, corrections=None):
             if corrections:
                 corrections.service(elm, journal)
             try:
-                sample = elm.acquire(mode)
+                sample = elm.read()
                 model.adapter_profile = elm.adapter_profile
                 event = model.accept(sample, args.tick_us)
                 journal.sample(sample, args, model, event)
                 consecutive = 0
-                journal.write('sample', demo=False, mode=mode, rpm=sample.rpm,
+                journal.write('sample', demo=False, mode=elm.mode, rpm=sample.rpm,
                               **injection_metrics(sample, args), load_raw=sample.load,
                               correction_raw=sample.corrections, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms,
                               observed_event=event, observed_count=model.count,
@@ -1848,16 +1836,9 @@ def worker(args, model, stop, journal, faults=None, corrections=None):
             except DiagnosticError as exc:
                 consecutive += 1
                 model.reject(str(exc))
-                if elm.restore_transport(str(exc)):
-                    model.adapter_profile = elm.adapter_profile
-                    model.notice(tr('Tiempos compatibles restaurados · reintentando lectura', 'Compatible timings restored · retrying read'))
-                    continue
-                if mode == 'grouped' and consecutive >= 3:
-                    mode = model.mode = 'individual'
-                    journal.write('fallback', reason='3 respuestas de grupo inválidas')
-                    consecutive = 0
-                elif consecutive >= 5:
-                    raise DiagnosticError(tr('Cinco ciclos sin datos válidos. ', 'Five cycles without valid data. ') + str(exc))
+                consecutive = elm.recover(exc, consecutive, model.notice)
+                model.adapter_profile = elm.adapter_profile
+                model.mode = elm.mode
     except InterruptedError:
         pass
     except Exception as exc:
