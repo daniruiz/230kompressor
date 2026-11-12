@@ -52,12 +52,12 @@
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
-  <XDFTABLE uniqueid="0x0002" flags="0x0">
-    <title>Launch Rev Limiter</title>
-
+  <XDFTABLE uniqueid="0x0050" flags="0x0">
+    <title>Launch Rev Limiter - speed thresholds</title>
+    <description>Columns 0 and 1 are speed thresholds A and B, selected by ECU state. Below the applicable threshold, the launch RPM limit can apply. These are not maximum vehicle-speed limits.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
-      <units>Column (index) (index)</units>
+      <units>Threshold (0=A, 1=B)</units>
       <indexcount>2</indexcount>
       <decimalpl>0</decimalpl>
       <outputtype>2</outputtype>
@@ -85,8 +85,51 @@
       </MATH>
     </XDFAXIS>
     <XDFAXIS id="z">
-      <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x4062" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="2" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>-</units>
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x4062" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="2" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>km/h</units>
+      <decimalpl>1</decimalpl>
+      <min>0</min>
+      <max>306</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*1.2">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x0002" flags="0x0">
+    <title>Launch Rev Limiter</title>
+    <description>Engine-speed limit shared by both launch speed-threshold branches. Activation also depends on ECU state and other active limits.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <units />
+      <indexcount>1</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <LABEL index="0" value="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <units />
+      <indexcount>1</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <LABEL index="0" value="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x4064" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>rpm</units>
       <decimalpl>0</decimalpl>
       <min>0</min>
       <max>65535</max>
@@ -1762,12 +1805,12 @@
       </MATH>
     </XDFAXIS>
   </XDFTABLE>
-  <XDFTABLE uniqueid="0x0011" flags="0x0">
-    <title>Launch Rev Limiter</title>
-
+  <XDFTABLE uniqueid="0x0051" flags="0x0">
+    <title>Launch Rev Limiter - speed thresholds</title>
+    <description>Columns 0 and 1 are speed thresholds A and B, selected by ECU state. Below the applicable threshold, the launch RPM limit can apply. These are not maximum vehicle-speed limits.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
-      <units>Column (index) (index)</units>
+      <units>Threshold (0=A, 1=B)</units>
       <indexcount>2</indexcount>
       <decimalpl>0</decimalpl>
       <outputtype>2</outputtype>
@@ -1795,8 +1838,51 @@
       </MATH>
     </XDFAXIS>
     <XDFAXIS id="z">
-      <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x30062" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="2" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>-</units>
+      <EMBEDDEDDATA mmedtypeflags="0x0" mmedaddress="0x30062" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="2" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>km/h</units>
+      <decimalpl>1</decimalpl>
+      <min>0</min>
+      <max>306</max>
+      <outputtype>1</outputtype>
+      <MATH equation="X*1.2">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x0011" flags="0x0">
+    <title>Launch Rev Limiter</title>
+    <description>Engine-speed limit shared by both launch speed-threshold branches. Activation also depends on ECU state and other active limits.</description>
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <units />
+      <indexcount>1</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <LABEL index="0" value="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <units />
+      <indexcount>1</indexcount>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <LABEL index="0" value="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x30064" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <units>rpm</units>
       <decimalpl>0</decimalpl>
       <min>0</min>
       <max>65535</max>
