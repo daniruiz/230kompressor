@@ -39,7 +39,7 @@ from __future__ import annotations
 import argparse
 import csv
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import datetime as dt
 import json
 import math
@@ -56,11 +56,13 @@ from contextlib import contextmanager
 if __package__:
     from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from .me21_reader import Me21Reader
+    from .dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from me21_reader import Me21Reader
+    from dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
     from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 
@@ -105,7 +107,6 @@ DEADTIME_NODES_404 = (112,112,112,112,112,63,43,33,26,21,21,21,21,21,21,21,21)
 O2_SWITCH_RAW = 0x2456
 # 110A -> F74F: byte used directly for OBD throttle position.
 # A narrowband signal cannot be converted to measured lambda or AFR.
-KNOCK_ALERT_THRESHOLD_DEG = 3.0
 BG = '#000000'
 MUTED = '#9aaec8'
 CYAN = '#57d8ed'
@@ -629,38 +630,6 @@ def definition(slot: int, ident: int, clear: bool = False) -> str:
     # 809E=01, 809F=D2 (define) / D0 (clear), 80A0=slot,
     # 80A1=11, 80A2=nonzero id (also required on the clear path).
     return f'2C01{0xD0 if clear else 0xD2:02X}{slot:02X}11{ident:02X}'
-
-
-@dataclass
-class Sample:
-    rpm: int
-    injection: int
-    load: int
-    corrections: tuple[int, ...]
-    duration_ms: float = 0.0
-    at: float = field(default_factory=time.monotonic)
-    trims: tuple[int, ...] = (32768,)*2
-    temperatures: tuple[int, int] = (40,40)
-    pairs_raw: str = ""
-    maf_raw: int | None = None
-    maf_adc_word: int | None = None
-    maf_g_s_est: float | None = None
-    maf_calibration_status: str = 'unverified_software'
-    interval_ms: float | None = None
-    advance_raw: int | None = None
-    throttle_raw: int | None = None
-    oxygen_raw: int | None = None
-    # Legacy metric input: the fixed acquisition group leaves voltage unavailable.
-    voltage_raw: int | None = None
-    diagnostic_ids: tuple[int, ...] = ()
-    maf_ecu_raw: int | None = None
-    adapter_voltage_v: float | None = None
-    adapter_voltage_age_ms: float | None = None
-    adapter_voltage_status: str = 'pending'
-
-    @property
-    def high_retard(self):
-        return max(self.corrections, default=0) * 0.75 > KNOCK_ALERT_THRESHOLD_DEG
 
 
 def from_pairs(pairs: list[bytes]) -> Sample:
