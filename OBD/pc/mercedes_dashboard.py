@@ -62,6 +62,7 @@ if __package__:
     from .dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
     from .measurements import Measurements
     from .fuel_corrections import FuelCorrections
+    from .temperature_alerts import TemperatureAlerts
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
@@ -73,6 +74,7 @@ else:
     from dashboard_sample import Sample, KNOCK_ALERT_THRESHOLD_DEG
     from measurements import Measurements
     from fuel_corrections import FuelCorrections
+    from temperature_alerts import TemperatureAlerts
     from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 
@@ -1531,6 +1533,7 @@ def connect_adapter(args, journal, stop, notice):
 class Model:
     def __init__(self, sound=None):
         self.sound = sound
+        self.temperature_alerts = TemperatureAlerts()
         self.lock = threading.RLock()
         self.sample = None
         self.ecu_profile = None
@@ -1583,11 +1586,12 @@ class Model:
                 raised = [i for i,(a,b) in enumerate(zip(old_values.retard_degrees[:4], values.retard_degrees[:4])) if b > a]
             if raised:
                 self.count += 1  # one observed update, NOT number of combustion knocks
-                if self.sound is not None and values.high_retard:
-                    self.sound.notify()
                 self.alert_until = sample.at + 3.0
                 slots = ','.join(str(i+1) for i in raised)
                 self.events.appendleft((sample.at, tr(f'Aumento en canal(es): {slots}', f'Increase in channel(s): {slots}')))
+            temperature_raised = self.temperature_alerts.accept(values)
+            if self.sound is not None and ((raised and values.high_retard) or temperature_raised):
+                self.sound.notify()
             self.previous = self.sample = sample
             self.failed = False
             self.samples += 1
@@ -1900,13 +1904,20 @@ def render(model, args, width=110, height=44, now=None):
         temperatures = Table.grid(expand=True, padding=(0,1))
         temperatures.add_column(style=MUTED)
         temperatures.add_column(justify='right')
-        for label,value in zip((tr('ADMISIÓN', 'INTAKE'),tr('REFRIGERANTE', 'COOLANT')),reversed(values.temperatures_c)):
-            temperatures.add_row(label, Text(f'{value:g} °C' if shown and value is not None else '—', style=f'bold {AMBER}'))
+        hot_temperatures = tuple(shown and TemperatureAlerts.is_hot(value, limit)
+                                for value, limit in zip(values.temperatures_c,
+                                (TemperatureAlerts.MOTOR_LIMIT, TemperatureAlerts.INTAKE_LIMIT)))
+        temperature_color = RED if any(hot_temperatures) else AMBER
+        temperature_bg = '#811c31' if any(hot_temperatures) and not args.no_flash and int(now*4)%2 == 0 else bg
+        for label,value,hot in zip((tr('ADMISIÓN', 'INTAKE'),tr('REFRIGERANTE', 'COOLANT')),
+                                   reversed(values.temperatures_c),reversed(hot_temperatures)):
+            temperatures.add_row(label, Text(f'{value:g} °C' if shown and value is not None else '—',
+                                            style=f'bold {RED if hot else AMBER}'))
         layout['extras'].split_column(Layout(name='mixture',size=6), Layout(name='temps',size=4), Layout(name='advance',minimum_size=3))
         layout['mixture'].update(Panel(mixture, title=tr('MEZCLA', 'MIXTURE'), border_style=GREEN,
                                        box=box.ROUNDED, style=f'on {bg}'))
-        layout['temps'].update(Panel(temperatures, title=tr('TEMPERATURAS', 'TEMPERATURES'), border_style=AMBER,
-                                     box=box.ROUNDED, style=f'on {bg}'))
+        layout['temps'].update(Panel(temperatures, title=tr('TEMPERATURAS', 'TEMPERATURES'), border_style=temperature_color,
+                                     box=box.ROUNDED, style=f'on {temperature_bg}'))
         adv = values.advance_degrees if shown else None
         advance_text = Text(f'{adv:+5.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
