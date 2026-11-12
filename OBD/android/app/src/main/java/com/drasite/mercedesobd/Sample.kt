@@ -25,7 +25,11 @@ data class Sample(
     val adapterVoltage: Double? = null,
     val adapterVoltageAgeMs: Long? = null,
     val adapterVoltageStatus: String = "pending",
+    // Other ECU readers supply their own values, leaving unsupported quantities null.
+    val measurements: Measurements? = null,
 ) {
+    val values: Measurements = measurements ?: Me21Measurements.from(this)
+
     // ATRV measures the adapter supply, not the ECU's F734 byte for dead time.
     val injectionMetrics = Injection.metrics(injection, rpm, null)
 
@@ -41,4 +45,3 @@ data class Sample(
     val highRetard
         get() = retard > Decoder.KNOCK_ALERT_THRESHOLD_DEG
 }
-

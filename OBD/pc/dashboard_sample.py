@@ -2,6 +2,13 @@
 from dataclasses import dataclass, field
 import time
 
+if __package__:
+    from .measurements import Measurements
+    from .me21_measurements import measurements as me21_measurements
+else:
+    from measurements import Measurements
+    from me21_measurements import measurements as me21_measurements
+
 KNOCK_ALERT_THRESHOLD_DEG = 3.0
 
 
@@ -31,7 +38,17 @@ class Sample:
     adapter_voltage_v: float | None = None
     adapter_voltage_age_ms: float | None = None
     adapter_voltage_status: str = 'pending'
+    measurements: Measurements | None = None
+
+    @classmethod
+    def from_measurements(cls, values: Measurements, **timing):
+        """Other readers need not manufacture ME2.1 raw bytes."""
+        return cls(values.rpm or 0, 0, values.load or 0, (), measurements=values, **timing)
+
+    def values(self, tick_us=8/3) -> Measurements:
+        # Samples are mutable during acquisition/demo; do not cache conversions.
+        return self.measurements if self.measurements is not None else me21_measurements(self, tick_us)
 
     @property
     def high_retard(self):
-        return max(self.corrections, default=0) * 0.75 > KNOCK_ALERT_THRESHOLD_DEG
+        return self.values().high_retard
