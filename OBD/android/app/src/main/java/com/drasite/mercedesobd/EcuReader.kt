@@ -1,6 +1,14 @@
 package com.drasite.mercedesobd
 
-/** Acquisition-thread boundary; implementations own ECU requests and recovery. */
+/** Acquisition-thread boundary; implementations own ECU requests and recovery.
+ *
+ * Inject an implementation through Session.readerFactory; Bluetooth lifetime
+ * remains in Session. All reads and menu diagnostics are serialized there.
+ * A future SIM4LE reader returns Sample.fromMeasurements with unsupported units
+ * left null, and FuelCorrections.fromMeasurements for on-demand results.
+ * Do not encode other ECU values as ME2.1 bytes. Family-specific raw logs/CSV
+ * columns need their own exporter extension. This API adds no ECU autodetection.
+ */
 interface EcuReader {
     val ecuProfile: EcuProfile?
     val ecuSoftware: String?
