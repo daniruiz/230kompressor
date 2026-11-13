@@ -684,11 +684,10 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             drawText(canvas, label, 816f, y, 14f, muted, false, 145f)
             drawText(canvas, value, 1179f, y, 15f, color, true, 215f, Paint.Align.RIGHT)
         }
+        fun formatTrim(value: Double?) = value?.let { formatValue("%+.2f", it) } ?: "â€”"
         row(
             "STFT / LTFT",
-            listOf(values?.stftPercent, values?.ltftPercent).joinToString(" / ") {
-                it?.let { value -> formatValue("%+.2f", value) } ?: "—"
-            } + " %",
+            "${formatTrim(values?.stftPercent)} / ${formatTrim(values?.ltftPercent)} %",
             320f,
         )
         val mafFlow = values?.mafGramsPerSecond
