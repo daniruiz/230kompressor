@@ -569,40 +569,22 @@ class Elm(
         if (!group) return
         notice(tr("OBDLink · midiendo tiempos", "OBDLink · measuring timings"))
         try {
-            val base = ArrayList<Double>()
-            val trial = ArrayList<Double>()
-            repeat(4) {
-                val s = acquire(true)
-                publish(s)
-                base.add(s.acquisitionMs)
-                if (fallbacks > 0 || !fast) return
-            }
+            // Check supported commands and valid replies, not host/Bluetooth jitter.
+            // No firmware/ECU whitelist; runtime errors still restore P4=5.
             if (at("STIP4 0", true)) {
                 p4 = true
-                repeat(6) {
-                    val s = acquire(true)
-                    publish(s)
-                    trial.add(s.acquisitionMs)
+                repeat(3) {
+                    publish(acquire(true))
                     if (fallbacks > 0 || !fast) {
                         rollback(tr("Atajo rechazado", "Shortcut rejected"))
                         return
                     }
                 }
-                val b = median(base.drop(1))
-                val t = median(trial.drop(1))
-                val accept = t < b * .97
-                if (accept) profile = "STN rápido P4=0"
-                else {
-                    at("STIP4 5")
-                    p4 = false
-                }
+                profile = "STN rápido P4=0"
                 log.event(
-                    "transport_benchmark",
-                    "baseline_ms" to base,
-                    "trial_ms" to trial,
-                    "baseline_median_ms" to b,
-                    "trial_median_ms" to t,
-                    "p4_zero_accepted" to accept,
+                    "stn_p4_validation",
+                    "valid_samples" to 3,
+                    "p4_ms" to 0,
                     "profile" to profile,
                 )
             }
@@ -612,7 +594,7 @@ class Elm(
             throw e
         } catch (e: DiagnosticException) {
             rollback(e.message ?: tr("Error prueba", "Trial error"))
-            log.event("transport_benchmark_error", "error" to e.toString())
+            log.event("transport_tuning_error", "error" to e.toString())
         }
         notice(I18n.profile(profile) + tr(" · lectura preparada", " · ready to read"))
     }

@@ -53,7 +53,7 @@ class Me21Reader(wire: Wire, private val log: Events) : EcuReader {
             "adapter_voltage_interval_ms" to 5000,
             "correction_deg_per_raw_nominal" to 0.75,
             "detector" to "observed_correction_increase_NOT_ECU_knock_counter",
-            "transport_revision" to "native_spp_stn_p3_and_elm_host_gap_v3",
+            "transport_revision" to "native_spp_stn_p4_validation_p3_and_elm_host_gap_v4",
             "adaptive" to "0",
             "response_timeout_ms" to 512,
             "request_gap_ms" to 60,

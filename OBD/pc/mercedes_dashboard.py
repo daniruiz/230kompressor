@@ -13,7 +13,7 @@ The ECU knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, STFT, temperatures, RPM, injection,
 load, raw sensor MAF, ignition advance, throttle and narrowband oxygen.
 LTFT occupies the remaining slot: twelve fixed IDs, one group read per cycle.
-STN/OBDLink: measured P4 and 60/25 ms P3 trials with automatic rollback.
+STN/OBDLink: validate P4=0 replies, then measure 60/25 ms P3 with rollback.
 ELM clones: automatically benchmark shorter host-side waits on grouped reads.
 Use --no-adapter-tuning to disable automatic timing optimisation.
 Stored LTFT endpoints and learned additive adaptation are read only on demand
@@ -1058,12 +1058,12 @@ class ELM:
         return True
 
     def optimize_transport(self, mode, notice, publish):
-        """Benchmark STN P4 first, then a shorter P3 on validated grouped reads.
+        """Validate STN P4 support, then measure P3 on grouped reads.
 
         Reference: https://www.obdlink.com/frpm, STPTRQ and STIP4.
-        Start with the established 60 ms P3. Retain P4=0 only with six valid
-        responses and >=3% improvement; test P3=25 separately at the chosen P4.
-        This short startup test is not proof of long-term link reliability.
+        P4=0 needs three valid replies, not a timing comparison dominated by
+        host/Bluetooth jitter. P3 keeps its measured acceptance criteria.
+        Both settings retain runtime rollback; no firmware or ECU whitelist.
         """
         if not self.is_stn or not self.fast or self.timing_fallbacks:
             return
@@ -1082,35 +1082,15 @@ class ELM:
             return
         notice(tr('OBDLink/STN · comprobando tiempos de lectura', 'OBDLink/STN · checking read timings'))
         try:
-            baseline = []
-            for _ in range(4):
-                sample = self.acquire(mode)
-                publish(sample)
-                baseline.append(sample.duration_ms)
-                if self.timing_fallbacks or not self.fast:
-                    return
             if self.at('STIP4 0', optional=True):
                 self.p4_fast = True
-                trial = []
-                for _ in range(6):
-                    sample = self.acquire(mode)
-                    publish(sample)
-                    trial.append(sample.duration_ms)
+                for _ in range(3):
+                    publish(self.acquire(mode))
                     if self.timing_fallbacks or not self.fast:
                         self.restore_transport(tr('Atajo de respuesta rechazado durante prueba', 'Response shortcut rejected during trial'))
                         return
-                # Exclude first request after a local AT/ST command from each set.
-                base_ms = statistics.median(baseline[1:])
-                trial_ms = statistics.median(trial[1:])
-                accepted = trial_ms < base_ms * 0.97
-                if accepted:
-                    self.adapter_profile = 'STN rápido P4=0'
-                else:
-                    self.at('STIP4 5')
-                    self.p4_fast = False
-                self.journal.write('transport_benchmark', baseline_ms=baseline,
-                                   trial_ms=trial, baseline_median_ms=base_ms,
-                                   trial_median_ms=trial_ms, p4_zero_accepted=accepted,
+                self.adapter_profile = 'STN rápido P4=0'
+                self.journal.write('stn_p4_validation', valid_samples=3, p4_ms=0,
                                    profile=self.adapter_profile)
             self._optimize_stn_request_gap(mode, publish)
         except LinkTimeout:
@@ -1118,7 +1098,7 @@ class ELM:
             raise
         except DiagnosticError as exc:
             self.restore_transport(str(exc))
-            self.journal.write('transport_benchmark_error', error=str(exc))
+            self.journal.write('transport_tuning_error', error=str(exc))
         notice(profile_text(self.adapter_profile) + tr(' · lectura preparada', ' · ready to read'))
 
     def _optimize_stn_request_gap(self, mode, publish):
@@ -2021,7 +2001,7 @@ def main(argv=None):
                   injector_deadtime_is_direct_ram_read=False,
                   injector_minimum_ticks=args.injector_calibration.minimum_ticks,
                   adaptive=args.adaptive, response_timeout_ms=512, request_gap_ms=60,
-                  transport_revision='elm_auto_host_gap_and_chunk_timestamps_v5',
+                  transport_revision='stn_p4_validation_p3_and_elm_host_gap_v6',
                   adapter_tuning=not args.no_adapter_tuning and not args.conservative,
                   elm_timing_probe=args.elm_timing_probe and not args.no_adapter_tuning and not args.conservative,
                   exchange_timing_basis='host_receive_batches_not_kline',
