@@ -272,11 +272,11 @@
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0004" flags="0x0">
-    <title>Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)</title>
-
+    <title>Vehicle speed limiter</title>
+    <description>Vehicle-speed thresholds in km/h (stored unsigned 16-bit value / 16). Row and column indices start at 0. Column n is selected when (RAM[0x9C0C] &amp; 7) = n: eight coding variants, not manual/automatic gearbox columns. All four rows use the same column, without interpolation between variants. Row 0: release threshold; at or below it, speed regulation is reset. Row 1: active-control update/recovery threshold. Row 2: entry threshold; above it, inactive speed regulation can start. Row 3: target speed used to calculate the regulation error. Original row 3 targets by column (km/h): 0=190, 1=210, 2=228, 3=242, 4=250, 5=250, 6=250, 7=250. If the vehicle-speed signal is invalid, row 3 also contributes to a fallback RPM ceiling through coding- and transmission-dependent conversion; it is not a fixed 5700 rpm limit.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
-      <units>Variant (index) (index)</units>
+      <units>Coding (index)</units>
       <indexcount>8</indexcount>
       <decimalpl>0</decimalpl>
       <outputtype>2</outputtype>
@@ -297,7 +297,7 @@
     </XDFAXIS>
     <XDFAXIS id="y" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
-      <units>Block (index) (index)</units>
+      <units>Control phase (index)</units>
       <indexcount>4</indexcount>
       <decimalpl>0</decimalpl>
       <outputtype>2</outputtype>
@@ -314,12 +314,12 @@
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x482e" mmedelementsizebits="16" mmedrowcount="4" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>rpm</units>
-      <decimalpl>0</decimalpl>
-      <min>-100</min>
-      <max>98202.5</max>
+      <units>km/h</units>
+      <decimalpl>2</decimalpl>
+      <min>0</min>
+      <max>4095.9375</max>
       <outputtype>1</outputtype>
-      <MATH equation="X*1.5-100">
+      <MATH equation="X*0.0625">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
@@ -1939,11 +1939,11 @@
     </XDFAXIS>
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0013" flags="0x0">
-    <title>Fallback RPM Limiter (Forces 5,700 rpm limiter without ABS)</title>
-
+    <title>Vehicle speed limiter</title>
+    <description>Vehicle-speed thresholds in km/h (stored unsigned 16-bit value / 16). Row and column indices start at 0. Column n is selected when (RAM[0x9C0C] &amp; 7) = n: eight coding variants, not manual/automatic gearbox columns. All four rows use the same column, without interpolation between variants. Row 0: release threshold; at or below it, speed regulation is reset. Row 1: active-control update/recovery threshold. Row 2: entry threshold; above it, inactive speed regulation can start. Row 3: target speed used to calculate the regulation error. Original row 3 targets by column (km/h): 0=190, 1=210, 2=228, 3=240, 4=250, 5=250, 6=250, 7=250. If the vehicle-speed signal is invalid, row 3 also contributes to a fallback RPM ceiling through coding- and transmission-dependent conversion; it is not a fixed 5700 rpm limit.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
-      <units>Variant (index) (index)</units>
+      <units>Coding (index)</units>
       <indexcount>8</indexcount>
       <decimalpl>0</decimalpl>
       <outputtype>2</outputtype>
@@ -1964,7 +1964,7 @@
     </XDFAXIS>
     <XDFAXIS id="y" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
-      <units>Block (index) (index)</units>
+      <units>Control phase (index)</units>
       <indexcount>4</indexcount>
       <decimalpl>0</decimalpl>
       <outputtype>2</outputtype>
@@ -1981,12 +1981,12 @@
     </XDFAXIS>
     <XDFAXIS id="z">
       <EMBEDDEDDATA mmedtypeflags="0x2" mmedaddress="0x3082e" mmedelementsizebits="16" mmedrowcount="4" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
-      <units>rpm</units>
-      <decimalpl>0</decimalpl>
-      <min>-100</min>
-      <max>98202.5</max>
+      <units>km/h</units>
+      <decimalpl>2</decimalpl>
+      <min>0</min>
+      <max>4095.9375</max>
       <outputtype>1</outputtype>
-      <MATH equation="X*1.5-100">
+      <MATH equation="X*0.0625">
         <VAR id="X" />
       </MATH>
     </XDFAXIS>
