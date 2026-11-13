@@ -54,7 +54,6 @@
   </XDFTABLE>
   <XDFTABLE uniqueid="0x004C" flags="0x0">
     <title>Launch Rev Limiter - speed thresholds</title>
-    <description>Columns 0 and 1 are speed thresholds A and B, selected by ECU state. Below the applicable threshold, the launch RPM limit can apply. These are not maximum vehicle-speed limits.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Threshold (0=A, 1=B)</units>
@@ -98,7 +97,6 @@
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0002" flags="0x0">
     <title>Launch Rev Limiter</title>
-    <description>Engine-speed limit shared by both launch speed-threshold branches. Activation also depends on ECU state and other active limits.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units />
@@ -1721,7 +1719,6 @@
   </XDFTABLE>
   <XDFTABLE uniqueid="0x004D" flags="0x0">
     <title>Launch Rev Limiter - speed thresholds</title>
-    <description>Columns 0 and 1 are speed thresholds A and B, selected by ECU state. Below the applicable threshold, the launch RPM limit can apply. These are not maximum vehicle-speed limits.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units>Threshold (0=A, 1=B)</units>
@@ -1765,7 +1762,6 @@
   </XDFTABLE>
   <XDFTABLE uniqueid="0x0011" flags="0x0">
     <title>Launch Rev Limiter</title>
-    <description>Engine-speed limit shared by both launch speed-threshold branches. Activation also depends on ECU state and other active limits.</description>
     <XDFAXIS id="x" uniqueid="0x0">
       <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
       <units />
