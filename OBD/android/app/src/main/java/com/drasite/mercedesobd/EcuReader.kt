@@ -4,10 +4,10 @@ package com.drasite.mercedesobd
  *
  * Inject an implementation through Session.readerFactory; Bluetooth lifetime
  * remains in Session. All reads and menu diagnostics are serialized there.
- * A future SIM4LE reader returns Sample.fromMeasurements with unsupported units
- * left null, and FuelCorrections.fromMeasurements for on-demand results.
+ * SIM4LE returns Sample.fromMeasurements with unsupported units left null,
+ * and FuelCorrections.fromMeasurements for on-demand results.
  * Do not encode other ECU values as ME2.1 bytes. Family-specific raw logs/CSV
- * columns need their own exporter extension. This API adds no ECU autodetection.
+ * columns are supplied by each reader. AutoEcuReader selects the ECU family.
  */
 interface EcuReader {
     val ecuProfile: EcuProfile?

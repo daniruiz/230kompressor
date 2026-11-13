@@ -15,7 +15,7 @@ class Session(
     private val root: File,
     val model: Model,
     private val connected: (String) -> Unit = {},
-    private val readerFactory: (Wire, Events) -> EcuReader = ::Me21Reader,
+    private val readerFactory: (Wire, Events) -> EcuReader = { wire, log -> AutoEcuReader(wire, log) },
     private val alert: () -> Unit,
 ) {
     @Volatile private var thread: Thread? = null

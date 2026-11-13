@@ -45,7 +45,7 @@ internal object Sim4leKwp {
             val source = bytes[pos + 2].u()
             val payload = bytes.copyOfRange(pos + head, end - 1)
             pos = end
-            if (source != 0x01) continue
+            if (source != 0x01) throw DiagnosticException("SIM4LE: wrong ECU address")
             if (payload.size == 3 && payload[0].u() == 0x7F && payload[1].u() == service) {
                 if (payload[2].u() == 0x78) { pending = true; continue }
                 throw NegativeResponse(service, payload[2].u())

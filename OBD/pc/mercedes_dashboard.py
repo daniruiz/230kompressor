@@ -55,7 +55,7 @@ from contextlib import contextmanager
 
 if __package__:
     from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
-    from .me21_reader import Me21Reader
+    from .auto_reader import AutoReader
     from .me21_measurements import (InjectorCalibration, O2_SWITCH_RAW, VOLTAGE_V_PER_RAW_EST,
                                     ecu_voltage_est, injection_metrics)
     from .dashboard_sample import Sample
@@ -66,7 +66,7 @@ if __package__:
     from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
-    from me21_reader import Me21Reader
+    from auto_reader import AutoReader
     from me21_measurements import (InjectorCalibration, O2_SWITCH_RAW, VOLTAGE_V_PER_RAW_EST,
                                    ecu_voltage_est, injection_metrics)
     from dashboard_sample import Sample
@@ -1577,7 +1577,7 @@ class Model:
 
 
 def create_reader(args, journal, stop, notice) -> EcuReader:
-    return Me21Reader(connect_adapter(args, journal, stop, notice), args, journal)
+    return AutoReader(connect_adapter(args, journal, stop, notice), args, journal)
 
 
 def worker(args, model, stop, journal, faults=None, corrections=None,

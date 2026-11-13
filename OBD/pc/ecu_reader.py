@@ -1,17 +1,14 @@
 """UI-independent acquisition boundary, used only on the acquisition thread.
 
-The launcher injects worker(..., reader_factory=...), defaulting to Me21Reader.
+The launcher injects worker(..., reader_factory=...), defaulting to AutoReader.
 Each factory receives args, journal, stop and notice, and owns its transport.
 identify/start/read/recover and menu diagnostics run on that same thread;
 close must release the transport even after a failed handshake.
 
-A future SIM4LE reader should return Sample.from_measurements(Measurements(...))
-and leave unverified units as None, especially injection duration and duty.
-No ME2.1-shaped placeholder bytes are needed. Optional correction results use
-FuelCorrections.from_measurements; unsupported diagnostics must raise an error.
-The existing raw log schema is retained only for legacy ME2.1 samples; adding
-family-specific raw fields or CSV columns is a separate exporter change.
-This boundary does not enable SIM4LE or select an ECU automatically.
+SIM4LE returns Sample.from_measurements with its own raw snapshot and units.
+Injection duration/duty describe the nominal base, not the electrical pulse.
+Optional correction results use FuelCorrections.from_measurements; unsupported
+diagnostics raise an error rather than issuing a different ECU family's command.
 """
 from typing import Protocol, Callable, Any
 
