@@ -69,7 +69,7 @@ class Sim4leReader:
 
     def start(self, notice, reject, publish):
         # Same adapter pacing as the successful Veepeak trace. No 83 session change.
-        self.elm.request_gap = 0 if not self.args.no_adapter_tuning else .060
+        self.elm.request_gap = .060 if self.args.no_adapter_tuning or self.args.conservative else 0
         publish(self.read())
 
     def read(self):
