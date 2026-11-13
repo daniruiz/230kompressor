@@ -169,6 +169,8 @@ class Journal(
             v["load_value"] = values.load
             v["load_unit"] = values.loadUnit
         }
+        v["ecu_family"] = s.ecuFamily
+        if (s.ecuFamily == "SIM4LE") v.putAll(Sim4leLog.snapshotFields(s))
         // Sample.at uses the monotonic acquisition clock; each log starts at zero.
         val start = csvStartedAt ?: s.at.also { csvStartedAt = it }
         csvWriter.write(CsvLog.sampleRow(v, s.at - start))

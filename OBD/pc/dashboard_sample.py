@@ -41,9 +41,9 @@ class Sample:
     ecu_fields: dict = field(default_factory=dict)
 
     @classmethod
-    def from_measurements(cls, values: Measurements, **timing):
+    def from_measurements(cls, values: Measurements, **sample_kwargs):
         """Other readers need not manufacture ME2.1 raw bytes."""
-        return cls(values.rpm or 0, 0, values.load or 0, (), measurements=values, **timing)
+        return cls(values.rpm or 0, 0, values.load or 0, (), measurements=values, **sample_kwargs)
 
     def values(self, tick_us=8/3) -> Measurements:
         # Samples are mutable during acquisition/demo; do not cache conversions.

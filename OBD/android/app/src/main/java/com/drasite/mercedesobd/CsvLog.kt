@@ -7,7 +7,7 @@ import java.util.Locale
 
 /** Wire format shared with the PC Journal's csv.DictWriter (excel dialect). */
 internal object CsvLog {
-    // Engine plots only; Journal keeps the full sample and diagnostics in JSONL.
+    // Keep the original ME2.1 columns first; SIM4LE appends decoded and raw fields.
     // Load stays in ECU units because its physical scale is not verified.
     val fields = listOf(
         "Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s_est", "maf_ecu_g_s_est",
@@ -16,7 +16,7 @@ internal object CsvLog {
         listOf(
             "stft_a_pct", "ltft_a_pct",
             "coolant_C", "iat_C", "oxygen_voltage_V", "adapter_voltage_V",
-        )
+        ) + Sim4leLog.fields
 
     private val utcSeconds = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss", Locale.ROOT)
         .withZone(ZoneOffset.UTC)

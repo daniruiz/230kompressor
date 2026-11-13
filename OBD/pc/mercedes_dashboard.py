@@ -56,6 +56,7 @@ from contextlib import contextmanager
 if __package__:
     from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from .auto_reader import AutoReader
+    from .sim4le_log import EXTRA_FIELDS, snapshot_fields
     from .me21_measurements import (InjectorCalibration, O2_SWITCH_RAW, VOLTAGE_V_PER_RAW_EST,
                                     ecu_voltage_est, injection_metrics)
     from .dashboard_sample import Sample
@@ -67,6 +68,7 @@ if __package__:
 else:
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from auto_reader import AutoReader
+    from sim4le_log import EXTRA_FIELDS, snapshot_fields
     from me21_measurements import (InjectorCalibration, O2_SWITCH_RAW, VOLTAGE_V_PER_RAW_EST,
                                    ecu_voltage_est, injection_metrics)
     from dashboard_sample import Sample
@@ -669,13 +671,14 @@ class Journal:
             except OSError:
                 self.stream.close()
                 raise
-            # Engine plots only; JSONL retains the complete sample and diagnostics.
+            # Preserve the original column order; SIM4LE adds the complete block.
             # Load stays in ECU units because its physical scale is not verified.
             self.csv_fields = ['Time','utc','rpm','load_raw','throttle_pct','maf_g_s_est','maf_ecu_g_s_est',
                 'injection_ms_est','injector_duty_est_pct','advance_deg']
             self.csv_fields += [f'knock_channel_{i}_deg_est' for i in range(1,5)]
             self.csv_fields += ['stft_a_pct','ltft_a_pct',
                                 'coolant_C','iat_C','oxygen_voltage_V','adapter_voltage_V']
+            self.csv_fields += EXTRA_FIELDS
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
@@ -737,6 +740,9 @@ class Journal:
             values = {key: value for key, value in values.items()
                       if not key.endswith('_raw') and key not in legacy}
             values.update(load_value=readings.load, load_unit=readings.load_unit)
+        values['ecu_family'] = sample.ecu_family
+        if sample.ecu_family == 'SIM4LE':
+            values.update(snapshot_fields(sample))
         self.write('csv_sample', csv_sample_at=sample.at, **values)
 
     def write(self, kind, *, csv_sample_at=None, **values):
