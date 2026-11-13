@@ -27,12 +27,18 @@ data class Sample(
     val adapterVoltageStatus: String = "pending",
     // Other ECU readers supply their own values, leaving unsupported quantities null.
     val measurements: Measurements? = null,
+    val ecuFamily: String = "ME2.1",
+    val ecuRaw: ByteArray = byteArrayOf(),
+    val ecuFields: Map<String, Any?> = emptyMap(),
 ) {
     companion object {
         /** Construct a sample without inventing ME2.1 raw readings for another ECU. */
-        fun fromMeasurements(values: Measurements, at: Long = monoMs(), acquisitionMs: Double = 0.0): Sample =
+        fun fromMeasurements(values: Measurements, at: Long = monoMs(), acquisitionMs: Double = 0.0,
+            ecuFamily: String = "ME2.1", ecuRaw: ByteArray = byteArrayOf(),
+            ecuFields: Map<String, Any?> = emptyMap()): Sample =
             Sample(rpm = values.rpm ?: 0, injection = 0, load = values.load ?: 0,
-                corrections = intArrayOf(), at = at, acquisitionMs = acquisitionMs, measurements = values)
+                corrections = intArrayOf(), at = at, acquisitionMs = acquisitionMs, measurements = values,
+                ecuFamily = ecuFamily, ecuRaw = ecuRaw.copyOf(), ecuFields = ecuFields)
     }
 
     // ATRV measures the adapter supply, not the ECU's F734 byte for dead time.

@@ -1,4 +1,4 @@
-"""Shared sample envelope; raw fields retain the ME2.1 log schema."""
+"""Shared sample envelope, with separate raw data for each ECU family."""
 from dataclasses import dataclass, field
 import time
 
@@ -36,6 +36,9 @@ class Sample:
     adapter_voltage_age_ms: float | None = None
     adapter_voltage_status: str = 'pending'
     measurements: Measurements | None = None
+    ecu_family: str = 'ME2.1'
+    ecu_raw: bytes = b''
+    ecu_fields: dict = field(default_factory=dict)
 
     @classmethod
     def from_measurements(cls, values: Measurements, **timing):

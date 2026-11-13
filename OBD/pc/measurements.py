@@ -22,6 +22,10 @@ class Measurements:
     advance_degrees: float | None = None
     oxygen_v: float | None = None
     oxygen_rich: bool | None = None
+    map_kpa: float | None = None
+    ecu_voltage_v: float | None = None
+    trim_labels: tuple[str, str] = ('STFT', 'LTFT')
+    injection_basis: str = 'common_request_estimate'
 
     @property
     def retard(self):

@@ -21,6 +21,10 @@ data class Measurements(
     val advanceDegrees: Double? = null,
     val oxygenVolts: Double? = null,
     val oxygenRich: Boolean? = null,
+    val mapKpa: Double? = null,
+    val ecuVoltageV: Double? = null,
+    val injectionBasis: String? = null,
+    val trimLabels: List<String> = listOf("STFT", "LTFT"),
 ) {
     val retard: Double? get() = retardDegrees.maxOrNull()
     val highRetard: Boolean get() = (retard ?: 0.0) > 3.0
