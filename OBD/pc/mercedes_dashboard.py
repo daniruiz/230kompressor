@@ -1789,6 +1789,7 @@ def render(model, args, width=110, height=44, now=None):
         flashing = now < model.alert_until
         flash = flashing and not args.no_flash and int(now*2)%2 == 0
         values = s.values(args.tick_us) if s else Measurements()
+        sim4le = s is not None and s.ecu_family == 'SIM4LE'
         high_retard = values.high_retard
         alert_color = RED if high_retard else ORANGE
         bg = ('#811c31' if high_retard else '#7d4315') if flash else BG
@@ -1813,11 +1814,12 @@ def render(model, args, width=110, height=44, now=None):
         duty = values.duty_percent or 0
         duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
         detail = (
-            (f'~{values.injection_ms:.2f} ms' + (f' · {values.injection_raw} raw' if values.injection_raw is not None else ''))
+            (f'~{values.injection_ms:.2f} ms' + ('' if sim4le else
+                f' · {values.injection_raw} raw' if values.injection_raw is not None else ''))
             if shown and values.injection_ms is not None else tr('Sin lectura de inyección', 'No injection reading')
         )
         layout['inj'].update(metric(
-            tr('INYECCIÓN / DUTY', 'INJECTION / DUTY'),
+            tr('INYECCIÓN', 'INJECTION'),
             f'~{duty:.1f}' if shown and values.duty_percent is not None else '—', '%',
             detail, duty_color, duty/100,
             spark(
@@ -1835,7 +1837,11 @@ def render(model, args, width=110, height=44, now=None):
         row=[]
         for i in range(4):
             n=values.retard_degrees[i] if i < len(values.retard_degrees) else None
-            row.append(Text(f'\nC{i+1}: {n:.2f}°' if shown and n is not None else tr(f'CANAL {i+1}   —', f'CHANNEL {i+1}   —'),
+            channel = ''
+            if n is not None:
+                separator = '\n' if width < 100 else ': '
+                channel = f'\nC{i+1}{separator}{n:.2f}°'
+            row.append(Text(channel if shown and n is not None else tr(f'CANAL {i+1}   —', f'CHANNEL {i+1}   —'),
                             style=f'italic bold {MAGENTA}' if n and shown else MUTED))
         indices.add_row(*row)
         if model.count > 0:
@@ -1868,7 +1874,14 @@ def render(model, args, width=110, height=44, now=None):
                                         style=f'bold {GREEN}'))
         maf = (('≥' if values.maf_at_limit else '~') + f'{values.maf_g_s:.1f} g/s'
                if shown and values.maf_g_s is not None else '—')
-        mixture.add_row(tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
+        if sim4le:
+            map_text = f'{values.map_kpa:.0f}' if shown and values.map_kpa is not None else '—'
+            precision = 0 if width < 100 else 1
+            maf_text = f'{values.maf_g_s:.{precision}f}' if shown and values.maf_g_s is not None else '—'
+            flow = f'{map_text}kPa / {maf_text}g/s' if width < 100 else f'{map_text} kPa · {maf_text} g/s'
+            mixture.add_row('MAP/MAF', Text(flow, style=f'bold {CYAN}'))
+        else:
+            mixture.add_row(tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
         oxygen_label = tr('rico', 'rich') if values.oxygen_rich else tr('pobre', 'lean')
         oxygen = f'{values.oxygen_v:.3f} V' if shown and values.oxygen_v is not None else '—'
         if shown and values.oxygen_v is not None and values.oxygen_rich is not None:
@@ -1915,9 +1928,9 @@ def render(model, args, width=110, height=44, now=None):
         footer.append(tr(' salir', ' exit'))
         mode_label = tr('DEMO · SIN COCHE', 'DEMO · NO CAR') if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
         footer.append('\n')
-        voltage = s.adapter_voltage_v if shown and s.adapter_voltage_status == 'ok' else None
+        voltage = (values.ecu_voltage_v if sim4le else s.adapter_voltage_v if s.adapter_voltage_status == 'ok' else None) if shown else None
         voltage_text = f'{voltage:.1f} V' if voltage is not None else '— V'
-        footer.append('OBD '+voltage_text+' · ', style=f'bold {CYAN}')
+        footer.append(('ECU ' if sim4le else 'OBD ')+voltage_text+' · ', style=f'bold {CYAN}')
         if not args.demo:
             software_label = model.ecu_software or tr('no identificada', 'unidentified')
             footer.append('SW '+software_label+' · ', style=f'bold {CYAN}')
