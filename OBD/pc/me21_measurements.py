@@ -15,9 +15,6 @@ VOLTAGE_V_PER_RAW_EST = 3 / 32
 # SW404 bank 1, shared by stock and the analysed 230k_ME21 tune.
 # 47CA: pointer F734, offset 0, shift 4, count 17; nodes at 47D0..47E0.
 DEADTIME_NODES_404 = (112,112,112,112,112,63,43,33,26,21,21,21,21,21,21,21,21)
-# Original ECU threshold, retained as the demo waveform centre only.
-# 111F -> 81C0; comparator at 159F0 uses ROM 41A8 = 0x2456.
-O2_SWITCH_RAW = 0x2456
 
 
 def measurements(sample, tick_us=8/3):

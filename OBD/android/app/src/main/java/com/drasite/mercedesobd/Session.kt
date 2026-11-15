@@ -8,8 +8,6 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.ArrayBlockingQueue
-import kotlin.math.round
-import kotlin.math.sin
 
 class Session(
     private val root: File,
@@ -36,7 +34,7 @@ class Session(
         stopped = false
         diagnosticsReady = false
         thread =
-            Thread({ run(demo, address, adapterTuning, automatic && !demo) }, "MercedesOBD acquisition").also {
+            Thread({ run(demo, address, adapterTuning, automatic && !demo, DemoEcu.SIM4LE) }, "MercedesOBD acquisition").also {
                 it.start()
             }
         return true
@@ -58,10 +56,13 @@ class Session(
     fun corrections(active: () -> Boolean, done: (Result<FuelCorrections>) -> Unit): Boolean =
         running && !stopped && diagnosticsReady && correctionRequests.offer(CorrectionRequest(active, done))
 
-    private fun serviceCorrections(elm: EcuReader?, journal: Journal) {
+    private fun serviceCorrections(elm: EcuReader?, journal: Journal, demoEcu: DemoEcu = DemoEcu.ME21) {
         val request = correctionRequests.poll() ?: return
         if (!request.active()) return
         try {
+            if (elm == null && demoEcu == DemoEcu.SIM4LE)
+                throw DiagnosticException(tr("Lectura de correcciones no disponible en Demo SIM4LE",
+                    "Correction readings unavailable in SIM4LE Demo"))
             // All adapter access stays on the acquisition thread, between samples.
             val result = elm?.readFuelCorrections() ?: FuelCorrections(33768, 35168, 45)
             val profile = elm?.ecuProfile
@@ -79,10 +80,14 @@ class Session(
         }
     }
 
-    private fun serviceFaults(elm: EcuReader?, journal: Journal, demoFaults: MutableList<FaultCode>) {
+    private fun serviceFaults(elm: EcuReader?, journal: Journal, demoFaults: MutableList<FaultCode>,
+        demoEcu: DemoEcu = DemoEcu.ME21) {
         val request = faultRequests.poll() ?: return
         try {
             if (elm == null) {
+                if (demoEcu == DemoEcu.SIM4LE)
+                    throw DiagnosticException(tr("Errores de la ECU no disponibles en Demo SIM4LE",
+                        "ECU fault codes unavailable in SIM4LE Demo"))
                 if (request.clear) demoFaults.clear()
                 journal.event("dtc_demo", "clear" to request.clear)
                 request.done(Result.success(demoFaults.toList()))
@@ -96,14 +101,14 @@ class Session(
         }
     }
 
-    private fun run(demo: Boolean, address: String?, adapterTuning: Boolean, automatic: Boolean) {
+    private fun run(demo: Boolean, address: String?, adapterTuning: Boolean, automatic: Boolean, demoEcu: DemoEcu) {
         val attempts = if (automatic) 3 else 1
         var didConnect = false
         try {
             for (attempt in 1..attempts) {
                 if (stopped) return
                 if (attempt > 1) model.clear()
-                didConnect = runAttempt(demo, address, adapterTuning, automatic, attempt)
+                didConnect = runAttempt(demo, address, adapterTuning, automatic, attempt, demoEcu)
                 // Retry only the initial connection. A session that delivered data never
                 // reconnects by itself after loss of the link or an explicit Stop.
                 if (didConnect || stopped || !automatic) return
@@ -128,7 +133,8 @@ class Session(
     }
 
     @SuppressLint("MissingPermission")
-    private fun runAttempt(demo: Boolean, address: String?, adapterTuning: Boolean, automatic: Boolean, attempt: Int): Boolean {
+    private fun runAttempt(demo: Boolean, address: String?, adapterTuning: Boolean, automatic: Boolean, attempt: Int,
+        demoEcu: DemoEcu): Boolean {
         var journal: Journal? = null
         var wire: BluetoothWire? = null
         var didConnect = false
@@ -151,43 +157,16 @@ class Session(
             }
             if (demo) {
                 diagnosticsReady = true
-                model.mode("DEMO · SIN COCHE")
+                model.mode("DEMO · SIN COCHE", demoEcu.family)
                 model.setEcu(null, null, "demo")
                 val start = monoMs()
                 var last = start
                 while (!stopped) {
-                    serviceFaults(null, j, demoFaults)
-                    serviceCorrections(null, j)
+                    serviceFaults(null, j, demoFaults, demoEcu)
+                    serviceCorrections(null, j, demoEcu)
                     val now = monoMs()
                     val t = (now - start) / 1000.0
-                    val phase = t % 8
-                    val load = (60 + 175 * (.5 + .5 * sin(t / 2.2))).toInt()
-                    val rpm = (900 + 5200 * (.5 + .5 * sin(t / 3 - 1.5))).toInt()
-                    val c = if (phase >= 2) maxOf(0, 8 - ((phase - 2) * 2).toInt()) else 0
-                    val mafAdc = (256 + 767 * (load / 255.0) * (rpm / 6500.0)).toInt().coerceIn(0, 1023)
-                    val injection = 700 + round(7500 * (.5 + .5 * sin(t / 3 - 1))).toInt()
-                    publish(
-                        Sample(
-                            rpm,
-                            injection,
-                            load,
-                            intArrayOf(c, maxOf(0, c - 2), 0, 0),
-                            stft = (32768 + 2500 * sin(t)).toInt(),
-                            ltft = 34000,
-                            coolant = (140 + 18 * sin(t / 4 - 1.5)).toInt(),
-                            iat = (98 + 20 * sin(t / 4 - 2.5)).toInt(),
-                            maf = mafAdc,
-                            mafAdcWord = mafAdc,
-                            mafGramsPerSecond = MafCalibration.gramsPerSecond(mafAdc),
-                            mafCalibrationStatus = "demo",
-                            advance = ((-15 + 20 * sin(t / 4) + 66) / .75).toInt(),
-                            throttle = (255 * (.5 + .5 * sin(t / 3))).toInt(),
-                            oxygen = (0x2456 * (1 + .7 * sin(t * 4))).toInt(),
-                            diagnosticIds = Decoder.ids.toList(),
-                            at = now,
-                            acquisitionMs = (now - last).toDouble(),
-                        )
-                    )
+                    publish(DemoSamples.sample(demoEcu, t, now, (now - last).toDouble()))
                     last = now
                     Thread.sleep(125)
                 }

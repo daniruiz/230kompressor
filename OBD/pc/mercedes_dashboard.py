@@ -57,9 +57,10 @@ if __package__:
     from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from .auto_reader import AutoReader
     from .sim4le_log import EXTRA_FIELDS, snapshot_fields
-    from .me21_measurements import (InjectorCalibration, O2_SWITCH_RAW, VOLTAGE_V_PER_RAW_EST,
+    from .me21_measurements import (InjectorCalibration, VOLTAGE_V_PER_RAW_EST,
                                     ecu_voltage_est, injection_metrics)
     from .dashboard_sample import Sample
+    from .demo_samples import demo_sample
     from .measurements import Measurements
     from .fuel_corrections import FuelCorrections
     from .temperature_alerts import TemperatureAlerts
@@ -69,9 +70,10 @@ else:
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from auto_reader import AutoReader
     from sim4le_log import EXTRA_FIELDS, snapshot_fields
-    from me21_measurements import (InjectorCalibration, O2_SWITCH_RAW, VOLTAGE_V_PER_RAW_EST,
+    from me21_measurements import (InjectorCalibration, VOLTAGE_V_PER_RAW_EST,
                                    ecu_voltage_est, injection_metrics)
     from dashboard_sample import Sample
+    from demo_samples import demo_sample
     from measurements import Measurements
     from fuel_corrections import FuelCorrections
     from temperature_alerts import TemperatureAlerts
@@ -320,13 +322,16 @@ class FaultMenu:
         self.message = tr('Borrando errores…', 'Clearing faults…') if clear else tr('Leyendo memoria de averías…', 'Reading fault memory…')
         self.requests.put_nowait(clear)
 
-    def service(self, elm: EcuReader | None, journal):
+    def service(self, elm: EcuReader | None, journal, demo_ecu='ME2.1'):
         try:
             clear = self.requests.get_nowait()
         except queue.Empty:
             return
         try:
             if elm is None:
+                if demo_ecu == 'SIM4LE':
+                    raise DiagnosticError(tr('Errores de la ECU no disponibles en Demo SIM4LE',
+                                             'ECU fault codes unavailable in SIM4LE Demo'))
                 if clear:
                     self.demo_faults.clear()
                 faults = self.demo_faults
@@ -488,7 +493,7 @@ class CorrectionsMenu:
             self.message = tr('Leyendo LTFT low, high y corrección aditiva…', 'Reading LTFT low, high and additive correction…')
             self.requests.put_nowait(self.generation)
 
-    def service(self, elm: EcuReader | None, journal):
+    def service(self, elm: EcuReader | None, journal, demo_ecu='ME2.1'):
         try:
             generation = self.requests.get_nowait()
         except queue.Empty:
@@ -497,6 +502,9 @@ class CorrectionsMenu:
             if not self.open or generation != self.generation:
                 return
         try:
+            if elm is None and demo_ecu == 'SIM4LE':
+                raise DiagnosticError(tr('Lectura de correcciones no disponible en Demo SIM4LE',
+                                         'Correction readings unavailable in SIM4LE Demo'))
             result = elm.read_fuel_corrections() if elm is not None else FuelCorrections(33768, 35168, 45)
             profile = elm.ecu_profile if elm is not None else None
             journal.write('fuel_corrections', demo=elm is None,
@@ -1597,42 +1605,27 @@ def worker(args, model, stop, journal, faults=None, corrections=None,
                 faults.ready = True
             if corrections:
                 corrections.ready = True
-            model.mode = 'DEMO'
+            model.mode = 'DEMO ' + args.demo_ecu
             model.ecu_identification_status = 'demo'
             model.notice(tr('Simulación · eventos programados cada 8 segundos', 'Simulation · events scheduled every 8 seconds'))
             started = time.monotonic()
             prev_at = started
             while not stop.is_set():
                 if faults:
-                    faults.service(None, journal)
+                    faults.service(None, journal, args.demo_ecu)
                 if corrections:
-                    corrections.service(None, journal)
+                    corrections.service(None, journal, args.demo_ecu)
                 now = time.monotonic()
                 t = now-started
-                phase = t % 8
-                load = int(60 + 175 * (0.5 + 0.5*math.sin(t/2.2)))
-                rpm = int(900 + 5200*(0.5 + 0.5*math.sin(t/3-1.5)))
-                correction = max(0, 8-int((phase-2)*2)) if phase >= 2 else 0
-                knock_corrections = (correction, max(0, correction-2), 0, 0)
-                sample = Sample(rpm, int(1100 + load*18), load, knock_corrections,
-                                (now-prev_at)*1000, now)
-                sample.throttle_raw = round(255*(0.5+0.5*math.sin(t/3)))
-                sample.oxygen_raw = round(O2_SWITCH_RAW*(1+0.7*math.sin(t*4)))
-                sample.maf_raw = min(1023, max(0, int(256 + 767*load/255*rpm/6500)))
-                sample.maf_adc_word = sample.maf_raw
-                sample.maf_g_s_est = flow_g_s(sample.maf_raw)
-                sample.maf_calibration_status = 'demo'
-                sample.injection = 600 + round(7500*(0.5+0.5*math.sin(t/3-1)))
-                sample.diagnostic_ids = IDS
-                sample.advance_raw = round((-15 + 20*math.sin(t/4) + 66)/0.75)
-                sample.temperatures = (int(140 + 18*math.sin(t/4-1.5)),
-                                       int(98 + 20*math.sin(t/4-2.5)))
-                sample.trims = (int(32768+2500*math.sin(t)),34000)
+                sample = demo_sample(t, args.demo_ecu, at=now, duration_ms=(now-prev_at)*1000)
+                if sample.ecu_family == 'ME2.1':
+                    sample.diagnostic_ids = IDS
                 prev_at = now
                 event = model.accept(sample, args.tick_us)
                 journal.sample(sample, args, model, event)
-                journal.write('sample', demo=True, rpm=rpm, **injection_metrics(sample, args),
-                              load_raw=load, correction_raw=knock_corrections, observed_event=event,
+                journal.write('sample', demo=True, ecu_family=sample.ecu_family,
+                              rpm=sample.rpm, **injection_metrics(sample, args),
+                              observed_event=event,
                               observed_count=model.count, cycle_ms=sample.interval_ms, acquisition_ms=sample.duration_ms)
                 if stop.wait(0.125):
                     break
@@ -1928,7 +1921,7 @@ def render(model, args, width=110, height=44, now=None):
         footer.append(tr(': correcciones  ·  ', ': corrections  ·  '))
         footer.append('Ctrl+C', style=f'bold {GREEN}')
         footer.append(tr(' salir', ' exit'))
-        mode_label = tr('DEMO · SIN COCHE', 'DEMO · NO CAR') if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
+        mode_label = (tr('DEMO · SIN COCHE', 'DEMO · NO CAR') + ' · ' + args.demo_ecu) if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
         footer.append('\n')
         voltage = (values.ecu_voltage_v if sim4le else s.adapter_voltage_v if s.adapter_voltage_status == 'ok' else None) if shown else None
         voltage_text = f'{voltage:.1f} V' if voltage is not None else '— V'
@@ -1945,20 +1938,22 @@ def render(model, args, width=110, height=44, now=None):
 def parse_args(argv=None):
     p=argparse.ArgumentParser(description=tr(
         'Panel MercedesOBD. Idioma automático: español o inglés.\n'
-        'Demo: mercedes_dashboard.py --demo\n'
+        'Demo: mercedes_dashboard.py --demo [me21|sim4le]\n'
         'Coche: mercedes_dashboard.py COM3 (o autodetección sin indicar puerto).\n\n'
         'El contador muestra aumentos de corrección observados, no detonaciones validadas.\n'
         'El tiempo y duty de inyección son estimados. La sonda estrecha\n'
         'indica voltaje, no AFR. Los registros conservan unidades y campos estables.',
         'MercedesOBD dashboard. Automatic language: Spanish or English.\n'
-        'Demo: mercedes_dashboard.py --demo\n'
+        'Demo: mercedes_dashboard.py --demo [me21|sim4le]\n'
         'Car: mercedes_dashboard.py COM3 (or omit the port for auto-detection).\n\n'
         'The counter shows observed correction increases, not validated knock events.\n'
         'Injection duration/duty are estimates. The narrowband sensor\n'
         'shows voltage, not AFR. Logs keep stable units and field names.'),
         formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('port', nargs='?', help=tr('Opcional: autodetección USB/Bluetooth; o /dev/ttyUSB0, /dev/rfcomm0, COM5, socket://IP:PUERTO', 'Optional: USB/Bluetooth auto-detection; or /dev/ttyUSB0, /dev/rfcomm0, COM5, socket://IP:PORT'))
-    p.add_argument('--demo', action='store_true', help=tr('Datos simulados, sin abrir puerto ni importar pyserial', 'Simulated data; no port opened or pyserial imported'))
+    p.add_argument('--demo', nargs='?', const='me21', choices=('me21', 'sim4le'),
+                   help=tr('Simular ME2.1 (por defecto) o SIM4LE, sin conexión',
+                           'Simulate ME2.1 (default) or SIM4LE, without a connection'))
     p.add_argument('--baud', type=int, default=115200, help=tr('Velocidad del puerto serie', 'Serial port baud rate'))
     p.add_argument('--seconds', type=float, default=0, help=tr('Duración; 0 hasta Ctrl+C', 'Duration; 0 until Ctrl+C'))
     p.add_argument('--adaptive', choices=['0','1','2'], default='0',
@@ -1978,6 +1973,8 @@ def parse_args(argv=None):
     p.add_argument('--log-dir', type=Path, default=Path('logs'), help=tr('Carpeta de registros', 'Log directory'))
     p.add_argument('--no-log', action='store_true', help=tr('Desactivar registros', 'Disable logging'))
     a=p.parse_args(argv)
+    a.demo_ecu = 'SIM4LE' if a.demo == 'sim4le' else 'ME2.1'
+    a.demo = a.demo is not None
     if a.baud <= 0 or not math.isfinite(a.seconds) or a.seconds < 0 or not math.isfinite(a.tick_us) or a.tick_us <= 0:
         p.error(tr('baud y tick-us positivos; seconds >= 0', 'baud and tick-us must be positive; seconds >= 0'))
     if not math.isfinite(a.voltage_scale) or a.voltage_scale <= 0:
