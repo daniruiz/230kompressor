@@ -5,6 +5,13 @@ import java.util.Locale
 /** Reassemble wrapped ELM text, then validate complete addressed KWP frames. */
 internal object Sim4leKwp {
     fun positive(reply: String, request: String, prefix: String, length: Int): ByteArray {
+        val responses = positives(reply, request, prefix, length)
+        if (responses.size != 1) throw DiagnosticException("SIM4LE: expected one complete engine response")
+        return responses.single()
+    }
+
+    /** Validate every frame before returning any result; 03 may contain several 43 frames. */
+    fun positives(reply: String, request: String, prefix: String, length: Int): List<ByteArray> {
         val upper = reply.uppercase(Locale.ROOT)
         val errors = listOf("BUFFER FULL", "DATA ERROR", "BUS ERROR", "BUS BUSY", "UNABLE TO CONNECT",
             "CAN ERROR", "RX ERROR", "STOPPED", "LV RESET", "<ERROR")
@@ -54,10 +61,10 @@ internal object Sim4leKwp {
                 throw DiagnosticException("SIM4LE: unexpected service or response length")
             positives.add(payload)
         }
-        if (positives.size != 1) {
-            if (pending && positives.isEmpty()) throw NegativeResponse(service, 0x78)
-            throw DiagnosticException("SIM4LE: expected one complete engine response")
+        if (positives.isEmpty()) {
+            if (pending) throw NegativeResponse(service, 0x78)
+            throw DiagnosticException("SIM4LE: expected a complete engine response")
         }
-        return positives.single()
+        return positives
     }
 }

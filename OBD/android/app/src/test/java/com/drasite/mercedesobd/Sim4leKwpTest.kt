@@ -42,4 +42,24 @@ class Sim4leKwpTest {
             assertEquals(0x12, e.code)
         }
     }
+
+    @Test fun validatesEveryObdFrameAndPreservesSingleResponseContract() {
+        val first = unhex("43063801060125")
+        val second = unhex("43011601280000")
+        val raw = "03\r" + frame(first).hex() + "\r" + frame(second).hex() + "\r>"
+        val replies = Sim4leKwp.positives(raw, "03", "43", 7)
+        assertEquals(2, replies.size)
+        assertArrayEquals(first, replies[0])
+        assertArrayEquals(second, replies[1])
+        try { Sim4leKwp.positive(raw, "03", "43", 7); fail("single response accepted two frames") }
+        catch (_: DiagnosticException) {}
+        val corrupt = frame(second).also { it[it.lastIndex] = (it.last().u() xor 1).toByte() }
+        for (last in listOf(corrupt, frame(second, source = 2), frame(second, target = 0xF0),
+            frame(unhex("430116")), frame(unhex("47011601280000")))) {
+            try {
+                Sim4leKwp.positives((frame(first) + last).hex(), "03", "43", 7)
+                fail("accepted incomplete or invalid continuation")
+            } catch (_: DiagnosticException) {}
+        }
+    }
 }

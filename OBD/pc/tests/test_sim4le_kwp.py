@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from ecu_reader import DiagnosticError, NegativeResponse
-from sim4le_kwp import positive_reply
+from sim4le_kwp import positive_reply, positive_replies
 from sim4le_measurements import decode_snapshot
 
 
@@ -19,6 +19,14 @@ def frame(payload, source=1):
 class KwpTests(unittest.TestCase):
     def parse(self, text):
         return positive_reply(text, b'\x21\x01', b'\x61\x01', 180)
+
+    def test_multiple_responses_are_explicit_and_every_frame_is_validated(self):
+        first, last = bytes.fromhex('43 0638 0106 0125'), bytes.fromhex('43 0116 0128 0000')
+        self.assertEqual(positive_replies(frame(first) + frame(last), b'\x03', b'\x43', 7), [first, last])
+        with self.assertRaises(DiagnosticError):
+            positive_replies(frame(first) + frame(last)[:-2], b'\x03', b'\x43', 7)
+        with self.assertRaises(DiagnosticError):
+            positive_reply(frame(first) + frame(last), b'\x03', b'\x43', 7)
 
     def test_live_engine_off_and_running_replies(self):
         path = Path(__file__).resolve().parents[2] / 'fixtures/sim4le_5116_fixed.json'

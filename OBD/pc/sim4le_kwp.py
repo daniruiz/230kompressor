@@ -8,6 +8,14 @@ else:
 
 
 def positive_reply(raw, request, prefix, length):
+    positives = positive_replies(raw, request, prefix, length)
+    if len(positives) != 1:
+        raise DiagnosticError('SIM4LE: expected one complete positive response')
+    return positives[0]
+
+
+def positive_replies(raw, request, prefix, length):
+    """Validate all frames received up to the ELM prompt, including OBD DTC lists."""
     lines = []
     echo = request.hex().upper()
     for line in raw.upper().replace('>', '\n').replace('\r', '\n').splitlines():
@@ -48,6 +56,6 @@ def positive_reply(raw, request, prefix, length):
         else:
             raise DiagnosticError('SIM4LE: unexpected payload or length')
         pos = end
-    if len(positives) != 1:
-        raise DiagnosticError('SIM4LE: expected one complete positive response')
-    return positives[0]
+    if not positives:
+        raise DiagnosticError('SIM4LE: expected a complete positive response')
+    return positives
