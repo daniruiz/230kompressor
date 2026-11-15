@@ -24,7 +24,7 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(values.retard_degrees, (0.0, 3.0, 6.0, 1.5))
         self.assertEqual(values.temperatures_c, (90, 38))
         self.assertEqual(values.trims_percent, (0.0, 25.0))
-        self.assertEqual((values.throttle_percent, values.advance_degrees), (100.0, 9.0))
+        self.assertEqual((values.throttle_percent, values.advance_degrees), (100.0, -9.0))
         self.assertEqual((values.oxygen_v, values.oxygen_rich), (0.5, True))
         self.assertEqual((values.maf_g_s, values.ecu_maf_g_s), (100.0, 111.08))
         self.assertTrue(values.maf_at_limit)

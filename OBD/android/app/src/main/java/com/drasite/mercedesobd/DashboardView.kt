@@ -821,11 +821,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         drawMeter(canvas, RectF(815f, 579f, 1180f, 585f), (adv?.let { abs(it) } ?: 0.0) / 40, cyan)
         drawText(
             canvas,
-            if (adv == null) tr("Sin lectura", "No reading")
-            else if (adv < 0) tr("Antes del PMS", "Before TDC") else if (adv > 0) tr(
-                "Después del PMS",
-                "After TDC"
-            ) else tr("En el PMS", "At TDC"),
+            I18n.advanceDirection(adv),
             997f,
             607f,
             12f,

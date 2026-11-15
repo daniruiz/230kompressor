@@ -32,6 +32,8 @@ def decode_snapshot(payload, **timing):
     data = bytes(payload[2:])
     word = lambda i: int.from_bytes(data[i:i + 2], 'little')
     percent = lambda i: signed(word(i)) * 100 / 65536
+    # Fixed byte 30 (E00C) is the mean channel angle, positive before TDC.
+    # The PID 0E path instead uses a complemented per-channel value (F58C in 5126).
     angle = lambda i: data[i] * .375 - 23.625
     maf = (word(10) * 0xDE39 >> 16) / 100
     throttle = 255 if word(2) > 0xC30 else word(2) * 0xA7FF >> 19

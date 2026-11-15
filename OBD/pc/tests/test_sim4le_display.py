@@ -112,11 +112,22 @@ class DisplayTests(unittest.TestCase):
                             self.assertIn('DEMO', text)
                             self.assertIn(family, text)
 
-    def test_me21_keeps_validated_advance_direction(self):
-        sample = Sample(3000, 3000, 180, (0, 0, 0, 0), at=10)
-        for raw, label in ((68, 'before TDC'), (88, 'at TDC'), (108, 'after TDC')):
-            sample.advance_raw = raw
-            self.assertIn(label, self.draw(sample))
+    def test_both_ecus_use_positive_before_tdc_and_negative_after_tdc(self):
+        for me21_raw, sim4le_raw, angle, english, spanish in (
+                (68, 103, 15, 'before TDC', 'antes del PMS'),
+                (88, 63, 0, 'at TDC', 'en el PMS'),
+                (108, 23, -15, 'after TDC', 'después del PMS')):
+            data = bytearray(178)
+            data[30] = sim4le_raw
+            samples = (Sample(3000, 3000, 180, (0, 0, 0, 0), at=10, advance_raw=me21_raw),
+                       decode_snapshot(b'\x61\x01' + data, at=10))
+            for sample in samples:
+                self.assertEqual(sample.values().advance_degrees, angle)
+                for language, label in (('en', english), ('es', spanish)):
+                    text = self.draw(sample, language=language)
+                    self.assertIn(f'{angle:+.1f}°', text)
+                    self.assertIn(label, text)
+                self.assertIn('No current reading', self.draw(sample, now=14))
 
 
 if __name__ == '__main__':

@@ -13,6 +13,14 @@ object I18n {
     fun text(spanish: String, english: String): String =
         if (isSpanish(locale)) spanish else english
 
+    // Both readers supply crankshaft degrees, positive before TDC.
+    fun advanceDirection(degrees: Double?): String = when {
+        degrees == null -> tr("Sin lectura", "No reading")
+        degrees > 0 -> tr("Antes del PMS", "Before TDC")
+        degrees < 0 -> tr("Después del PMS", "After TDC")
+        else -> tr("En el PMS", "At TDC")
+    }
+
     fun mode(value: String): String = when (value) {
         "PARADO" -> tr("PARADO", "STOPPED")
         "INICIANDO" -> tr("INICIANDO", "STARTING")

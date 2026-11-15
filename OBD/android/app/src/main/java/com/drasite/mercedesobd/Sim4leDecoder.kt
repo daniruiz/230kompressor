@@ -14,6 +14,8 @@ internal object Sim4leDecoder {
         fun word(i: Int) = raw(i) or (raw(i + 1) shl 8)
         fun signedWord(i: Int) = word(i).toShort().toInt()
         fun percent(i: Int) = signedWord(i) * 100.0 / 65536
+        // Fixed byte 30 (E00C) is the mean channel angle, positive before TDC.
+        // PID 0E uses a complemented per-channel value instead (F58C in 5126).
         fun angle(i: Int) = raw(i) * .375 - 23.625
         val maf = (word(10).toLong() * 0xDE39 shr 16) / 100.0
         val throttle = if (word(2) > 0xC30) 255 else word(2) * 0xA7FF shr 19

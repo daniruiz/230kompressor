@@ -10,6 +10,20 @@ from dashboard_sample import Sample
 
 
 class Sim4leMeasurementsTests(unittest.TestCase):
+    def test_ecu_knock_retard_reduces_positive_before_tdc_advance(self):
+        # 404 adds eight 0.75-degree counts; SIM4LE subtracts sixteen 0.375-degree
+        # counts per channel. These opposite native directions both retard by 6°.
+        for me21_raw, sim4le_raw, me21_retard, sim4le_retard, expected in (
+                (68, 103, 0, 128, 15), (76, 87, 8, 112, 9)):
+            data = bytearray(178)
+            data[30] = sim4le_raw
+            data[37:41] = bytes([sim4le_retard] * 4)
+            samples = (Sample(3000, 3000, 180, (me21_retard,) * 4, advance_raw=me21_raw),
+                       decode_snapshot(b'\x61\x01' + data))
+            for sample in samples:
+                self.assertEqual(sample.values().advance_degrees, expected)
+                self.assertEqual(sample.values().retard_degrees, (15 - expected,) * 4)
+
     def test_both_ecus_use_voltage_thresholds_with_an_unlabelled_middle_band(self):
         for raw, expected in ((85, False), (86, None), (87, None), (88, None), (89, True)):
             with self.subTest(volts=raw / 200):

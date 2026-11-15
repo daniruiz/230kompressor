@@ -32,7 +32,7 @@ software, with that assumption explicitly identified in the logs.
 Logs also include ID1107's processed ECU airflow byte (F74C), converted
 at 1.1108 g/s per unit. This quantized value can be model-substituted and
 saturates at 255; the same ID supplies the internal load byte (F74D).
-Ignition conversion matches the OBD PID 0E path, positive = BTDC.
+ME2.1 ignition uses 66 - raw*0.75: positive before TDC, unlike its native sign.
 Memory service framing is derived from ECU code, pending on-car validation.
 """
 from __future__ import annotations
@@ -1913,7 +1913,7 @@ def render(model, args, width=110, height=44, now=None):
         advance_text = Text(f'{adv:+5.1f}°' if adv is not None else '—',
                             style=f'bold {CYAN}', justify='center')
         advance_bar = bar(abs(adv), 40, 24 if height > 36 else 15, color=CYAN) if adv is not None else Text('─'*24, style=MUTED)
-        direction = (tr('antes del PMS', 'before TDC') if adv < 0 else tr('después del PMS', 'after TDC') if adv > 0 else tr('en el PMS', 'at TDC')) if adv is not None else tr('Sin lectura actual', 'No current reading')
+        direction = (tr('antes del PMS', 'before TDC') if adv > 0 else tr('después del PMS', 'after TDC') if adv < 0 else tr('en el PMS', 'at TDC')) if adv is not None else tr('Sin lectura actual', 'No current reading')
         layout['advance'].update(Panel(Align.center(Group(Align.center(advance_text),
                                                           Align.center(advance_bar),
                                                           Align.center(Text(direction, style=MUTED))) if height > 36 else advance_text + ' ' + advance_bar,

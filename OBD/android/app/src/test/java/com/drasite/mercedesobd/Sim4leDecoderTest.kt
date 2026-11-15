@@ -2,8 +2,46 @@ package com.drasite.mercedesobd
 
 import org.junit.Assert.*
 import org.junit.Test
+import java.util.Locale
 
 class Sim4leDecoderTest {
+    @Test fun nativeKnockRetardReducesPositiveBeforeTdcAdvanceInBothEcus() {
+        // 404 adds raw counts; SIM4LE subtracts them. Both changes retard by 6°.
+        assertEquals(15.0, Decoder.advance(68), 0.0)
+        assertEquals(9.0, Decoder.advance(68 + 8), 0.0)
+        for ((raw, knock, expected) in listOf(Triple(103, 128, 15.0), Triple(87, 112, 9.0))) {
+            val values = Sim4leDecoder.decode(payload().apply {
+                byte(30, raw)
+                for (offset in 37..40) byte(offset, knock)
+            }).values
+            assertEquals(expected, values.advanceDegrees!!, 0.0)
+            assertEquals(List(4) { 15.0 - expected }, values.retardDegrees)
+        }
+    }
+
+    @Test fun bothEcusUsePositiveBeforeTdcAndNegativeAfterTdc() {
+        val previousLocale = I18n.localeProvider
+        try {
+            for ((me21Raw, sim4leRaw, expectedAngle) in listOf(
+                Triple(68, 103, 15.0), Triple(88, 63, 0.0), Triple(108, 23, -15.0))) {
+                val sim4le = Sim4leDecoder.decode(payload().apply { byte(30, sim4leRaw) }).values
+                for (angle in listOf(Decoder.advance(me21Raw), sim4le.advanceDegrees!!)) {
+                    assertEquals(expectedAngle, angle, 0.0)
+                    for ((language, labels) in listOf(
+                        "en" to listOf("Before TDC", "At TDC", "After TDC", "No reading"),
+                        "es" to listOf("Antes del PMS", "En el PMS", "Después del PMS", "Sin lectura"))) {
+                        I18n.localeProvider = { Locale.forLanguageTag(language) }
+                        val position = when (expectedAngle) { 15.0 -> 0; 0.0 -> 1; else -> 2 }
+                        assertEquals(labels[position], I18n.advanceDirection(angle))
+                        assertEquals(labels[3], I18n.advanceDirection(null))
+                    }
+                }
+            }
+        } finally {
+            I18n.localeProvider = previousLocale
+        }
+    }
+
     @Test fun oxygenUsesAnUnlabelledMiddleBand() {
         for ((raw, expected) in listOf(85 to false, 86 to null, 87 to null, 88 to null, 89 to true)) {
             val sim4le = Sim4leDecoder.decode(payload().apply { word(74, raw) }, at = 100).values

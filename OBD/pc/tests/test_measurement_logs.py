@@ -39,7 +39,7 @@ class MeasurementLogTests(unittest.TestCase):
         expected = dict(rpm=3000, load_raw=180, F746_raw=3000,
                         injection_ms_est=8.0, injector_duty_est_pct=20.0,
                         coolant_C=90, iat_C=38, stft_a_pct=0.0, ltft_a_pct=25.0,
-                        advance_deg=9.0, oxygen_voltage_V=0.5, maf_ecu_g_s_est=111.08,
+                        advance_deg=-9.0, oxygen_voltage_V=0.5, maf_ecu_g_s_est=111.08,
                         knock_channel_3_raw=8, knock_channel_3_deg_est=6.0)
         for key, value in expected.items():
             self.assertEqual(records[0][key], value, key)

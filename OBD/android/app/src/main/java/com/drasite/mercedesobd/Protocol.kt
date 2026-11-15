@@ -82,7 +82,9 @@ object Decoder {
 
     fun oxygen(raw: Int) = ((raw - 3512).coerceIn(0, 0x3FBE) shr 6) / 200.0
 
-    fun advance(raw: Int) = raw * .75 - 66
+    // SW404 F759 grows with spark delay (010A82..010B1E / 0089E2..0089F8).
+    // ID 110B exports it directly; normalize to positive before TDC, zero at raw 88.
+    fun advance(raw: Int) = 66 - raw * .75
 
     // F74C = min(255, floor(processed flow / 40)); one flow unit is 0.02777 g/s.
     // This quantized diagnostic value follows ECU load selection/filtering.

@@ -46,9 +46,10 @@ def ecu_maf_g_s(raw: int | None) -> float | None:
 
 
 def advance_degrees(raw):
-    # 0x3A378..0x3A3A0 converts F759 to PID 0E as floor(3*N/2)-4,
-    # clamped 0..255, then OBD decodes A/2-64. Keep native 0.75° precision.
-    return raw * 0.75 - 66
+    # ID 110B exports F759. SW404 010A82..010B1E / 0089E2..0089F8
+    # schedule larger raw values later; knock retard is added at 010874.
+    # Normalize to positive before TDC, retaining raw 88 as the zero reference.
+    return 66 - raw * 0.75
 
 
 def oxygen_voltage(raw):
