@@ -46,11 +46,6 @@ class ReaderTests(unittest.TestCase):
         self.assertIsNotNone(result.low_percent)
         self.assertIsNone(result.additive_ms)
         self.elm.command.assert_called_once_with('2101 1')
-        self.elm.command.reset_mock()
-        for operation in (reader.read_faults, reader.clear_faults):
-            with self.assertRaises(DiagnosticError):
-                operation()
-        self.elm.command.assert_not_called()
 
     def test_unknown_identity_and_corrupt_frames_are_rejected(self):
         reader = Sim4leReader(self.elm, self.args, self.journal)

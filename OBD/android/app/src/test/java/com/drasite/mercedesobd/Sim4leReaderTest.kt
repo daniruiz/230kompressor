@@ -5,13 +5,25 @@ import org.junit.Test
 
 class Sim4leReaderTest {
     private val log = object : Events { override fun event(type: String, vararg values: Pair<String, Any?>) {} }
+    private companion object {
+        fun frame(payload: ByteArray): String {
+            val header = if (payload.size < 64) byteArrayOf((0x80 + payload.size).toByte(), 0xF1.toByte(), 1)
+                else byteArrayOf(0x80.toByte(), 0xF1.toByte(), 1, payload.size.toByte())
+            val body = header + payload
+            return (body + byteArrayOf((body.sumOf { it.u() } and 255).toByte())).hex()
+        }
+    }
     private class Adapter(private val rejectSuffix: Boolean = false) : Wire {
         val commands = ArrayList<String>()
+        val replies = HashMap<String, String>()
+        val errors = HashMap<String, DiagnosticException>()
         var clock = 0L
         override fun close() {}
         override fun exchange(command: String, timeoutMs: Long, timing: ExchangeTiming): String {
             commands.add(command)
             clock += 5
+            errors[command]?.let { throw it }
+            replies[command]?.let { return it }
             if (command.startsWith("AT")) return "OK"
             if (rejectSuffix && command.endsWith(" 1")) return "?"
             val payload = when (command.removeSuffix(" 1")) {
@@ -21,12 +33,11 @@ class Sim4leReaderTest {
                     it[102] = 0; it[103] = 0x10; it[104] = 0; it[105] = 0xF0.toByte()
                     it[47] = 0xFF.toByte(); it[48] = 0xFF.toByte()
                 }
+                "03" -> unhex("43000000000000")
+                "04" -> unhex("44")
                 else -> error("Unexpected request: $command")
             }
-            val header = if (payload.size < 64) byteArrayOf((0x80 + payload.size).toByte(), 0xF1.toByte(), 1)
-                else byteArrayOf(0x80.toByte(), 0xF1.toByte(), 1, payload.size.toByte())
-            val body = header + payload
-            return (body + byteArrayOf((body.sumOf { it.u() } and 255).toByte())).hex()
+            return frame(payload)
         }
     }
 
@@ -60,9 +71,76 @@ class Sim4leReaderTest {
         assertEquals(-1, values.additiveRaw)
         assertNull(values.additiveMs)
         val after = adapter.commands.size
-        try { reader.readFaults(); fail("unsupported fault service") } catch (_: DiagnosticException) {}
-        try { reader.clearFaults(); fail("unsupported fault clear") } catch (_: DiagnosticException) {}
-        assertEquals(after, adapter.commands.size)
+        assertTrue(reader.readFaults().isEmpty())
+        reader.clearFaults()
+        assertEquals(listOf("03", "04"), adapter.commands.drop(after))
+    }
+
+    @Test fun obdReadsEveryFrameDecodesFamiliesAndOmitsUnmappedAndPaddingCodes() {
+        val adapter = Adapter()
+        adapter.replies["03"] = "03\r" + listOf("43063801060125", "430116412882AF", "43FABCFFFF0000", "43063800000000")
+            .joinToString("\r") { frame(unhex(it)).chunked(10).joinToString("\r") } + "\r>"
+        val reader = Sim4leReader(adapter, log, {}, { adapter.clock })
+        val faults = reader.readFaults()
+        assertEquals(listOf("P0638", "P0106", "P0125", "P0116", "C0128", "B02AF", "U3ABC"), faults.map { it.code })
+        assertTrue(faults.all { it.status == null && it.scope == "confirmed_obd" })
+        assertEquals("confirmed_obd", reader.faultScope)
+        assertEquals(listOf("03"), adapter.commands)
+        assertTrue(faults.all { it.statusLabel() == tr("Confirmado OBD", "Confirmed OBD") })
+        assertEquals("P0300 · " + tr("estado", "status") + " 60", FaultCode("P0300", 0x60, "ME21").label())
+    }
+
+    @Test fun readsEmptyConfirmedListAndResumesFixedPollingAfterClearingWithoutSetup() {
+        val adapter = Adapter()
+        val reader = Sim4leReader(adapter, log, { adapter.clock += it }, { adapter.clock })
+        reader.identify {}
+        reader.start(true, {}, {})
+        val before = adapter.commands.size
+        assertTrue(reader.readFaults().isEmpty())
+        reader.clearFaults()
+        assertEquals(3000, reader.read().values.rpm)
+        assertEquals(listOf("03", "04", "2101 1"), adapter.commands.drop(before))
+    }
+
+    private fun failure(action: () -> Unit): DiagnosticException {
+        try { action() } catch (e: DiagnosticException) { return e }
+        throw AssertionError("Expected a diagnostic failure")
+    }
+
+    @Test fun neitherReadNorClearTreatsNoDataNegativeOrTimeoutAsSuccess() {
+        for (command in listOf("03", "04")) {
+            for (reply in listOf("NO DATA", "?", "", frame(unhex("7F${command}22")), frame(unhex("7F${command}78")))) {
+                val adapter = Adapter().also { it.replies[command] = reply }
+                val reader = Sim4leReader(adapter, log, {}, { adapter.clock })
+                val error = failure { if (command == "03") reader.readFaults() else reader.clearFaults() }
+                if (reply.startsWith("83")) {
+                    assertTrue(error is NegativeResponse)
+                    assertEquals(command.toInt(16), (error as NegativeResponse).service)
+                }
+                assertEquals(listOf(command), adapter.commands)
+            }
+            val timeout = LinkTimeout("no prompt")
+            val adapter = Adapter().also { it.errors[command] = timeout }
+            val reader = Sim4leReader(adapter, log, {}, { adapter.clock })
+            assertSame(timeout, failure { if (command == "03") reader.readFaults() else reader.clearFaults() })
+            assertEquals(listOf(command), adapter.commands)
+        }
+    }
+
+    @Test fun clearRequiresOneExactValidAcknowledgementAndDoesNotRetry() {
+        val valid = frame(unhex("44"))
+        val corrupt = unhex(valid).also { it[it.lastIndex] = (it.last().u() xor 1).toByte() }.hex()
+        for (reply in listOf(frame(unhex("4400")), frame(unhex("54")), valid + valid, corrupt)) {
+            val adapter = Adapter().also { it.replies["04"] = reply }
+            val events = ArrayList<String>()
+            val recorder = object : Events {
+                override fun event(type: String, vararg values: Pair<String, Any?>) { events.add(type) }
+            }
+            val reader = Sim4leReader(adapter, recorder, {}, { adapter.clock })
+            failure { reader.clearFaults() }
+            assertEquals(listOf("04"), adapter.commands)
+            assertEquals(listOf("dtc_clear_request"), events)
+        }
     }
 
     private class StubReader(private val error: DiagnosticException? = null) : EcuReader {

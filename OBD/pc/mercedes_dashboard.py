@@ -250,6 +250,12 @@ def decode_faults(reply):
     return faults
 
 
+def fault_status_text(fault):
+    if fault.get('scope') == 'confirmed_obd':
+        return tr('Confirmado OBD', 'Confirmed OBD')
+    return f'0x{fault["status"]:02X}'
+
+
 class FaultMenu:
     """The acquisition thread alone owns the adapter; the UI queues requests."""
     def __init__(self, demo=False):
@@ -265,6 +271,7 @@ class FaultMenu:
         self.focus = 0
         self.confirm_focus = 0
         self.faults = None
+        self.fault_scope = None
         self.result_status = 'idle'
         self.updated_at = None
         self.message = tr('Pulsa 1 para leer los errores.', 'Press 1 to read faults.')
@@ -328,13 +335,11 @@ class FaultMenu:
         except queue.Empty:
             return
         try:
+            self.fault_scope = ('confirmed_obd' if demo_ecu == 'SIM4LE' else None) if elm is None else getattr(elm, 'fault_scope', None)
             if elm is None:
-                if demo_ecu == 'SIM4LE':
-                    raise DiagnosticError(tr('Errores de la ECU no disponibles en Demo SIM4LE',
-                                             'ECU fault codes unavailable in SIM4LE Demo'))
                 if clear:
                     self.demo_faults.clear()
-                faults = self.demo_faults
+                faults = [dict(fault, status=None, scope='confirmed_obd') for fault in self.demo_faults] if self.fault_scope else self.demo_faults
                 journal.write('dtc_demo', clear=clear)
             elif clear:
                 elm.clear_faults()
@@ -348,7 +353,7 @@ class FaultMenu:
                 self.result_status = 'cleared'
             else:
                 self.faults = list(faults)
-                self.message = '\n'.join(f'{f["code"]} · {tr("estado", "status")} {f["status"]:02X}' for f in faults) or tr('No hay errores almacenados', 'No stored faults')
+                self.message = '\n'.join(f'{f["code"]} · {fault_status_text(f)}' for f in faults) or tr('No hay errores almacenados', 'No stored faults')
                 self.result_status = 'read'
             self.updated_at = dt.datetime.now().strftime('%H:%M:%S')
         except Exception as exc:
@@ -400,10 +405,12 @@ class FaultMenu:
                 table = Table(box=box.SIMPLE_HEAD, expand=True, padding=(0, 1), show_edge=False,
                               header_style=MUTED, row_styles=[f'on {background}', 'on #15263a'])
                 table.add_column(tr('Código', 'Code'), style=f'bold {AMBER}', ratio=1)
-                table.add_column(tr('Estado ECU (hex)', 'ECU status (hex)'), justify='right', style='white', ratio=1)
+                table.add_column(tr('Estado', 'Status') if self.fault_scope == 'confirmed_obd' else tr('Estado ECU (hex)', 'ECU status (hex)'), justify='right', style='white', ratio=1)
                 for fault in shown:
-                    table.add_row(fault['code'], f'0x{fault["status"]:02X}')
+                    table.add_row(fault['code'], fault_status_text(fault))
                 count_label = tr('1 error almacenado', '1 stored fault') if len(self.faults) == 1 else tr(f'{len(self.faults)} errores almacenados', f'{len(self.faults)} stored faults')
+                if self.fault_scope == 'confirmed_obd':
+                    count_label = tr(f'Fallos confirmados OBD: {len(self.faults)}', f'Confirmed OBD faults: {len(self.faults)}')
                 body = Group(Text(count_label, style='bold white'), table,
                              Text(tr(f'{self.offset + 1}–{self.offset + len(shown)} de {len(self.faults)}',
                                      f'{self.offset + 1}–{self.offset + len(shown)} of {len(self.faults)}'), style=MUTED, justify='right'))
@@ -419,6 +426,9 @@ class FaultMenu:
                 }
                 title, tone = labels[self.result_status]
                 message = self.message if self.result_status != 'read' else tr('La ECU no ha devuelto códigos de error.', 'The ECU returned no fault codes.')
+                if self.result_status == 'read' and self.fault_scope == 'confirmed_obd':
+                    title = tr('Sin fallos confirmados OBD', 'No confirmed OBD faults')
+                    message = tr('La ECU no ha devuelto fallos confirmados mediante OBD.', 'The ECU returned no confirmed faults through OBD.')
                 lines = Text(message).wrap(console, max(1, width - 6))
                 self.page_size = max(1, body_height - 2)
                 self.scroll_limit = max(0, len(lines) - self.page_size)

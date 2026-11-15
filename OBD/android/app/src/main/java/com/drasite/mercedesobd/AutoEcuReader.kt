@@ -14,6 +14,7 @@ class AutoEcuReader(
     override val ecuIdentificationStatus get() = selected?.ecuIdentificationStatus ?: "pending"
     override val mode get() = selected?.mode ?: "INICIANDO"
     override val transportProfile get() = selected?.transportProfile ?: ""
+    override val faultScope get() = selected?.faultScope
 
     override fun identify(notice: (String) -> Unit) {
         val me21 = me21Factory(wire, log)

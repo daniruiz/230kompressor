@@ -65,11 +65,15 @@ class DemoTests(unittest.TestCase):
         journal = Mock()
         faults = dashboard.FaultMenu(demo=True)
         faults.ready = True
-        for clear in (False, True):
+        for clear in (False, True, False):
             faults.request(clear)
             faults.service(None, journal, 'SIM4LE')
-            self.assertEqual(faults.result_status, 'error')
-            self.assertIn('SIM4LE', faults.message)
+            self.assertEqual(faults.result_status, 'cleared' if clear else 'read')
+            self.assertEqual(faults.fault_scope, 'confirmed_obd')
+            for fault in faults.faults or []:
+                self.assertIsNone(fault['status'])
+                self.assertEqual(fault['scope'], 'confirmed_obd')
+        self.assertEqual(faults.faults, [])
         corrections = dashboard.CorrectionsMenu(demo=True)
         corrections.ready = True
         corrections.show()

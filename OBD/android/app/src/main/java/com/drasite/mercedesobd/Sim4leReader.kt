@@ -16,6 +16,7 @@ class Sim4leReader(
         private set
     override val mode = "SIM4LE · 2101"
     override val transportProfile get() = "KWP · ${gap} ms"
+    override val faultScope = "confirmed_obd"
     private var gap = 60L
     private var lastBus: Long? = null
     private var suffix = true
@@ -96,8 +97,27 @@ class Sim4leReader(
             additiveRaw = values["additive_raw"] as Int))
     }
 
-    override fun readFaults(): List<FaultCode> = throw DiagnosticException(
-        tr("Lectura de averías SIM4LE no implementada", "SIM4LE fault reading is not implemented"))
-    override fun clearFaults(): Unit = throw DiagnosticException(
-        tr("Borrado de averías SIM4LE no implementado", "SIM4LE fault clearing is not implemented"))
+    override fun readFaults(): List<FaultCode> {
+        log.event("dtc_read_request", "ecu_family" to "SIM4LE", "service" to "03", "scope" to faultScope)
+        // No ELM response-count suffix: the ECU emits every continuation before the prompt.
+        val payloads = Sim4leKwp.positives(command("03"), "03", "43", 7)
+        val faults = payloads.flatMap { payload ->
+            (1..5 step 2).mapNotNull { offset ->
+                val code = (payload[offset].u() shl 8) or payload[offset + 1].u()
+                if (code == 0 || code == 0xFFFF) null // Padding, or no SAE mapping.
+                else FaultCode("%c%01X%03X".format(Locale.ROOT, "PCBU"[code shr 14],
+                    (code shr 12) and 3, code and 0xFFF), null, payload.hex(), faultScope)
+            }
+        }.distinctBy { it.code }
+        log.event("dtc_read", "ecu_family" to "SIM4LE", "scope" to faultScope,
+            "codes" to faults.map { it.code }, "records" to payloads.map { it.hex() })
+        return faults
+    }
+
+    override fun clearFaults() {
+        log.event("dtc_clear_request", "ecu_family" to "SIM4LE", "service" to "04")
+        // Never retry an erase command when its reply is missing or rejected.
+        Sim4leKwp.positive(command("04"), "04", "44", 1)
+        log.event("dtc_clear", "ecu_family" to "SIM4LE", "acknowledged" to true)
+    }
 }

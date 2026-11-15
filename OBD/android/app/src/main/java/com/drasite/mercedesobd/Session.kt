@@ -20,6 +20,8 @@ class Session(
     @Volatile private var socket: BluetoothSocket? = null
     @Volatile private var stopped = false
     @Volatile private var diagnosticsReady = false
+    @Volatile var faultScope: String? = null
+        private set
     private data class FaultRequest(val clear: Boolean, val done: (Result<List<FaultCode>>) -> Unit)
     private val faultRequests = ArrayBlockingQueue<FaultRequest>(1)
     private data class CorrectionRequest(val active: () -> Boolean, val done: (Result<FuelCorrections>) -> Unit)
@@ -33,6 +35,7 @@ class Session(
         model.clear()
         stopped = false
         diagnosticsReady = false
+        faultScope = null
         thread =
             Thread({ run(demo, address, adapterTuning, automatic && !demo, DemoEcu.SIM4LE) }, "MercedesOBD acquisition").also {
                 it.start()
@@ -85,11 +88,9 @@ class Session(
         val request = faultRequests.poll() ?: return
         try {
             if (elm == null) {
-                if (demoEcu == DemoEcu.SIM4LE)
-                    throw DiagnosticException(tr("Errores de la ECU no disponibles en Demo SIM4LE",
-                        "ECU fault codes unavailable in SIM4LE Demo"))
                 if (request.clear) demoFaults.clear()
-                journal.event("dtc_demo", "clear" to request.clear)
+                journal.event("dtc_demo", "clear" to request.clear, "ecu_family" to demoEcu.family,
+                    "scope" to faultScope)
                 request.done(Result.success(demoFaults.toList()))
             } else {
                 val result = if (request.clear) { elm.clearFaults(); emptyList() } else elm.readFaults()
@@ -142,7 +143,8 @@ class Session(
             val j = Journal(root, demo, adapterTuning, deferUntilConnected = automatic)
             journal = j
             val temperatureAlerts = TemperatureAlerts()
-            val demoFaults = mutableListOf(FaultCode("P0300", 0, "DEMO"))
+            val demoFaults = mutableListOf(if (demoEcu == DemoEcu.SIM4LE)
+                FaultCode("P0300", null, "DEMO", "confirmed_obd") else FaultCode("P0300", 0, "DEMO"))
             fun publish(s: Sample) {
                 if (stopped) throw InterruptedException()
                 if (!demo && !didConnect) {
@@ -156,6 +158,7 @@ class Session(
                 if ((raised && sample.values.highRetard) || temperatureRaised) alert()
             }
             if (demo) {
+                faultScope = if (demoEcu == DemoEcu.SIM4LE) "confirmed_obd" else null
                 diagnosticsReady = true
                 model.mode("DEMO · SIN COCHE", demoEcu.family)
                 model.setEcu(null, null, "demo")
@@ -218,6 +221,7 @@ class Session(
             reader.identify(model::notice)
             model.setEcu(reader.ecuProfile, reader.ecuSoftware, reader.ecuIdentificationStatus)
             reader.start(adapterTuning, ::publish, model::notice)
+            faultScope = reader.faultScope
             diagnosticsReady = true
             var consecutive = 0
             while (!stopped) {

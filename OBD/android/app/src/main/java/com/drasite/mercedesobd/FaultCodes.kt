@@ -3,8 +3,15 @@ package com.drasite.mercedesobd
 /** ME2.1 service A1: E1 + code (BE) + status + internal ID + 53 snapshot bytes.
  * SW404: 03B37C..03B448; final E1 FF FF count is mandatory, including count zero.
  */
-data class FaultCode(val code: String, val status: Int, val raw: String) {
-    fun label() = "$code · " + tr("estado", "status") + " %02X".format(status)
+data class FaultCode(val code: String, val status: Int?, val raw: String, val scope: String? = null) {
+    fun statusLabel() = when {
+        scope == "confirmed_obd" -> tr("Confirmado OBD", "Confirmed OBD")
+        status != null -> tr("Estado ECU", "ECU status") + " 0x%02X".format(status)
+        else -> tr("Estado no disponible", "Status unavailable")
+    }
+
+    fun label() = "$code · " + if (scope == "confirmed_obd") statusLabel()
+        else status?.let { tr("estado", "status") + " %02X".format(it) } ?: statusLabel()
 }
 
 object FaultCodes {

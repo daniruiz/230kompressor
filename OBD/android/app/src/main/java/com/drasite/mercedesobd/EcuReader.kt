@@ -15,6 +15,7 @@ interface EcuReader {
     val ecuIdentificationStatus: String
     val mode: String
     val transportProfile: String
+    val faultScope: String? get() = null
     fun identify(notice: (String) -> Unit)
     fun start(tuning: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit)
     fun read(): Sample

@@ -6,19 +6,20 @@ if __package__:
     from .ecu_reader import DiagnosticError, LinkTimeout
     from .dashboard_i18n import tr
     from .fuel_corrections import FuelCorrections, CorrectionMeasurements
-    from .sim4le_kwp import positive_reply
+    from .sim4le_kwp import positive_reply, positive_replies
     from .sim4le_measurements import decode_snapshot
 else:
     from ecu_reader import DiagnosticError, LinkTimeout
     from dashboard_i18n import tr
     from fuel_corrections import FuelCorrections, CorrectionMeasurements
-    from sim4le_kwp import positive_reply
+    from sim4le_kwp import positive_reply, positive_replies
     from sim4le_measurements import decode_snapshot
 
 
 class Sim4leReader:
     ecu_profile = None  # Never expose ME2.1 RAM addresses to menu diagnostics.
     mode = 'SIM4LE · 2101'
+    fault_scope = 'confirmed_obd'
 
     def __init__(self, transport, args, journal):
         self.elm, self.args, self.journal = transport, args, journal
@@ -92,12 +93,28 @@ class Sim4leReader:
             additive_raw=fields['additive_raw']))
 
     def read_faults(self):
-        raise DiagnosticError(tr('Lectura de averías SIM4LE no implementada',
-                                 'SIM4LE fault reading is not implemented'))
+        # 03 can return several frames: never use the one-response ELM suffix.
+        frames = positive_replies(self.elm.command('03'), b'\x03', b'\x43', 7)
+        faults, seen = [], set()
+        for payload in frames:
+            for offset in (1, 3, 5):
+                first, second = payload[offset:offset + 2]
+                raw = first << 8 | second
+                if raw in (0, 0xFFFF) or raw in seen:
+                    continue  # Padding or a native fault without an OBD mapping.
+                seen.add(raw)
+                code = f'{"PCBU"[first >> 6]}{(first >> 4) & 3:X}{first & 15:X}{second:02X}'
+                faults.append(dict(code=code, status=None, scope=self.fault_scope,
+                                   raw=payload.hex().upper()))
+        self.journal.write('dtc_read', ecu_family='SIM4LE', scope=self.fault_scope,
+                           codes=[f['code'] for f in faults],
+                           records=[payload.hex().upper() for payload in frames])
+        return faults
 
     def clear_faults(self):
-        raise DiagnosticError(tr('Borrado de averías SIM4LE no implementado',
-                                 'SIM4LE fault clearing is not implemented'))
+        # Send once. Missing or negative acknowledgement must not trigger a retry.
+        positive_reply(self.elm.command('04'), b'\x04', b'\x44', 1)
+        self.journal.write('dtc_clear', ecu_family='SIM4LE', service='04', acknowledged=True)
 
     def close(self):
         self.elm.close()

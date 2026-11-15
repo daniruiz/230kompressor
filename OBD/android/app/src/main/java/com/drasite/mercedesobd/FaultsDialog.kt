@@ -17,9 +17,12 @@ import java.util.Date
 internal class FaultsDialog(
     private val activity: Activity,
     private val session: Session,
-    demo: Boolean,
+    private val demo: Boolean,
 ) {
-    private val description = if (demo) tr("DEMO · datos simulados", "DEMO · simulated data") else tr("Memoria de averías del motor", "Engine fault memory")
+    private val confirmedObd get() = session.faultScope == "confirmed_obd"
+    private val description get() = (if (demo) tr("DEMO · datos simulados", "DEMO · simulated data")
+        else tr("Memoria de averías del motor", "Engine fault memory")) +
+        if (confirmedObd) tr(" · Confirmados OBD", " · Confirmed OBD") else ""
     private val panel = DialogPanel(activity, tr("Errores de la ECU", "ECU fault codes"), description)
     private val handler = Handler(Looper.getMainLooper())
     private var busy = false
@@ -61,13 +64,20 @@ internal class FaultsDialog(
         panel.subtitle.text = description + " · " + DateFormat.getTimeInstance(DateFormat.MEDIUM).format(Date())
         clear.available(codes.isNotEmpty())
         if (codes.isEmpty()) {
-            status(tr("Sin errores almacenados", "No stored faults"),
-                if (confirmedClear) tr("El borrado se ha completado y la ECU ya no devuelve errores.", "Clearing is complete and the ECU reports no faults.")
+            status(if (confirmedObd) tr("Sin errores confirmados OBD", "No confirmed OBD faults")
+                else tr("Sin errores almacenados", "No stored faults"),
+                if (confirmedObd) (if (confirmedClear) tr("Borrado aceptado. ", "Clearing accepted. ") else "") +
+                    tr("La ECU no ha devuelto fallos confirmados mediante OBD.", "The ECU returned no confirmed faults through OBD.")
+                else if (confirmedClear) tr("El borrado se ha completado y la ECU ya no devuelve errores.", "Clearing is complete and the ECU reports no faults.")
                 else tr("La ECU no ha devuelto códigos de error.", "The ECU returned no fault codes."), DialogPanel.GREEN)
             return
         }
         panel.content.removeAllViews()
-        val count = if (codes.size == 1) tr("1 error almacenado", "1 stored fault") else tr("${codes.size} errores almacenados", "${codes.size} stored faults")
+        val count = if (confirmedObd) {
+            if (codes.size == 1) tr("1 error confirmado OBD", "1 confirmed OBD fault")
+            else tr("${codes.size} errores confirmados OBD", "${codes.size} confirmed OBD faults")
+        } else if (codes.size == 1) tr("1 error almacenado", "1 stored fault")
+        else tr("${codes.size} errores almacenados", "${codes.size} stored faults")
         panel.content.addView(panel.text(count, 17f, DialogPanel.AMBER, true))
         if (confirmedClear) panel.content.addView(panel.text(tr("La ECU sigue indicando estos errores tras el borrado.", "The ECU still reports these faults after clearing."), 13f, DialogPanel.MUTED))
         val rows = LinearLayout(activity).apply {
@@ -81,7 +91,7 @@ internal class FaultsDialog(
                 background = panel.background(Color.rgb(21, 38, 58))
             }
             row.addView(panel.text(code.code, 23f, DialogPanel.AMBER, true), LinearLayout.LayoutParams(0, -2, 1f))
-            row.addView(panel.text(tr("Estado ECU", "ECU status") + " 0x%02X".format(code.status), 14f, DialogPanel.MUTED))
+            row.addView(panel.text(code.statusLabel(), 14f, DialogPanel.MUTED))
             rows.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = panel.dp(8) })
         }
         panel.content.addView(ScrollView(activity).apply { addView(rows) }, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -109,7 +119,7 @@ internal class FaultsDialog(
                             read.available(false)
                             status(tr("Borrado aceptado", "Clear request accepted"),
                                 tr("Comprobando si quedan errores…", "Checking for remaining faults…"), DialogPanel.GREEN, true)
-                            // The ECU applies its erase flag on the next processing cycle.
+                            // Brief UI delay before the independent verification read.
                             handler.postDelayed({ busy = false; request(false, checkingClear = true) }, 250)
                         } else showCodes(codes)
                     },
