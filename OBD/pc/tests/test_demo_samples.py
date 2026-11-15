@@ -78,9 +78,13 @@ class DemoTests(unittest.TestCase):
         corrections.ready = True
         corrections.show()
         corrections.service(None, journal, 'SIM4LE')
-        self.assertTrue(corrections.error)
-        self.assertIsNone(corrections.result)
-        self.assertIn('SIM4LE', corrections.message)
+        self.assertFalse(corrections.error)
+        values = corrections.result.values()
+        self.assertAlmostEqual(values.low_percent, -3, places=2)
+        self.assertAlmostEqual(values.high_percent, 2, places=2)
+        self.assertEqual(values.additive_raw, -35)
+        self.assertIsNone(values.additive_ms)
+        self.assertTrue(journal.write.call_args.kwargs['demo'])
 
 
 if __name__ == '__main__':

@@ -63,11 +63,8 @@ class Session(
         val request = correctionRequests.poll() ?: return
         if (!request.active()) return
         try {
-            if (elm == null && demoEcu == DemoEcu.SIM4LE)
-                throw DiagnosticException(tr("Lectura de correcciones no disponible en Demo SIM4LE",
-                    "Correction readings unavailable in SIM4LE Demo"))
             // All adapter access stays on the acquisition thread, between samples.
-            val result = elm?.readFuelCorrections() ?: FuelCorrections(33768, 35168, 45)
+            val result = elm?.readFuelCorrections() ?: DemoSamples.corrections(demoEcu)
             val profile = elm?.ecuProfile
             journal.event("fuel_corrections", "demo" to (elm == null),
                 "software" to profile?.software,

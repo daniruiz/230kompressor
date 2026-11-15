@@ -3,15 +3,33 @@ import io
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fuel_corrections import CorrectionMeasurements, FuelCorrections
 from mercedes_dashboard import CorrectionsMenu
+from demo_samples import demo_corrections
+import dashboard_i18n
 from rich.console import Console
 
 
 class FuelCorrectionTests(unittest.TestCase):
+    def test_sim4le_menu_only_shows_learned_values_in_both_languages(self):
+        for language in ('en', 'es'):
+            menu = CorrectionsMenu(demo=True)
+            menu.result = demo_corrections('SIM4LE')
+            output = io.StringIO()
+            console = Console(file=output, width=78, height=29, color_system=None)
+            with patch.object(dashboard_i18n, 'LANGUAGE', language):
+                console.print(menu.render(console, width=74, height=19))
+            text = output.getvalue()
+            for value in ('LTFT low', 'LTFT high', '-3.00', '+2.00', '-35'):
+                self.assertIn(value, text)
+            self.assertIn('ECU units' if language == 'en' else 'unidades ECU', text)
+            self.assertNotIn('ms', text)
+            self.assertNotIn('1/2', text)
+            self.assertEqual(menu.preferred_height(), 19)
+
     def test_me21_signed_additive_and_known_trim_values(self):
         result = FuelCorrections(32768, 49152, 0xFFFF)
         values = result.values()

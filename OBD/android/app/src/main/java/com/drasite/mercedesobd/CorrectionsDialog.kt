@@ -75,10 +75,15 @@ internal class CorrectionsDialog(
         row("LTFT low", readings.lowPercent?.let { String.format(I18n.locale, "%+.2f %%", it) } ?: "—")
         row("LTFT high", readings.highPercent?.let { String.format(I18n.locale, "%+.2f %%", it) } ?: "—")
         row(tr("Corrección aditiva", "Additive correction"),
-            readings.additiveMs?.let { String.format(I18n.locale, "~%+.3f ms", it) } ?: "—",
-            readings.additiveRaw?.let { String.format(I18n.locale, "%+d", it) + tr(" unidades ECU", " ECU units") })
-        rows.addView(panel.text(tr("Tiempo de la aditiva estimado. Actualiza para volver a consultar.",
-            "Additive duration is estimated. Refresh to read again."), 13f, DialogPanel.MUTED))
+            readings.additiveMs?.let { String.format(I18n.locale, "~%+.3f ms", it) }
+                ?: readings.additiveRaw?.let { String.format(I18n.locale, "%+d", it) + tr(" unidades ECU", " ECU units") } ?: "—",
+            readings.additiveRaw?.takeIf { readings.additiveMs != null }?.let {
+                String.format(I18n.locale, "%+d", it) + tr(" unidades ECU", " ECU units") })
+        rows.addView(panel.text(if (readings.additiveMs != null)
+            tr("Tiempo de la aditiva estimado. Actualiza para volver a consultar.",
+                "Additive duration is estimated. Refresh to read again.") else
+            tr("Lectura puntual. Actualiza para volver a consultar.", "Snapshot only. Refresh to read again."),
+            13f, DialogPanel.MUTED))
         panel.content.addView(ScrollView(activity).apply { addView(rows) }, LinearLayout.LayoutParams(-1, -1))
     }
 

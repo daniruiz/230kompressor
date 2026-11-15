@@ -4,6 +4,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DemoSamplesTest {
+    @Test fun correctionDemosKeepMe21AndProvideThreeSignedSim4leValues() {
+        val me21 = DemoSamples.corrections(DemoEcu.ME21)
+        assertEquals(FuelCorrections(33768, 35168, 45), me21)
+        assertNotNull(me21.values.additiveMs)
+        val sim4le = DemoSamples.corrections(DemoEcu.SIM4LE).values
+        assertEquals(-1966 * 100.0 / 65536, sim4le.lowPercent!!, 0.0)
+        assertEquals(1311 * 100.0 / 65536, sim4le.highPercent!!, 0.0)
+        assertEquals(-35, sim4le.additiveRaw)
+        assertNull(sim4le.additiveMs)
+    }
+
     @Test fun demoDefaultsToMe21AndAcceptsBothFamilyNames() {
         assertEquals(DemoEcu.ME21, DemoEcu.fromName(null))
         assertEquals(DemoEcu.ME21, DemoEcu.fromName("ME2.1"))

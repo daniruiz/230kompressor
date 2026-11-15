@@ -14,6 +14,13 @@ enum class DemoEcu(val family: String) {
 
 /** Deterministic demo data, decoded through the same paths as live readings. */
 internal object DemoSamples {
+    fun corrections(ecu: DemoEcu): FuelCorrections = if (ecu == DemoEcu.ME21) {
+        FuelCorrections(33768, 35168, 45)
+    } else {
+        FuelCorrections.fromMeasurements(CorrectionMeasurements(
+            lowPercent = -1966 * 100.0 / 65536, highPercent = 1311 * 100.0 / 65536, additiveRaw = -35))
+    }
+
     fun sample(ecu: DemoEcu, seconds: Double, at: Long, acquisitionMs: Double = 125.0): Sample {
         val phase = seconds % 8
         val load = (60 + 175 * (.5 + .5 * sin(seconds / 2.2))).toInt()

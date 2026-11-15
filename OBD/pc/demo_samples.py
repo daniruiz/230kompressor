@@ -5,10 +5,22 @@ if __package__:
     from .dashboard_sample import Sample
     from .maf_calibration import flow_g_s
     from .sim4le_measurements import decode_snapshot
+    from .fuel_corrections import CorrectionMeasurements, FuelCorrections
 else:
     from dashboard_sample import Sample
     from maf_calibration import flow_g_s
     from sim4le_measurements import decode_snapshot
+    from fuel_corrections import CorrectionMeasurements, FuelCorrections
+
+
+def demo_corrections(family='ME2.1'):
+    if family == 'SIM4LE':
+        return FuelCorrections.from_measurements(CorrectionMeasurements(
+            low_percent=-1966 * 100 / 65536, high_percent=1311 * 100 / 65536,
+            additive_raw=-35))
+    if family != 'ME2.1':
+        raise ValueError(f'Unknown demo ECU: {family}')
+    return FuelCorrections(33768, 35168, 45)
 
 
 def demo_sample(t, family='ME2.1', *, at, duration_ms):

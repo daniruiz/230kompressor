@@ -60,7 +60,7 @@ if __package__:
     from .me21_measurements import (InjectorCalibration, VOLTAGE_V_PER_RAW_EST,
                                     ecu_voltage_est, injection_metrics)
     from .dashboard_sample import Sample
-    from .demo_samples import demo_sample
+    from .demo_samples import demo_sample, demo_corrections
     from .measurements import Measurements
     from .fuel_corrections import FuelCorrections
     from .temperature_alerts import TemperatureAlerts
@@ -73,7 +73,7 @@ else:
     from me21_measurements import (InjectorCalibration, VOLTAGE_V_PER_RAW_EST,
                                    ecu_voltage_est, injection_metrics)
     from dashboard_sample import Sample
-    from demo_samples import demo_sample
+    from demo_samples import demo_sample, demo_corrections
     from measurements import Measurements
     from fuel_corrections import FuelCorrections
     from temperature_alerts import TemperatureAlerts
@@ -512,10 +512,7 @@ class CorrectionsMenu:
             if not self.open or generation != self.generation:
                 return
         try:
-            if elm is None and demo_ecu == 'SIM4LE':
-                raise DiagnosticError(tr('Lectura de correcciones no disponible en Demo SIM4LE',
-                                         'Correction readings unavailable in SIM4LE Demo'))
-            result = elm.read_fuel_corrections() if elm is not None else FuelCorrections(33768, 35168, 45)
+            result = elm.read_fuel_corrections() if elm is not None else demo_corrections(demo_ecu)
             profile = elm.ecu_profile if elm is not None else None
             journal.write('fuel_corrections', demo=elm is None,
                           software=profile.software if profile else None,
@@ -566,10 +563,13 @@ class CorrectionsMenu:
                 values = self.result.values(self.tick_us)
                 table.add_row('LTFT low', f'{values.low_percent:+.2f} %' if values.low_percent is not None else '—')
                 table.add_row('LTFT high', f'{values.high_percent:+.2f} %' if values.high_percent is not None else '—')
-                table.add_row(tr('Corrección aditiva', 'Additive correction'),
-                              f'~{values.additive_ms:+.3f} ms' if values.additive_ms is not None else '—')
-                table.add_row(tr('Aditiva · unidades ECU', 'Additive · ECU units'),
-                              f'{values.additive_raw:+d}' if values.additive_raw is not None else '—')
+                if values.additive_ms is not None:
+                    table.add_row(tr('Corrección aditiva', 'Additive correction'), f'~{values.additive_ms:+.3f} ms')
+                    table.add_row(tr('Aditiva · unidades ECU', 'Additive · ECU units'),
+                                  f'{values.additive_raw:+d}' if values.additive_raw is not None else '—')
+                else:
+                    additive = (f'{values.additive_raw:+d} ' + tr('unidades ECU', 'ECU units')) if values.additive_raw is not None else '—'
+                    table.add_row(tr('Corrección aditiva', 'Additive correction'), additive)
                 body.extend([table, ''])
             body.extend(['', Text(self.message, style=RED if self.error else CYAN if self.busy else MUTED)])
             content['body'].update(Group(*body))
