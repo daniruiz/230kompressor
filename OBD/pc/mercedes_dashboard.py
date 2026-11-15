@@ -710,7 +710,9 @@ class Journal:
                       throttle_pct=readings.throttle_percent,
                       oxygen_raw=sample.oxygen_raw,
                       oxygen_voltage_V=readings.oxygen_v,
-                      oxygen_state=('rico' if readings.oxygen_rich else 'pobre') if readings.oxygen_rich is not None else 'sin datos',
+                      oxygen_state=(('rico' if readings.oxygen_rich else 'pobre')
+                                    if readings.oxygen_rich is not None else
+                                    ('' if readings.oxygen_v is not None else 'sin datos')),
                       maf_raw=sample.maf_raw,
                       maf_adc_word=sample.maf_adc_word,
                       maf_g_s_est=readings.maf_g_s,

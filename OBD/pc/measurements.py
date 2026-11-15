@@ -21,11 +21,17 @@ class Measurements:
     ecu_maf_g_s: float | None = None
     advance_degrees: float | None = None
     oxygen_v: float | None = None
-    oxygen_rich: bool | None = None
     map_kpa: float | None = None
     ecu_voltage_v: float | None = None
     trim_labels: tuple[str, str] = ('STFT', 'LTFT')
     injection_basis: str = 'common_request_estimate'
+
+    @property
+    def oxygen_rich(self):
+        """Display policy for both ECUs; None hides the label in the neutral band."""
+        if self.oxygen_v is None or .43 <= self.oxygen_v <= .44:
+            return None
+        return self.oxygen_v > .44
 
     @property
     def retard(self):

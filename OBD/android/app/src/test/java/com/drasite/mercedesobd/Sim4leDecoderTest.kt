@@ -4,6 +4,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class Sim4leDecoderTest {
+    @Test fun oxygenUsesAnUnlabelledMiddleBand() {
+        for ((raw, expected) in listOf(85 to false, 86 to null, 87 to null, 88 to null, 89 to true)) {
+            val sim4le = Sim4leDecoder.decode(payload().apply { word(74, raw) }, at = 100).values
+            val me21Voltage = Decoder.oxygen(3512 + raw * 64)
+            assertEquals(raw / 200.0, me21Voltage, 0.0)
+            assertEquals(expected, Measurements(oxygenVolts = me21Voltage).oxygenRich)
+            assertEquals(expected, sim4le.oxygenRich)
+        }
+        assertNull(Measurements().oxygenRich)
+    }
+
     private fun payload(): ByteArray = byteArrayOf(0x61, 0x01) + ByteArray(178)
     private fun ByteArray.byte(offset: Int, value: Int) { this[offset + 2] = value.toByte() }
     private fun ByteArray.word(offset: Int, value: Int) {

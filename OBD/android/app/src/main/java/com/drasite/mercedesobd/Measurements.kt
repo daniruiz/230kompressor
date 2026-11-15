@@ -20,12 +20,19 @@ data class Measurements(
     val ecuMafGramsPerSecond: Double? = null,
     val advanceDegrees: Double? = null,
     val oxygenVolts: Double? = null,
-    val oxygenRich: Boolean? = null,
     val mapKpa: Double? = null,
     val ecuVoltageV: Double? = null,
     val injectionBasis: String? = null,
     val trimLabels: List<String> = listOf("STFT", "LTFT"),
 ) {
+    // Display policy for both ECUs; null hides the label in the neutral band.
+    val oxygenRich: Boolean? get() = oxygenVolts?.let {
+        when {
+            it < .43 -> false
+            it > .44 -> true
+            else -> null
+        }
+    }
     val retard: Double? get() = retardDegrees.maxOrNull()
     val highRetard: Boolean get() = (retard ?: 0.0) > 3.0
 }
@@ -50,7 +57,6 @@ internal object Me21Measurements {
             ecuMafGramsPerSecond = Decoder.ecuMaf(sample.mafEcuRaw),
             advanceDegrees = Decoder.advance(sample.advance),
             oxygenVolts = Decoder.oxygen(sample.oxygen),
-            oxygenRich = sample.oxygen > 0x2456,
         )
     }
 }

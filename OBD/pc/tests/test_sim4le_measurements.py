@@ -6,9 +6,22 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sim4le_measurements import decode_snapshot
 from ecu_reader import DiagnosticError
+from dashboard_sample import Sample
 
 
 class Sim4leMeasurementsTests(unittest.TestCase):
+    def test_both_ecus_use_voltage_thresholds_with_an_unlabelled_middle_band(self):
+        for raw, expected in ((85, False), (86, None), (87, None), (88, None), (89, True)):
+            with self.subTest(volts=raw / 200):
+                data = bytearray(178)
+                data[74:76] = raw.to_bytes(2, 'little')
+                sim4le = decode_snapshot(b'\x61\x01' + data).values()
+                me21 = Sample(3000, 3000, 180, (0, 0, 0, 0),
+                              oxygen_raw=3512 + raw * 64).values()
+                for values in (me21, sim4le):
+                    self.assertEqual(values.oxygen_v, raw / 200)
+                    self.assertIs(values.oxygen_rich, expected)
+
     def test_snapshot_uses_own_scales_and_preserves_all_bytes(self):
         data = bytearray(178)
         for offset, value in {0: 160, 1: 100, 30: 100, 37: 120, 38: 125,
