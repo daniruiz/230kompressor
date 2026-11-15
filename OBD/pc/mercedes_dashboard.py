@@ -1862,8 +1862,8 @@ def render(model, args, width=110, height=44, now=None):
             box=box.HEAVY if flashing else box.ROUNDED, border_style=alert_color if flashing else MAGENTA,
             style=f'on {bg}', padding=(0,2)))
         mixture = Table.grid(expand=True, padding=(0,1))
-        mixture.add_column(style=MUTED)
-        mixture.add_column(justify='right')
+        mixture.add_column(style=MUTED, no_wrap=True)
+        mixture.add_column(justify='right', no_wrap=True)
         for label,value in zip(('STFT','LTFT'),values.trims_percent):
             mixture.add_row(label, Text(f'{value:+.2f} %' if shown and value is not None else '—',
                                         style=f'bold {GREEN}'))
@@ -1873,15 +1873,15 @@ def render(model, args, width=110, height=44, now=None):
             map_text = f'{values.map_kpa:.0f}' if shown and values.map_kpa is not None else '—'
             precision = 0 if width < 100 else 1
             maf_text = f'{values.maf_g_s:.{precision}f}' if shown and values.maf_g_s is not None else '—'
-            flow = f'{map_text}kPa / {maf_text}g/s' if width < 100 else f'{map_text} kPa · {maf_text} g/s'
+            flow = f'{map_text}kPa/{maf_text}g/s' if width < 100 else f'{map_text} kPa · {maf_text} g/s'
             mixture.add_row('MAP/MAF', Text(flow, style=f'bold {CYAN}'))
         else:
-            mixture.add_row(tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
+            mixture.add_row('MAF' if width < 100 else tr('Caudalímetro', 'Airflow'), Text(maf, style=f'bold {CYAN}'))
         oxygen_label = tr('rico', 'rich') if values.oxygen_rich else tr('pobre', 'lean')
         oxygen = f'{values.oxygen_v:.3f} V' if shown and values.oxygen_v is not None else '—'
         if shown and values.oxygen_v is not None and values.oxygen_rich is not None:
-            oxygen = f'{oxygen_label} · {oxygen}'
-        mixture.add_row(tr('Sonda λ', 'O₂ sensor'), Text(oxygen, style=f'bold {AMBER}'))
+            oxygen = f'{oxygen_label} {values.oxygen_v:.3f}V' if width < 100 else f'{oxygen_label} · {oxygen}'
+        mixture.add_row('λ' if width < 100 else tr('Sonda λ', 'O₂ sensor'), Text(oxygen, style=f'bold {AMBER}'))
         temperatures = Table.grid(expand=True, padding=(0,1))
         temperatures.add_column(style=MUTED)
         temperatures.add_column(justify='right')

@@ -2,6 +2,7 @@
 import io
 import json
 from pathlib import Path
+import re
 import unittest
 from unittest.mock import patch
 import sys
@@ -69,21 +70,47 @@ class DisplayTests(unittest.TestCase):
     def test_demo_layouts_and_oxygen_labels_in_both_languages(self):
         for family in ('ME2.1', 'SIM4LE'):
             for language, lean, rich in (('en', 'lean', 'rich'), ('es', 'pobre', 'rico')):
-                for t, label in ((0, lean), (2, lean), (4, None), (6, None), (8, None), (10, rich)):
-                    with self.subTest(family=family, language=language, t=t):
-                        sample = demo_sample(t, family, at=10, duration_ms=125)
-                        text = self.draw(sample, language=language,
-                                         demo='sim4le' if family == 'SIM4LE' else 'me21')
-                        line = next(line for line in text.splitlines()
-                                    if ('O₂ sensor' if language == 'en' else 'Sonda λ') in line)
-                        self.assertIn(f'{sample.values().oxygen_v:.3f} V', line)
-                        self.assertEqual(lean in line, label == lean)
-                        self.assertEqual(rich in line, label == rich)
-                        self.assertEqual('MAP/MAF' in text, family == 'SIM4LE')
-                        voltage = sample.values().ecu_voltage_v if family == 'SIM4LE' else sample.adapter_voltage_v
-                        self.assertIn(('ECU ' if family == 'SIM4LE' else 'OBD ') + f'{voltage:.1f} V', text)
-                        self.assertIn('DEMO', text)
-                        self.assertIn(family, text)
+                for width, height in ((78, 29), (78, 30), (90, 30), (99, 30),
+                                      (100, 30), (110, 44)):
+                    for t, label in ((0, lean), (2, lean), (4, None), (6, None),
+                                     (8, None), (10, rich), (12, rich)):
+                        with self.subTest(family=family, language=language,
+                                          width=width, height=height, t=t):
+                            sample = demo_sample(t, family, at=10, duration_ms=125)
+                            values = sample.values()
+                            text = self.draw(sample, width, height, language,
+                                             demo='sim4le' if family == 'SIM4LE' else 'me21')
+                            oxygen_name = ('λ' if width < 100 else
+                                           'O₂ sensor' if language == 'en' else 'Sonda λ')
+                            lines = [line for line in text.splitlines() if oxygen_name in line]
+                            self.assertEqual(len(lines), 1, text)
+                            oxygen_line = lines[0]
+                            self.assertRegex(oxygen_line, re.escape(f'{values.oxygen_v:.3f}') + r'\s?V\b')
+                            self.assertEqual(lean in oxygen_line, label == lean)
+                            self.assertEqual(rich in oxygen_line, label == rich)
+                            self.assertNotIn('…', oxygen_line)
+                            if label is None:
+                                # 0.430–0.440 V remains visible without a mixture label.
+                                self.assertNotIn('·', oxygen_line)
+
+                            flow_name = ('MAP/MAF' if family == 'SIM4LE' else
+                                         'MAF' if width < 100 else
+                                         'Airflow' if language == 'en' else 'Caudalímetro')
+                            flow_lines = [line for line in text.splitlines() if flow_name in line]
+                            self.assertEqual(len(flow_lines), 1, text)
+                            flow_line = flow_lines[0]
+                            self.assertNotIn('…', flow_line)
+                            if family == 'SIM4LE':
+                                precision = 0 if width < 100 else 1
+                                self.assertRegex(flow_line, re.escape(f'{values.map_kpa:.0f}') + r'\s?kPa\b')
+                                self.assertRegex(flow_line, re.escape(f'{values.maf_g_s:.{precision}f}') + r'\s?g/s\b')
+                            else:
+                                self.assertIn(f'~{values.maf_g_s:.1f} g/s', flow_line)
+                            self.assertEqual('MAP/MAF' in text, family == 'SIM4LE')
+                            voltage = values.ecu_voltage_v if family == 'SIM4LE' else sample.adapter_voltage_v
+                            self.assertIn(('ECU ' if family == 'SIM4LE' else 'OBD ') + f'{voltage:.1f} V', text)
+                            self.assertIn('DEMO', text)
+                            self.assertIn(family, text)
 
     def test_me21_keeps_validated_advance_direction(self):
         sample = Sample(3000, 3000, 180, (0, 0, 0, 0), at=10)
