@@ -181,43 +181,48 @@ class Session(
                     ?: throw DiagnosticException(tr("Bluetooth no disponible", "Bluetooth unavailable"))
             if (!adapter.isEnabled) throw DiagnosticException(tr("Activa Bluetooth en Ajustes", "Enable Bluetooth in Settings"))
             val device = adapter.getRemoteDevice(requireNotNull(address))
-            val sock =
-                device.createRfcommSocketToServiceRecord(
-                    UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-                )
-            socket = sock
-            if (stopped) throw InterruptedException()
-            val watchdog = Executors.newSingleThreadScheduledExecutor()
-            try {
-                val timeout =
-                    watchdog.schedule(
-                        {
-                            try {
-                                sock.close()
-                            } catch (_: Exception) {}
-                        },
-                        15,
-                        TimeUnit.SECONDS,
+            fun openWire(): BluetoothWire {
+                if (stopped) throw InterruptedException()
+                val sock =
+                    device.createRfcommSocketToServiceRecord(
+                        UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
                     )
+                socket = sock
+                if (stopped) throw InterruptedException()
+                val watchdog = Executors.newSingleThreadScheduledExecutor()
                 try {
-                    sock.connect()
+                    val timeout =
+                        watchdog.schedule(
+                            {
+                                try {
+                                    sock.close()
+                                } catch (_: Exception) {}
+                            },
+                            15,
+                            TimeUnit.SECONDS,
+                        )
+                    try {
+                        sock.connect()
+                    } finally {
+                        timeout.cancel(false)
+                    }
                 } finally {
-                    timeout.cancel(false)
+                    watchdog.shutdownNow()
                 }
-            } finally {
-                watchdog.shutdownNow()
+                val opened = BluetoothWire(sock, j)
+                wire = opened // finally closes the newest transport, including after reconnect.
+                j.event(
+                    "adapter_connection",
+                    "transport" to "bluetooth_spp",
+                    "bluetooth_name" to device.name,
+                    "bluetooth_address" to device.address,
+                )
+                return opened
             }
-            val w = BluetoothWire(sock, j)
-            wire = w
-            j.event(
-                "adapter_connection",
-                "transport" to "bluetooth_spp",
-                "bluetooth_name" to device.name,
-                "bluetooth_address" to device.address,
-            )
+            val w = openWire()
             val reader = readerFactory?.invoke(w, j) ?: AutoEcuReader(w, j,
                 preferredFamily = ecuMemory?.preferred(),
-                recordFamily = { ecuMemory?.remember(it) })
+                recordFamily = { ecuMemory?.remember(it) }, reconnect = ::openWire)
             reader.identify(model::notice)
             model.setEcu(reader.ecuProfile, reader.ecuSoftware, reader.ecuIdentificationStatus)
             reader.start(adapterTuning, ::publish, model::notice)

@@ -1611,7 +1611,9 @@ def create_reader(args, journal, stop, notice) -> EcuReader:
     transport = connect_adapter(args, journal, stop, notice)
     preferences = EcuPreferences()
     return AutoReader(transport, args, journal, preferred_family=preferences.get(),
-                      record_family=preferences.remember)
+                      record_family=preferences.remember,
+                      reconnect=lambda: ELM(transport.port, transport.baud, journal, stop,
+                                            fast=not args.conservative, repeat=False))
 
 
 def worker(args, model, stop, journal, faults=None, corrections=None,

@@ -1,13 +1,14 @@
 package com.drasite.mercedesobd
 
-/** Try the last working family first; only synchronized failures permit retries. */
+/** Prefer the last working family; a lost prompt must never reuse its transport. */
 class AutoEcuReader(
-    private val wire: Wire,
+    private var wire: Wire,
     private val log: Events,
     private val me21Factory: (Wire, Events) -> EcuReader = ::Me21Reader,
     private val sim4leFactory: (Wire, Events) -> EcuReader = { w, e -> Sim4leReader(w, e) },
     private val preferredFamily: String? = null,
     private val recordFamily: (String) -> Unit = {},
+    private val reconnect: (() -> Wire)? = null,
 ) : EcuReader {
     private var selected: EcuReader? = null
     private var selectedFamily: String? = null
@@ -29,7 +30,8 @@ class AutoEcuReader(
         val attempts = listOf(Triple(preferred, 0L, false), Triple(preferred, 3000L, false),
             Triple(other, 6000L, true), Triple(preferred, 6000L, true))
         var lastError: DiagnosticException? = null
-        for ((family, wait, retry) in attempts) {
+        for ((index, attempt) in attempts.withIndex()) {
+            val (family, wait, retry) = attempt
             val candidate = if (family == "ME2.1") me21Factory(wire, log) else sim4leFactory(wire, log)
             log.event("ecu_family_attempt", "family" to family, "initial_wait_ms" to wait,
                 "retry" to retry)
@@ -39,7 +41,12 @@ class AutoEcuReader(
                 selectedFamily = family
                 return
             } catch (e: LinkTimeout) {
-                throw e // Lost framing requires a new connection, never another ECU request.
+                if (index != 0 || reconnect == null) throw e
+                lastError = e
+                log.event("ecu_family_attempt_failed", "family" to family, "reason" to e.toString(),
+                    "reconnecting" to true)
+                wire.close()
+                wire = reconnect() // Only the initial attempt can reopen; next attempt still waits 3 s.
             } catch (e: DiagnosticException) {
                 lastError = e
                 log.event("ecu_family_attempt_failed", "family" to family, "reason" to e.toString())

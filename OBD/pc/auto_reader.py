@@ -10,12 +10,14 @@ else:
 
 
 class AutoReader:
-    def __init__(self, transport, args, journal, *, preferred_family=None, record_family=None):
+    def __init__(self, transport, args, journal, *, preferred_family=None, record_family=None,
+                 reconnect=None):
         self.transport, self.args, self.journal = transport, args, journal
         self.preferred_family = preferred_family if preferred_family in ('ME2.1', 'SIM4LE') else 'ME2.1'
         self.reader = None
         self.record_family = record_family
         self.remembered = False
+        self.reconnect = reconnect
 
     def identify(self, notice):
         self.remembered = False
@@ -25,15 +27,22 @@ class AutoReader:
         attempts = ((preferred, 0, False), (preferred, 3, False),
                     (other, 6, True), (preferred, 6, True))
         for index, (family, wait, retry) in enumerate(attempts):
+            # A rejected single-frame read can disable the response-count suffix.
+            # Each fresh attempt gets the user's original transport policy again.
+            self.transport.fast = not self.args.conservative
             self.reader = factories[family](self.transport, self.args, self.journal)
             self.journal.write('ecu_connection_attempt', family=family,
                                attempt=index+1, wait_ms=wait*1000, conservative=retry)
             try:
                 self.reader.identify(notice, initial_wait=wait, retry=retry)
                 return
-            except LinkTimeout:
-                # The caller must close a transport whose prompt was lost.
-                raise
+            except LinkTimeout as exc:
+                if index != 0 or self.reconnect is None:
+                    raise
+                self.journal.write('ecu_connection_reopen', family=family, error=str(exc))
+                # Never issue another command on a stream whose prompt was lost.
+                self.transport.close()
+                self.transport = self.reconnect()
             except DiagnosticError as exc:
                 self.journal.write('ecu_family_probe', family=family, error=str(exc))
                 if index == len(attempts)-1:

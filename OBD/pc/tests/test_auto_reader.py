@@ -30,8 +30,9 @@ class AutoReaderTests(unittest.TestCase):
             return reader
         return create
 
-    def connect(self, preferred=None):
-        reader = AutoReader(self.transport, Mock(), self.journal, preferred_family=preferred)
+    def connect(self, preferred=None, reconnect=None):
+        reader = AutoReader(self.transport, Mock(), self.journal, preferred_family=preferred,
+                            reconnect=reconnect)
         with patch('auto_reader.Me21Reader', side_effect=self.factory('ME2.1')), \
              patch('auto_reader.Sim4leReader', side_effect=self.factory('SIM4LE')):
             reader.identify(self.notice)
@@ -77,6 +78,36 @@ class AutoReaderTests(unittest.TestCase):
     def test_close_works_even_before_identification(self):
         AutoReader(self.transport, Mock(), self.journal).close()
         self.transport.close.assert_called_once()
+
+    def test_first_timeout_closes_then_reopens_before_short_retry(self):
+        new_transport = Mock()
+        events = []
+        self.transport.close.side_effect = lambda: events.append('close')
+        def reconnect():
+            events.append('reopen')
+            return new_transport
+        self.failures = [LinkTimeout('lost prompt')]
+        reader = self.connect('SIM4LE', reconnect)
+        self.assertEqual(events, ['close', 'reopen'])
+        self.assertEqual(self.attempts, [('SIM4LE', 0, False), ('SIM4LE', 3, False)])
+        self.assertIs(reader.transport, new_transport)
+        self.notice.assert_not_called()
+        reader.close()
+        new_transport.close.assert_called_once()
+
+    def test_second_timeout_or_failed_reopen_is_final(self):
+        for failure in (LinkTimeout('lost again'), OSError('port unavailable')):
+            self.attempts.clear()
+            reopen = Mock(return_value=Mock())
+            self.failures = [LinkTimeout('first')]
+            if isinstance(failure, LinkTimeout):
+                self.failures.append(failure)
+            else:
+                reopen.side_effect = failure
+            with self.assertRaises(type(failure)):
+                self.connect('SIM4LE', reopen)
+            reopen.assert_called_once()
+            self.assertLessEqual(len(self.attempts), 2)
 
 
 if __name__ == '__main__':

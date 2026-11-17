@@ -6,7 +6,8 @@ from unittest.mock import ANY, Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from ecu_reader import DiagnosticError, LinkTimeout
-from mercedes_dashboard import ELM
+from auto_reader import AutoReader
+from mercedes_dashboard import ELM, parse_args
 
 
 class StartupTimingTests(unittest.TestCase):
@@ -83,6 +84,25 @@ class StartupTimingTests(unittest.TestCase):
         with self.assertRaises(InterruptedError):
             self.setup(initial_wait=3, retry=False)
         self.assertFalse(any(c.args[0] == 'ATSI' for c in self.elm.command.call_args_list))
+
+    def test_recovered_attempt_restores_suffix_without_overriding_conservative_mode(self):
+        for conservative in (False, True):
+            self.elm._read_single_frame = ELM._read_single_frame.__get__(self.elm)
+            self.elm.restore_transport = Mock()
+            self.elm.identify_ecu = Mock()
+            observed = []
+            # The fast path tries a malformed reply once with and once without
+            # its suffix. The next connection attempt receives a valid frame.
+            replies = iter(['BAD'] * (1 if conservative else 2) + ['6211040000'])
+            def query(*args, **kwargs):
+                observed.append(self.elm.fast)
+                return next(replies)
+            self.elm.query = Mock(side_effect=query)
+            args = parse_args(['--conservative'] if conservative else [])
+            with patch('mercedes_dashboard.time.monotonic', side_effect=lambda: self.clock):
+                AutoReader(self.elm, args, self.elm.journal).identify(self.notice)
+            self.assertEqual(observed, [False, False] if conservative else [True, False, True])
+            self.assertEqual(self.elm.fast, not conservative)
 
 
 if __name__ == '__main__':
