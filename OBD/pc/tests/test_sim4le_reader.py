@@ -82,7 +82,7 @@ class ReaderTests(unittest.TestCase):
             sim.assert_not_called()
             me21.return_value.identify.side_effect = DiagnosticError('7F 22 11')
             reader.identify(Mock())
-            sim.return_value.identify.assert_called_once()
+            sim.return_value.identify.assert_called_once_with(unittest.mock.ANY, initial_wait=6, retry=True)
 
 
 if __name__ == '__main__':

@@ -165,7 +165,7 @@ class Sim4leReaderTest {
             val sim = StubReader()
             val reader = AutoEcuReader(Adapter(), log, { _, _ -> me21 }, { _, _ -> sim })
             try { reader.identify {} } catch (e: LinkTimeout) { assertSame(error, e) }
-            assertEquals(1, me21.identifications)
+            assertEquals(if (error != null && error !is LinkTimeout) 2 else 1, me21.identifications)
             assertEquals(if (error != null && error !is LinkTimeout) 1 else 0, sim.identifications)
         }
     }

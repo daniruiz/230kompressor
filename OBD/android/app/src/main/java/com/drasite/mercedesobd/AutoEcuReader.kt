@@ -1,11 +1,12 @@
 package com.drasite.mercedesobd
 
-/** Preserve the ME2.1 startup; only a synchronized rejection tries SIM4LE. */
+/** Try the last working family first; only synchronized failures permit retries. */
 class AutoEcuReader(
     private val wire: Wire,
     private val log: Events,
     private val me21Factory: (Wire, Events) -> EcuReader = ::Me21Reader,
     private val sim4leFactory: (Wire, Events) -> EcuReader = { w, e -> Sim4leReader(w, e) },
+    private val preferredFamily: String? = null,
 ) : EcuReader {
     private var selected: EcuReader? = null
     private val reader get() = checkNotNull(selected) { "ECU reader has not been identified" }
@@ -17,16 +18,28 @@ class AutoEcuReader(
     override val faultScope get() = selected?.faultScope
 
     override fun identify(notice: (String) -> Unit) {
-        val me21 = me21Factory(wire, log)
-        try {
-            me21.identify(notice)
-            selected = me21
-        } catch (e: LinkTimeout) {
-            throw e // A lost prompt needs a new connection, not another ECU request.
-        } catch (e: DiagnosticException) {
-            log.event("reader_fallback", "from" to "ME2.1", "to" to "SIM4LE", "reason" to e.toString())
-            selected = sim4leFactory(wire, log).also { it.identify(notice) }
+        selected = null
+        val preferred = if (preferredFamily == "SIM4LE") "SIM4LE" else "ME2.1"
+        val other = if (preferred == "ME2.1") "SIM4LE" else "ME2.1"
+        val attempts = listOf(Triple(preferred, 0L, false), Triple(preferred, 3000L, false),
+            Triple(other, 6000L, true), Triple(preferred, 6000L, true))
+        var lastError: DiagnosticException? = null
+        for ((family, wait, retry) in attempts) {
+            val candidate = if (family == "ME2.1") me21Factory(wire, log) else sim4leFactory(wire, log)
+            log.event("ecu_family_attempt", "family" to family, "initial_wait_ms" to wait,
+                "retry" to retry)
+            try {
+                candidate.identify(notice, wait, retry)
+                selected = candidate
+                return
+            } catch (e: LinkTimeout) {
+                throw e // Lost framing requires a new connection, never another ECU request.
+            } catch (e: DiagnosticException) {
+                lastError = e
+                log.event("ecu_family_attempt_failed", "family" to family, "reason" to e.toString())
+            }
         }
+        throw checkNotNull(lastError)
     }
 
     override fun start(tuning: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) =
