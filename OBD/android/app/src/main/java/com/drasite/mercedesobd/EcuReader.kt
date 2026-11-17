@@ -17,6 +17,7 @@ interface EcuReader {
     val transportProfile: String
     val faultScope: String? get() = null
     fun identify(notice: (String) -> Unit)
+    fun identify(notice: (String) -> Unit, initialWaitMs: Long, retry: Boolean) = identify(notice)
     fun start(tuning: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit)
     fun read(): Sample
     fun recover(error: DiagnosticException, consecutive: Int): Int
@@ -35,7 +36,9 @@ class Me21Reader(wire: Wire, private val log: Events) : EcuReader {
     override val mode get() = if (group) "AGRUPADO" else "INDIVIDUAL"
     override val transportProfile get() = elm.profile
 
-    override fun identify(notice: (String) -> Unit) {
+    override fun identify(notice: (String) -> Unit) = identify(notice, 6000, true)
+
+    override fun identify(notice: (String) -> Unit, initialWaitMs: Long, retry: Boolean) {
         log.event(
             "reader_configuration",
             "reader" to "ME2.1",
@@ -73,7 +76,7 @@ class Me21Reader(wire: Wire, private val log: Events) : EcuReader {
             "ecu_identification_policy" to "ROM software reference; once at connection",
             "supported_ecu_software" to EcuProfiles.all.map { it.software },
         )
-        elm.setup(notice)
+        elm.setup(notice, initialWaitMs, retry)
         elm.identifyEcu(notice)
     }
 

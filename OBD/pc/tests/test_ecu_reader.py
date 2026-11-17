@@ -29,7 +29,7 @@ class Me21ReaderTests(unittest.TestCase):
         self.reader.identify(self.notice)
         self.reader.start(self.notice, self.reject, self.publish)
         self.assertEqual(sequence.mock_calls, [
-            call.elm.setup(self.notice, True), call.elm.identify_ecu(self.notice),
+            call.elm.setup(self.notice, True, initial_wait=6, retry=True), call.elm.identify_ecu(self.notice),
             call.elm.define_group(), call.publish(first),
             call.elm.optimize_transport('grouped', self.notice, self.publish),
             call.elm.enable_adapter_voltage_polling(),

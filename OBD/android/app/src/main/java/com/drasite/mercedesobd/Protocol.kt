@@ -276,7 +276,8 @@ class Elm(
         return reply
     }
 
-    fun setup(notice: (String) -> Unit) {
+    fun setup(notice: (String) -> Unit, initialWaitMs: Long = 6000, retry: Boolean = true) {
+        require(initialWaitMs >= 0)
         at("ATE0")
         val identity = command("ATI").trim()
         notice(tr("Adaptador: $identity", "Adapter: $identity"))
@@ -292,10 +293,14 @@ class Elm(
         at("ATPC")
         // Let a previous ECU session expire before starting another slow init.
         // ATRV is local to the adapter: use the last second of this idle window
-        // for the first voltage reading without extending the six-second wait.
-        val idleDeadline = now() + 6000
-        notice(tr("Cerrando sesión anterior · 6 s", "Closing previous session · 6 s"))
-        pause(5000)
+        // for the first voltage reading without extending the requested wait.
+        val idleDeadline = now() + initialWaitMs
+        if (initialWaitMs > 0) {
+            notice(tr("Cerrando sesión anterior · ${initialWaitMs / 1000} s",
+                "Closing previous session · ${initialWaitMs / 1000} s"))
+            val beforeVoltage = (initialWaitMs - 1000).coerceAtLeast(0)
+            if (beforeVoltage > 0) pause(beforeVoltage)
+        }
         readAdapterVoltage()
         val idleRemaining = idleDeadline - now()
         if (idleRemaining > 0) pause(idleRemaining)
@@ -322,7 +327,8 @@ class Elm(
         log.event("keyword_check", "disabled_acknowledged" to kwDisabled)
         at("ATAL", true)
         // Keep one more idle retry for init/read failures with the prompt intact.
-        for (attempt in 0..1) {
+        val attempts = if (retry) 2 else 1
+        for (attempt in 0 until attempts) {
             if (attempt > 0) {
                 at("ATPC")
                 lastBus = null
@@ -342,7 +348,7 @@ class Elm(
                     "keywords" to keywords,
                     "keyword_disable_acknowledged" to kwDisabled,
                     "attempts" to attempt + 1,
-                    "startup_wait_ms" to (attempt + 1) * 6000,
+                    "startup_wait_ms" to initialWaitMs + attempt * 6000,
                 )
                 return
             } catch (e: LinkTimeout) {
@@ -352,7 +358,7 @@ class Elm(
                 // The ECU is already communicating; waiting cannot fix rejection.
                 throw e
             } catch (e: DiagnosticException) {
-                if (attempt > 0) throw e
+                if (attempt + 1 >= attempts) throw e
                 log.event("connection_retry", "reason" to e.toString(), "wait_ms" to 6000)
             }
         }

@@ -47,11 +47,16 @@ class Sim4leReader(
         return Sim4leKwp.positive(reply, request, prefix, length)
     }
 
-    override fun identify(notice: (String) -> Unit) {
+    override fun identify(notice: (String) -> Unit) = identify(notice, 6000, true)
+
+    override fun identify(notice: (String) -> Unit, initialWaitMs: Long, retry: Boolean) {
+        require(initialWaitMs >= 0)
         at("ATPC")
-        notice(tr("Probando SIM4LE · cerrando sesión anterior · 6 s",
-            "Trying SIM4LE · closing previous session · 6 s"))
-        pause(6000)
+        if (initialWaitMs > 0) {
+            notice(tr("Probando SIM4LE · cerrando sesión anterior · ${initialWaitMs / 1000} s",
+                "Trying SIM4LE · closing previous session · ${initialWaitMs / 1000} s"))
+            pause(initialWaitMs)
+        }
         lastBus = null
         gap = 60
         for (cmd in listOf("ATD", "ATE0", "ATL0", "ATS0", "ATH1", "ATM0", "ATSP5", "ATIIA01",

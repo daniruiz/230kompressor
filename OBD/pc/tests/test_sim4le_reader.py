@@ -47,6 +47,20 @@ class ReaderTests(unittest.TestCase):
         self.assertIsNone(result.additive_ms)
         self.elm.command.assert_called_once_with('2101 1')
 
+    def test_startup_wait_can_be_skipped_or_set_to_three_seconds(self):
+        reader = Sim4leReader(self.elm, self.args, self.journal)
+        reader.identify(Mock(), initial_wait=0, retry=False)
+        self.elm.stop.wait.assert_not_called()
+        reader.identify(Mock(), initial_wait=3, retry=False)
+        self.elm.stop.wait.assert_called_once_with(3)
+
+    def test_cancel_during_startup_wait_sends_no_init(self):
+        reader = Sim4leReader(self.elm, self.args, self.journal)
+        self.elm.stop.wait.return_value = True
+        with self.assertRaises(InterruptedError):
+            reader.identify(Mock(), initial_wait=3, retry=False)
+        self.elm.command.assert_not_called()
+
     def test_unknown_identity_and_corrupt_frames_are_rejected(self):
         reader = Sim4leReader(self.elm, self.args, self.journal)
         self.elm.command.side_effect = lambda c, **kw: frame(b'\x5a\x94' + b'OTHER_ECU---')

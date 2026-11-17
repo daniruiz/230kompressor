@@ -28,8 +28,8 @@ class Me21Reader:
     def adapter_profile(self):
         return self.elm.adapter_profile
 
-    def identify(self, notice):
-        self.elm.setup(notice, self.args.adaptive)
+    def identify(self, notice, *, initial_wait=6, retry=True):
+        self.elm.setup(notice, self.args.adaptive, initial_wait=initial_wait, retry=retry)
         self.elm.identify_ecu(notice)
 
     def start(self, notice, reject, publish):

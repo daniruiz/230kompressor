@@ -988,7 +988,7 @@ class ELM:
         positive(self.command('14', allow_repeat=False), 0x14, b'\x54', 1)
         self.journal.write('dtc_clear', acknowledged=True)
 
-    def setup(self, notice, adaptive):
+    def setup(self, notice, adaptive, *, initial_wait=6, retry=True):
         self.adaptive = adaptive if self.fast else '0'
         # Automatic discovery already verified these commands on this open port.
         if self.adapter_identity is None:
@@ -1007,13 +1007,16 @@ class ELM:
                            group_ids=[f'11{x:02X}' for x in IDS],
                            decoder_revision='12_ids_sensor_maf_1143_ecu_maf_load_1107_fixed_ltft_v6')
         self.at('ATPC')
+        self.last_bus_reply = self.last_command = None
         # Let a previous ECU session expire before starting another slow init.
         # ATRV is local to the adapter: use the last second of this idle window
         # for the first voltage reading without extending the six-second wait.
-        idle_deadline = time.monotonic() + 6
-        notice(tr('Cerrando sesión anterior · 6 s', 'Closing previous session · 6 s'))
-        if self.stop.wait(5):
-            raise InterruptedError
+        idle_deadline = time.monotonic() + initial_wait
+        if initial_wait:
+            notice(tr(f'Cerrando sesión anterior · {initial_wait:g} s',
+                      f'Closing previous session · {initial_wait:g} s'))
+            if self.stop.wait(max(0, initial_wait - 1)):
+                raise InterruptedError
         self._read_adapter_voltage()
         idle_remaining = idle_deadline - time.monotonic()
         if idle_remaining > 0 and self.stop.wait(idle_remaining):
@@ -1025,7 +1028,7 @@ class ELM:
         # Group packets exceed the 7-byte limit of some ELM implementations.
         self.at('ATAL', optional=True)
         # Keep one more idle retry for init/read failures with the prompt intact.
-        for attempt in range(2):
+        for attempt in range(2 if retry else 1):
             if attempt:
                 self.at('ATPC')
                 self.last_bus_reply = None
@@ -1047,12 +1050,12 @@ class ELM:
                 # confirms communication. Neither calls for repeating slow init.
                 raise
             except DiagnosticError as exc:
-                if attempt:
+                if attempt or not retry:
                     raise
                 self.journal.write('connection_retry', reason=str(exc), wait_ms=6000)
             else:
                 self.journal.write('ecu_link_verified', keywords=kw, attempts=attempt+1,
-                                   startup_wait_ms=(attempt+1)*6000)
+                                   startup_wait_ms=int(initial_wait*1000)+attempt*6000)
                 notice(tr('Sesión lista · palabras clave ', 'Session ready · keywords ') + kw)
                 return
 

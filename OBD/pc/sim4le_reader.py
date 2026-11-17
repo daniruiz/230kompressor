@@ -40,15 +40,16 @@ class Sim4leReader:
             reply = self.elm.command(command)
         return positive_reply(reply, request, prefix, length)
 
-    def identify(self, notice):
+    def identify(self, notice, *, initial_wait=6, retry=True):
         e = self.elm
         e.adapter_voltage_polling = False
         # End any previous slow-init session before changing protocol.
         e.at('ATPC')
-        notice(tr('Probando SIM4LE · cerrando sesión anterior · 6 s',
-                  'Trying SIM4LE · closing previous session · 6 s'))
-        if e.stop.wait(6):
-            raise InterruptedError
+        if initial_wait:
+            notice(tr(f'Conectando SIM4LE · espera de {initial_wait:g} s',
+                      f'Connecting SIM4LE · waiting {initial_wait:g} s'))
+            if e.stop.wait(initial_wait):
+                raise InterruptedError
         e.last_bus_reply = e.last_command = None
         e.request_gap = 0.060
         for command in ('ATD', 'ATE0', 'ATL0', 'ATS0', 'ATH1', 'ATM0', 'ATSP5',
