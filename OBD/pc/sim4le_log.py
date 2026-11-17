@@ -21,7 +21,9 @@ def snapshot_fields(sample):
     """Keep standard STFT/LTFT columns empty: these are different internal terms."""
     v = sample.values()
     return dict(
-        ecu_family=sample.ecu_family, load_raw=v.load, load_unit=v.load_unit,
+        # Preserve the original 16-bit log columns when the display uses byte 12.
+        ecu_family=sample.ecu_family, load_raw=sample.ecu_fields['load_raw16'],
+        load_value=sample.ecu_fields['load_raw16'], load_unit=v.load_unit,
         map_kpa=v.map_kpa, ecu_voltage_V=v.ecu_voltage_v,
         injection_basis=v.injection_basis, injection_breakdown_status=v.injection_basis,
         duty_over_100_est=None,  # A base occupancy is not evidence of electrical saturation.

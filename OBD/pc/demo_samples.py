@@ -47,8 +47,9 @@ def demo_sample(t, family='ME2.1', *, at, duration_ms):
         word(6, int.from_bytes(data[4:6], 'little'))
         word(8, rpm)
         word(10, (20 + 180 * effort * rpm / 6500) * 100 * 65536 / 0xDE39)
-        word(13, 1000 + 18000 * effort)
-        data[12] = round(255 * effort)
+        # Nominal M10062 demo relationship only; live readings use byte 12 as sent.
+        word(13, load * 254 + 127)
+        data[12] = load
         word(17, (3 + 15 * effort) / .004)
         word(19, 100 * (1 << 19) / 0x10FA)
         word(25, 50000 * (1 - effort))

@@ -38,6 +38,10 @@ class DemoTests(unittest.TestCase):
                 self.assertGreater(len({v.ecu_voltage_v for v in values}), 1)
                 for sample in samples:
                     self.assertEqual(len(sample.ecu_raw), 178)
+                    self.assertEqual(sample.values().load, sample.ecu_fields['scaled_load_raw'])
+                    self.assertEqual(sample.values().load_maximum, 255)
+                    self.assertTrue(0 <= sample.values().load <= 255)
+                    self.assertEqual(sample.ecu_fields['load_raw16'] // 254, sample.values().load)
                     self.assertEqual(sample.values(), decode_snapshot(b'\x61\x01' + sample.ecu_raw).values())
                     self.assertEqual(sample.values(tick_us=100), sample.values())
             else:
@@ -58,6 +62,7 @@ class DemoTests(unittest.TestCase):
             factory.assert_not_called()
             self.assertEqual(len(samples), 3)
             self.assertEqual({s.ecu_family for s in samples}, {args.demo_ecu})
+            self.assertEqual(list(model.history['load']), [s.values().load for s in samples])
             self.assertAlmostEqual(samples[-1].interval_ms, 125)
             journal.close.assert_called_once()
 

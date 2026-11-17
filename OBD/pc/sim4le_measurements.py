@@ -58,7 +58,8 @@ def decode_snapshot(payload, **timing):
     )
     fields.update({f'knock_level_{i + 1}_raw': data[95 + i] for i in range(4)})
     values = Measurements(
-        rpm=word(8), load=word(13), load_maximum=65535.0,
+        # Display the ECU's own scaled byte, never infer its calibration divisor.
+        rpm=word(8), load=data[12], load_maximum=255.0,
         injection_raw=word(17), injection_ms=word(17) * .004,
         duty_percent=word(17) * .004 * word(8) / 1200,
         injection_basis='base_4us_nominal_720deg',

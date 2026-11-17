@@ -62,7 +62,7 @@ class Sim4leDecoderTest {
     @Test fun snapshotUsesOwnScalesAndPreservesAllRawBytes() {
         val input = payload().apply {
             byte(0, 160); byte(1, 100); word(2, 0xC31); word(4, 12000)
-            word(8, 3000); word(10, 65535); word(13, 4000); word(17, 1000)
+            word(8, 3000); word(10, 65535); byte(12, 173); word(13, 4000); word(17, 1000)
             byte(30, 100); byte(37, 120); byte(38, 125); byte(39, 124); byte(40, 255)
             word(45, 0xF000); word(51, 0x1000); byte(73, 137); word(74, 100)
         }
@@ -72,7 +72,11 @@ class Sim4leDecoderTest {
         assertEquals(178, sample.ecuRaw.size)
         assertArrayEquals(input.copyOfRange(2, 180), sample.ecuRaw)
         assertEquals(3000, v.rpm)
-        assertEquals(4000, v.load)
+        assertEquals(173, v.load)
+        assertEquals(255.0, v.loadMaximum, 0.0)
+        assertEquals("raw", v.loadUnit)
+        assertEquals(4000, sample.ecuFields["load_raw16"])
+        assertEquals(173, sample.ecuFields["scaled_load_raw"])
         assertEquals(72, v.coolantC)
         assertEquals(27, v.iatC)
         assertEquals(100.0, v.throttlePercent!!, 0.0)

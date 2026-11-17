@@ -37,7 +37,8 @@ class KwpTests(unittest.TestCase):
                 wrapped = '\r'.join(wire[i:i + 32] for i in range(0, len(wire), 32))
                 sample = decode_snapshot(self.parse('2101 1\r' + wrapped))
                 self.assertEqual(sample.values().rpm, row['rpm'])
-                self.assertEqual(sample.values().load, row['load'])
+                self.assertEqual(sample.values().load, row['scaled_load'])
+                self.assertEqual(sample.ecu_fields['load_raw16'], row['load'])
                 self.assertEqual(sample.values().advance_degrees, row['advance'])
 
     def test_truncated_corrupt_duplicate_and_foreign_frames(self):

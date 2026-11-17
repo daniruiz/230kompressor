@@ -59,7 +59,9 @@ internal object DemoSamples {
         word(4, (6000 + load * 65))
         word(8, rpm)
         word(10, (2500 + 50000 * (load / 255.0) * (rpm / 6500.0)).toInt())
-        word(13, load * 180)
+        byte(12, load)
+        // Nominal 5126 demo relationship only; live decoding reads byte 12 directly.
+        word(13, load * 254 + 127)
         word(17, 250 + (3500 * (.5 + .5 * sin(seconds / 3 - 1))).roundToInt())
         byte(30, ((-2 + 20 * sin(seconds / 4) + 23.625) / .375).roundToInt())
         listOf(37, 39, 40, 38).forEachIndexed { channel, offset ->

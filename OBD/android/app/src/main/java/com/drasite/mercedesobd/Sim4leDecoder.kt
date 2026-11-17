@@ -40,7 +40,8 @@ internal object Sim4leDecoder {
         )
         (0..3).forEach { fields["knock_level_${it + 1}_raw"] = raw(95 + it) }
         val values = Measurements(
-            rpm = word(8), load = word(13), loadMaximum = 65535.0, loadUnit = "raw",
+            // Display the ECU's scaled byte directly, independently of its 16-bit load.
+            rpm = word(8), load = raw(12), loadMaximum = 255.0, loadUnit = "raw",
             injectionRaw = word(17), injectionMs = word(17) * .004,
             dutyPercent = word(17) * .004 * word(8) / 1200,
             injectionBasis = "base_4us_nominal_720deg",

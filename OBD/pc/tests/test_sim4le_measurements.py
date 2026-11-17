@@ -38,7 +38,7 @@ class Sim4leMeasurementsTests(unittest.TestCase):
 
     def test_snapshot_uses_own_scales_and_preserves_all_bytes(self):
         data = bytearray(178)
-        for offset, value in {0: 160, 1: 100, 30: 100, 37: 120, 38: 125,
+        for offset, value in {0: 160, 1: 100, 12: 100, 30: 100, 37: 120, 38: 125,
                               39: 124, 40: 255, 73: 137}.items():
             data[offset] = value
         for offset, value in {2: 0xC31, 4: 12000, 8: 3000, 10: 65535,
@@ -49,7 +49,10 @@ class Sim4leMeasurementsTests(unittest.TestCase):
         v = sample.values(tick_us=12345)  # A ME2.1 CLI override cannot change SIM4LE.
         self.assertEqual(sample.ecu_raw, data)
         self.assertEqual(sample.ecu_family, 'SIM4LE')
-        self.assertEqual((v.rpm, v.load), (3000, 4000))
+        # The display must use the received byte, not word(13)/254 or /256.
+        self.assertEqual((v.rpm, v.load, v.load_maximum, v.load_unit), (3000, 100, 255, 'raw'))
+        self.assertEqual(sample.ecu_fields['load_raw16'], 4000)
+        self.assertEqual(sample.ecu_fields['scaled_load_raw'], 100)
         self.assertEqual(v.temperatures_c, (72, 27))
         self.assertEqual(v.throttle_percent, 100)
         self.assertEqual(v.maf_g_s, 568.88)

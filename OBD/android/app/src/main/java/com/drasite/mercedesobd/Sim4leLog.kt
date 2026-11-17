@@ -19,8 +19,11 @@ internal object Sim4leLog {
 
     fun snapshotFields(sample: Sample): Map<String, Any?> {
         val v = sample.values
+        // Preserve historical log meanings; the dashboard now displays scaled_load_raw.
+        val load16 = sample.ecuFields["load_raw16"]
         val fields = linkedMapOf<String, Any?>(
-            "ecu_family" to sample.ecuFamily, "load_raw" to v.load, "load_unit" to v.loadUnit,
+            "ecu_family" to sample.ecuFamily, "load_raw" to load16, "load_value" to load16,
+            "load_unit" to v.loadUnit,
             "map_kpa" to v.mapKpa, "ecu_voltage_V" to v.ecuVoltageV,
             "injection_basis" to v.injectionBasis, "injection_breakdown_status" to v.injectionBasis,
             "duty_over_100_est" to null, // Base occupancy does not prove electrical saturation.
