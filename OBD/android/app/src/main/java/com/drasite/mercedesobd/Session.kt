@@ -13,7 +13,8 @@ class Session(
     private val root: File,
     val model: Model,
     private val connected: (String) -> Unit = {},
-    private val readerFactory: (Wire, Events) -> EcuReader = { wire, log -> AutoEcuReader(wire, log) },
+    private val readerFactory: ((Wire, Events) -> EcuReader)? = null,
+    private val ecuMemory: EcuMemory? = null,
     private val alert: () -> Unit,
 ) {
     @Volatile private var thread: Thread? = null
@@ -214,7 +215,9 @@ class Session(
                 "bluetooth_name" to device.name,
                 "bluetooth_address" to device.address,
             )
-            val reader = readerFactory(w, j)
+            val reader = readerFactory?.invoke(w, j) ?: AutoEcuReader(w, j,
+                preferredFamily = ecuMemory?.preferred(),
+                recordFamily = { ecuMemory?.remember(it) })
             reader.identify(model::notice)
             model.setEcu(reader.ecuProfile, reader.ecuSoftware, reader.ecuIdentificationStatus)
             reader.start(adapterTuning, ::publish, model::notice)

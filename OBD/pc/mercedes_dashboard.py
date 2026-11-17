@@ -56,6 +56,7 @@ from contextlib import contextmanager
 if __package__:
     from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from .auto_reader import AutoReader
+    from .ecu_preferences import EcuPreferences
     from .sim4le_log import EXTRA_FIELDS, snapshot_fields
     from .me21_measurements import (InjectorCalibration, VOLTAGE_V_PER_RAW_EST,
                                     ecu_voltage_est, injection_metrics)
@@ -69,6 +70,7 @@ if __package__:
 else:
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from auto_reader import AutoReader
+    from ecu_preferences import EcuPreferences
     from sim4le_log import EXTRA_FIELDS, snapshot_fields
     from me21_measurements import (InjectorCalibration, VOLTAGE_V_PER_RAW_EST,
                                    ecu_voltage_est, injection_metrics)
@@ -1606,7 +1608,10 @@ class Model:
 
 
 def create_reader(args, journal, stop, notice) -> EcuReader:
-    return AutoReader(connect_adapter(args, journal, stop, notice), args, journal)
+    transport = connect_adapter(args, journal, stop, notice)
+    preferences = EcuPreferences()
+    return AutoReader(transport, args, journal, preferred_family=preferences.get(),
+                      record_family=preferences.remember)
 
 
 def worker(args, model, stop, journal, faults=None, corrections=None,

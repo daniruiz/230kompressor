@@ -18,9 +18,22 @@ class MercedesApplication : Application() {
     internal var serviceStopping = false
     private var stopping = false
     val session: Session by lazy {
+        // Old per-adapter entries do not identify which ECU was connected last.
+        // Remove them without guessing a preference from their iteration order.
+        try {
+            val obsolete = prefs.all.keys.filter { it.startsWith("last_ecu_family_") }
+            if (obsolete.isNotEmpty()) prefs.edit().also { editor ->
+                obsolete.forEach { editor.remove(it) }
+            }.apply()
+        } catch (_: RuntimeException) {
+            // Optional preferences must never prevent a connection.
+        }
         Session(File(filesDir, "logs"), model, connected = { address ->
             prefs.edit().putString("last_connected_address", address).apply()
-        }) {
+        }, ecuMemory = EcuMemory(
+            { key -> prefs.getString(key, null) },
+            { key, family -> prefs.edit().putString(key, family).apply() },
+        )) {
             val generation = startGeneration
             handler.post {
                 if (generation == startGeneration && !stopping && session.running && prefs.getBoolean("sound", true)) alerts.play(demoMode)

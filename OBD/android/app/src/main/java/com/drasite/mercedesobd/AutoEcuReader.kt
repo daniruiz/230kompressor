@@ -7,8 +7,11 @@ class AutoEcuReader(
     private val me21Factory: (Wire, Events) -> EcuReader = ::Me21Reader,
     private val sim4leFactory: (Wire, Events) -> EcuReader = { w, e -> Sim4leReader(w, e) },
     private val preferredFamily: String? = null,
+    private val recordFamily: (String) -> Unit = {},
 ) : EcuReader {
     private var selected: EcuReader? = null
+    private var selectedFamily: String? = null
+    private var recorded = false
     private val reader get() = checkNotNull(selected) { "ECU reader has not been identified" }
     override val ecuProfile get() = selected?.ecuProfile
     override val ecuSoftware get() = selected?.ecuSoftware
@@ -19,6 +22,8 @@ class AutoEcuReader(
 
     override fun identify(notice: (String) -> Unit) {
         selected = null
+        selectedFamily = null
+        recorded = false
         val preferred = if (preferredFamily == "SIM4LE") "SIM4LE" else "ME2.1"
         val other = if (preferred == "ME2.1") "SIM4LE" else "ME2.1"
         val attempts = listOf(Triple(preferred, 0L, false), Triple(preferred, 3000L, false),
@@ -31,6 +36,7 @@ class AutoEcuReader(
             try {
                 candidate.identify(notice, wait, retry)
                 selected = candidate
+                selectedFamily = family
                 return
             } catch (e: LinkTimeout) {
                 throw e // Lost framing requires a new connection, never another ECU request.
@@ -42,9 +48,19 @@ class AutoEcuReader(
         throw checkNotNull(lastError)
     }
 
+    private fun rememberAfterSample() {
+        if (recorded) return
+        recorded = true
+        try {
+            recordFamily(checkNotNull(selectedFamily))
+        } catch (e: RuntimeException) {
+            log.event("ecu_family_cache_error", "reason" to e.toString())
+        }
+    }
+
     override fun start(tuning: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) =
-        reader.start(tuning, publish, notice)
-    override fun read(): Sample = reader.read()
+        reader.start(tuning, { sample -> rememberAfterSample(); publish(sample) }, notice)
+    override fun read(): Sample = reader.read().also { rememberAfterSample() }
     override fun recover(error: DiagnosticException, consecutive: Int) = reader.recover(error, consecutive)
     override fun readFaults() = reader.readFaults()
     override fun clearFaults() = reader.clearFaults()

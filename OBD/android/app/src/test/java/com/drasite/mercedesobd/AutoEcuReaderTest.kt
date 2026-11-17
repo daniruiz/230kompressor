@@ -8,7 +8,11 @@ class AutoEcuReaderTest {
         val attempts = ArrayList<Triple<String, Long, Boolean>>()
         val events = ArrayList<String>()
         val notices = ArrayList<String>()
+        val remembered = ArrayList<String>()
         var reads = 0
+        var sampleError: DiagnosticException? = null
+        var storageError: RuntimeException? = null
+        var publishAtStart = true
         private val wire = object : Wire {
             override fun close() {}
             override fun exchange(command: String, timeoutMs: Long, timing: ExchangeTiming): String =
@@ -29,16 +33,23 @@ class AutoEcuReaderTest {
                 failures.getOrNull(attempts.lastIndex)?.let { throw it }
             }
             override fun start(tuning: Boolean, publish: (Sample) -> Unit, notice: (String) -> Unit) {
-                publish(read())
+                if (publishAtStart) publish(read())
             }
-            override fun read(): Sample { reads++; return Sample.fromMeasurements(Measurements()) }
+            override fun read(): Sample {
+                reads++
+                sampleError?.let { throw it }
+                return Sample.fromMeasurements(Measurements())
+            }
             override fun recover(error: DiagnosticException, consecutive: Int) = consecutive
             override fun readFaults() = emptyList<FaultCode>()
             override fun clearFaults() {}
             override fun readFuelCorrections() = FuelCorrections.fromMeasurements(CorrectionMeasurements())
         }
         val reader = AutoEcuReader(wire, log, { _, _ -> candidate("ME2.1") },
-            { _, _ -> candidate("SIM4LE") }, preferred)
+            { _, _ -> candidate("SIM4LE") }, preferred, { family ->
+                remembered.add(family)
+                storageError?.let { throw it }
+            })
         fun identify() = reader.identify(notices::add)
     }
 
@@ -86,5 +97,34 @@ class AutoEcuReaderTest {
         assertEquals(4, h.attempts.size)
         assertEquals(4, h.events.count { it == "ecu_family_attempt_failed" })
         assertTrue(h.notices.isEmpty())
+        assertTrue(h.remembered.isEmpty())
+    }
+
+    @Test fun onlyFirstValidSampleRecordsTheActuallyDetectedFamily() {
+        for (initialPublish in listOf(true, false)) {
+            val h = Harness("SIM4LE", List(2) { DiagnosticException("different car") })
+            h.publishAtStart = initialPublish
+            h.identify()
+            assertTrue(h.remembered.isEmpty())
+            h.sampleError = DiagnosticException("invalid frame")
+            try { h.reader.read(); fail("invalid sample") } catch (_: DiagnosticException) {}
+            assertTrue(h.remembered.isEmpty())
+            h.sampleError = null
+            h.reader.start(true, {}, {})
+            assertEquals(if (initialPublish) listOf("ME2.1") else emptyList<String>(), h.remembered)
+            repeat(3) { h.reader.read() }
+            assertEquals(listOf("ME2.1"), h.remembered)
+        }
+    }
+
+    @Test fun unavailablePreferenceStorageDoesNotInterruptPollingOrRetryWrites() {
+        val h = Harness("SIM4LE")
+        h.storageError = IllegalStateException("preferences unavailable")
+        h.identify()
+        h.reader.start(true, {}, {})
+        h.reader.read()
+        assertEquals(2, h.reads)
+        assertEquals(listOf("SIM4LE"), h.remembered)
+        assertEquals(1, h.events.count { it == "ecu_family_cache_error" })
     }
 }
