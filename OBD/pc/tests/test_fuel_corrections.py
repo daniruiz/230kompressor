@@ -38,7 +38,7 @@ class FuelCorrectionTests(unittest.TestCase):
         self.assertAlmostEqual(values.additive_ms, -8 / 3000)
         logged = result.log_values(2)
         self.assertEqual(logged['additive_raw'], 65535)
-        self.assertEqual(logged['additive_ms_est'], -.002)
+        self.assertEqual(logged['additive_ms'], -.002)
         self.assertEqual(logged['additive_tick_us_assumed'], 2)
 
     def test_external_corrections_do_not_assume_a_timer_scale(self):
@@ -48,7 +48,7 @@ class FuelCorrectionTests(unittest.TestCase):
         logged = result.log_values(100)
         self.assertEqual(logged['ltft_low_pct'], -16.88)
         self.assertEqual(logged['additive_signed_raw'], 167)
-        for key in ('ltft_low_raw', 'ltft_high_pct', 'additive_ms_est', 'additive_tick_us_assumed'):
+        for key in ('ltft_low_raw', 'ltft_high_pct', 'additive_ms', 'additive_tick_us_assumed'):
             self.assertIsNone(logged[key], key)
 
     def test_menu_reads_once_per_request_and_renders_unknown_values(self):

@@ -29,8 +29,7 @@ class Sim4leLogTests(unittest.TestCase):
         self.assertEqual(float(row['map_kpa']), sample.values().map_kpa)
         self.assertEqual(float(row['ecu_voltage_V']), sample.values().ecu_voltage_v)
         self.assertEqual(row['acquisition_ms'], '315')
-        for key in ('adapter_voltage_V', 'stft_a_pct', 'ltft_a_pct'):
-            self.assertEqual(row[key], '')
+        self.assertEqual(row['adapter_voltage_V'], '')
         self.assertNotIn('F746_raw', record)
         self.assertNotIn('maf_curve_sha256', record)
         self.assertIn('base', row['injection_basis'])

@@ -122,9 +122,9 @@ class Journal(
                 "oxygen_state" to values.oxygenRich?.let { if (it) "rico" else "pobre" },
                 "maf_raw" to s.maf,
                 "maf_adc_word" to s.mafAdcWord,
-                "maf_g_s_est" to values.mafGramsPerSecond,
+                "maf_g_s" to values.mafGramsPerSecond,
                 "maf_ecu_raw" to s.mafEcuRaw,
-                "maf_ecu_g_s_est" to values.ecuMafGramsPerSecond,
+                "maf_ecu_g_s" to values.ecuMafGramsPerSecond,
                 "maf_ecu_source" to "grouped_1107_processed",
                 "maf_ecu_at_limit" to s.mafEcuRaw?.let { it == 255 },
                 "maf_saturated" to values.mafAtLimit,
@@ -135,7 +135,7 @@ class Journal(
                 "advance_raw" to s.advance,
                 "advance_deg" to values.advanceDegrees,
                 "ecu_voltage_raw" to null,
-                "ecu_voltage_V_est" to null,
+                "ecu_voltage_V" to null,
                 "ecu_voltage_scale_V_per_raw" to null,
                 "adapter_voltage_V" to s.adapterVoltage,
                 "adapter_voltage_age_ms" to s.adapterVoltageAgeMs,
@@ -145,20 +145,20 @@ class Journal(
                 "ecu_identification_status" to d.ecuIdentificationStatus,
                 "ltft_low_address" to d.ecuProfile?.let { addressHex(it.ltftLowAddress) },
                 "ltft_high_address" to d.ecuProfile?.let { addressHex(it.ltftHighAddress) },
-                "stft_a_raw" to s.stft,
-                "stft_a_pct" to values.stftPercent,
-                "ltft_a_raw" to s.ltft,
-                "ltft_a_pct" to values.ltftPercent,
+                "stft_raw" to s.stft,
+                "stft_pct" to values.stftPercent,
+                "ltft_raw" to s.ltft,
+                "ltft_pct" to values.ltftPercent,
             )
         s.injectionMetrics?.let { v.putAll(it.logValues()) }
-        v["injection_ms_est"] = values.injectionMs
-        v["injector_duty_est_pct"] = values.dutyPercent
-        v["duty_over_100_est"] = values.dutyPercent?.let { it > 100 }
+        v["injection_ms"] = values.injectionMs
+        v["injector_duty_pct"] = values.dutyPercent
+        v["duty_over_100"] = values.dutyPercent?.let { it > 100 }
         s.corrections.forEachIndexed { i, n ->
             v["knock_channel_${i+1}_raw"] = n
         }
         values.retardDegrees.forEachIndexed { i, n ->
-            v["knock_channel_${i+1}_deg_est"] = n
+            v["knock_channel_${i+1}_deg"] = n
         }
         if (s.measurements != null) {
             // A different reader must not inherit ME2.1 addresses or sensor-curve claims.

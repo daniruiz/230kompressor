@@ -28,7 +28,7 @@ data class FuelCorrections(val low: Int, val high: Int, val additive: Int,
         "ltft_low_pct" to values.lowPercent, "ltft_high_pct" to values.highPercent,
         "additive_raw" to additive.takeIf { measurements == null },
         "additive_signed_raw" to values.additiveRaw,
-        "additive_ms_est" to values.additiveMs,
+        "additive_ms" to values.additiveMs,
         "additive_tick_us_assumed" to Decoder.TICK_US.takeIf { measurements == null },
     )
 }

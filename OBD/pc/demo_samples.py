@@ -74,7 +74,7 @@ def demo_sample(t, family='ME2.1', *, at, duration_ms):
         duration_ms=duration_ms, at=at,
         throttle_raw=round(255 * (.5 + .5 * math.sin(t / 3))),
         oxygen_raw=3512 + oxygen * 64,
-        maf_raw=maf_raw, maf_adc_word=maf_raw, maf_g_s_est=flow_g_s(maf_raw),
+        maf_raw=maf_raw, maf_adc_word=maf_raw, maf_g_s=flow_g_s(maf_raw),
         maf_calibration_status='demo',
         advance_raw=round((-15 + 20 * math.sin(t / 4) + 66) / .75),
         temperatures=(coolant + 40, iat + 40),

@@ -10,11 +10,11 @@ internal object CsvLog {
     // Keep the original ME2.1 columns first; SIM4LE appends decoded and raw fields.
     // Load stays in ECU units because its physical scale is not verified.
     val fields = listOf(
-        "Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s_est", "maf_ecu_g_s_est",
-        "injection_ms_est", "injector_duty_est_pct", "advance_deg",
-    ) + (1..4).map { "knock_channel_${it}_deg_est" } +
+        "Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s", "maf_ecu_g_s",
+        "injection_ms", "injector_duty_pct", "advance_deg",
+    ) + (1..4).map { "knock_channel_${it}_deg" } +
         listOf(
-            "stft_a_pct", "ltft_a_pct",
+            "stft_pct", "ltft_pct",
             "coolant_C", "iat_C", "oxygen_voltage_V", "adapter_voltage_V",
         ) + Sim4leLog.fields
 

@@ -17,7 +17,7 @@ class MeasurementTests(unittest.TestCase):
         sample = Sample(3000, 3000, 180, (0, 4, 8, 2),
                         trims=(32768, 49152), temperatures=(130, 78),
                         throttle_raw=255, advance_raw=100, oxygen_raw=9912,
-                        maf_raw=1023, maf_g_s_est=100.0, maf_ecu_raw=100)
+                        maf_raw=1023, maf_g_s=100.0, maf_ecu_raw=100)
         values = sample.values()
         self.assertEqual((values.rpm, values.load), (3000, 180))
         self.assertEqual((values.injection_ms, values.duty_percent), (8.0, 20.0))

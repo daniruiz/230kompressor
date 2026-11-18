@@ -8,8 +8,8 @@ internal object Sim4leLog {
         "load_raw16", "map_model_kpa", "injection_base_raw", "scaled_load_raw",
         "pressure_reference_raw", "air_model_correction_raw", "bypass_position_raw",
         "advance_base_deg", "advance_idle_deg", "ignition_temperature_correction_deg",
-        "ignition_other_correction_deg", "ltft_applied_pct", "additive_raw",
-        "lambda_trend_raw", "lambda_correction_raw", "lambda_correction_pct",
+        "ignition_other_correction_deg", "additive_raw",
+        "lambda_trend_raw", "lambda_correction_raw",
         "injection_tick_us_nominal", "ltft_low_pct", "ltft_high_pct", "speed_kph",
         "model_ratio_raw", "coolant_retained_raw", "atmospheric_pressure_raw",
         "oxygen2_voltage_V", "idle_target_rpm", "bypass_reference_raw",
@@ -26,8 +26,8 @@ internal object Sim4leLog {
             "load_unit" to v.loadUnit,
             "map_kpa" to v.mapKpa, "ecu_voltage_V" to v.ecuVoltageV,
             "injection_basis" to v.injectionBasis, "injection_breakdown_status" to v.injectionBasis,
-            "duty_over_100_est" to null, // Base occupancy does not prove electrical saturation.
-            "stft_a_pct" to null, "ltft_a_pct" to null, "adapter_voltage_source" to null,
+            "duty_over_100" to null, // Base occupancy does not prove electrical saturation.
+            "adapter_voltage_source" to null,
             "maf_source" to "SIM4LE 2101 processed ECU airflow",
             "maf_ecu_source" to "SIM4LE 2101 offset 10",
             "sim4le_2101_raw" to sample.ecuRaw.hex(),

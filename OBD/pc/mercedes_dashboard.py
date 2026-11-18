@@ -693,10 +693,10 @@ class Journal:
                 raise
             # Preserve the original column order; SIM4LE adds the complete block.
             # Load stays in ECU units because its physical scale is not verified.
-            self.csv_fields = ['Time','utc','rpm','load_raw','throttle_pct','maf_g_s_est','maf_ecu_g_s_est',
-                'injection_ms_est','injector_duty_est_pct','advance_deg']
-            self.csv_fields += [f'knock_channel_{i}_deg_est' for i in range(1,5)]
-            self.csv_fields += ['stft_a_pct','ltft_a_pct',
+            self.csv_fields = ['Time','utc','rpm','load_raw','throttle_pct','maf_g_s','maf_ecu_g_s',
+                'injection_ms','injector_duty_pct','advance_deg']
+            self.csv_fields += [f'knock_channel_{i}_deg' for i in range(1,5)]
+            self.csv_fields += ['stft_pct','ltft_pct',
                                 'coolant_C','iat_C','oxygen_voltage_V','adapter_voltage_V']
             self.csv_fields += EXTRA_FIELDS
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
@@ -715,12 +715,12 @@ class Journal:
         for i,n in enumerate(sample.corrections,1):
             values[f'knock_channel_{i}_raw']=n
         for i,n in enumerate(readings.retard_degrees,1):
-            values[f'knock_channel_{i}_deg_est']=n
-        for name,n,value in zip(('stft_a','ltft_a'),sample.trims,readings.trims_percent):
+            values[f'knock_channel_{i}_deg']=n
+        for name,n,value in zip(('stft','ltft'),sample.trims,readings.trims_percent):
             values[name+'_raw']=n
             values[name+'_pct']=value
         values.update(ecu_voltage_raw=sample.voltage_raw,
-                      ecu_voltage_V_est=ecu_voltage_est(sample.voltage_raw, args.voltage_scale),
+                      ecu_voltage_V=ecu_voltage_est(sample.voltage_raw, args.voltage_scale),
                       ecu_voltage_scale_V_per_raw=args.voltage_scale if sample.voltage_raw is not None else None,
                       adapter_voltage_V=sample.adapter_voltage_v,
                       adapter_voltage_age_ms=sample.adapter_voltage_age_ms,
@@ -735,14 +735,14 @@ class Journal:
                                     ('' if readings.oxygen_v is not None else 'sin datos')),
                       maf_raw=sample.maf_raw,
                       maf_adc_word=sample.maf_adc_word,
-                      maf_g_s_est=readings.maf_g_s,
+                      maf_g_s=readings.maf_g_s,
                       maf_source='grouped_1143_adc',
                       maf_calibration_status=sample.maf_calibration_status,
-                      maf_calibration_source=MAF_CALIBRATION_SOURCE if sample.maf_g_s_est is not None else None,
-                      maf_curve_sha256=MAF_CURVE_SHA256 if sample.maf_g_s_est is not None else None,
+                      maf_calibration_source=MAF_CALIBRATION_SOURCE if sample.maf_g_s is not None else None,
+                      maf_curve_sha256=MAF_CURVE_SHA256 if sample.maf_g_s is not None else None,
                       maf_saturated=readings.maf_at_limit,
                       maf_ecu_raw=sample.maf_ecu_raw,
-                      maf_ecu_g_s_est=readings.ecu_maf_g_s,
+                      maf_ecu_g_s=readings.ecu_maf_g_s,
                       maf_ecu_source='grouped_1107_processed',
                       maf_ecu_at_limit=sample.maf_ecu_raw == 255 if sample.maf_ecu_raw is not None else None,
                       advance_raw=sample.advance_raw,
@@ -758,7 +758,7 @@ class Journal:
             legacy = {'diagnostic_ids', 'maf_ecu_source', 'maf_ecu_at_limit', 'maf_source',
                       'maf_calibration_status', 'maf_calibration_source', 'maf_curve_sha256',
                       'ltft_low_address', 'ltft_high_address', 'maf_adc_word',
-                      'ecu_voltage_V_est', 'ecu_voltage_scale_V_per_raw'}
+                      'ecu_voltage_V', 'ecu_voltage_scale_V_per_raw'}
             values = {key: value for key, value in values.items()
                       if not key.endswith('_raw') and key not in legacy}
             values.update(load_value=readings.load, load_unit=readings.load_unit)
@@ -776,7 +776,7 @@ class Journal:
                 at = time.monotonic() if csv_sample_at is None else csv_sample_at
                 if self.csv_started_at is None:
                     self.csv_started_at = at
-                csv_row = {k:row.get(k,'') for k in self.csv_fields}
+                csv_row = {name: row.get(name, '') for name in self.csv_fields}
                 csv_row['Time'] = f'{at-self.csv_started_at:.3f}'
                 self.csv_writer.writerow(csv_row)
             now = time.monotonic()
@@ -1310,11 +1310,11 @@ class ELM:
         # A recognised software reference validates the layout, not whether a
         # tuned ECU retained the stock sensor calibration. Record that assumption.
         if sample.maf_raw is not None:
-            sample.maf_g_s_est = flow_g_s(sample.maf_raw)
+            sample.maf_g_s = flow_g_s(sample.maf_raw)
             sample.maf_calibration_status = ('stock_curve_assumed' if self.ecu_profile is not None
                                              else 'stock_curve_assumed_unverified_software')
         else:
-            sample.maf_g_s_est = None
+            sample.maf_g_s = None
             sample.maf_calibration_status = 'missing_adc_sample'
         sample.at = ended
         sample.duration_ms = (ended-start)*1000

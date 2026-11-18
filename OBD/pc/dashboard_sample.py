@@ -22,7 +22,7 @@ class Sample:
     pairs_raw: str = ""
     maf_raw: int | None = None
     maf_adc_word: int | None = None
-    maf_g_s_est: float | None = None
+    maf_g_s: float | None = None
     maf_calibration_status: str = 'unverified_software'
     interval_ms: float | None = None
     advance_raw: int | None = None

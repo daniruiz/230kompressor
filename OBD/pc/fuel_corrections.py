@@ -41,5 +41,5 @@ class FuelCorrections:
         return dict(ltft_low_raw=self.low if legacy else None, ltft_high_raw=self.high if legacy else None,
                     ltft_low_pct=values.low_percent, ltft_high_pct=values.high_percent,
                     additive_raw=self.additive if legacy else None, additive_signed_raw=values.additive_raw,
-                    additive_ms_est=values.additive_ms,
+                    additive_ms=values.additive_ms,
                     additive_tick_us_assumed=tick_us if legacy else None)

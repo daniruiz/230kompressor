@@ -28,7 +28,7 @@ def measurements(sample, tick_us=8/3):
         temperatures_c=tuple(n - 40 for n in sample.temperatures),
         trims_percent=tuple(trim_percent(n) for n in sample.trims),
         throttle_percent=sample.throttle_raw * 100 / 255 if sample.throttle_raw is not None else None,
-        maf_g_s=sample.maf_g_s_est, maf_at_limit=sample.maf_raw == 1023,
+        maf_g_s=sample.maf_g_s, maf_at_limit=sample.maf_raw == 1023,
         ecu_maf_g_s=ecu_maf_g_s(sample.maf_ecu_raw),
         advance_degrees=advance_degrees(sample.advance_raw) if sample.advance_raw is not None else None,
         oxygen_v=oxygen_voltage(sample.oxygen_raw),
@@ -121,9 +121,9 @@ def injection_metrics(sample, args) -> dict:
     if sample.measurements is not None:
         values = sample.measurements
         base_only = values.injection_basis.startswith('base_')
-        return dict(injection_ms_est=values.injection_ms,
-                    injector_duty_est_pct=values.duty_percent,
-                    duty_over_100_est=values.duty_percent > 100 if values.duty_percent is not None and not base_only else None,
+        return dict(injection_ms=values.injection_ms,
+                    injector_duty_pct=values.duty_percent,
+                    duty_over_100=values.duty_percent > 100 if values.duty_percent is not None and not base_only else None,
                     injection_breakdown_status=values.injection_basis if base_only else 'reader_values')
     cal = args.injector_calibration
     raw = sample.injection
@@ -146,14 +146,14 @@ def injection_metrics(sample, args) -> dict:
         # measurement of effective injector flow or proof that fuel is on.
         net = raw-dead
         status = 'running_path_assumed'
-    return dict(F746_raw=raw, injection_ms_est=total_ms,
-                injector_duty_est_pct=duty, duty_over_100_est=duty > 100,
+    return dict(F746_raw=raw, injection_ms=total_ms,
+                injector_duty_pct=duty, duty_over_100=duty > 100,
                 injection_cycle_720_ms=120000/sample.rpm if sample.rpm else None,
-                injection_cycle_margin_ms_est=(120000/sample.rpm-total_ms) if sample.rpm else None,
+                injection_cycle_margin_ms=(120000/sample.rpm-total_ms) if sample.rpm else None,
                 F8C6_calc_raw=dead,
-                injector_deadtime_ms_est=dead*args.tick_us/1000 if dead is not None else None,
+                injector_deadtime_ms=dead*args.tick_us/1000 if dead is not None else None,
                 injection_before_deadtime_raw=net,
-                injection_before_deadtime_ms_est=net*args.tick_us/1000 if net is not None else None,
+                injection_before_deadtime_ms=net*args.tick_us/1000 if net is not None else None,
                 injector_deadtime_fraction_pct=100*dead/raw if dead is not None and raw and net is not None else None,
                 injection_breakdown_status=status,
                 injection_F746_saturated=raw == 65535)
