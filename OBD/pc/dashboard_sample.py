@@ -20,10 +20,8 @@ class Sample:
     trims: tuple[int, ...] = (32768,)*2
     temperatures: tuple[int, int] = (40,40)
     pairs_raw: str = ""
-    maf_raw: int | None = None
-    maf_adc_word: int | None = None
-    maf_g_s: float | None = None
-    maf_calibration_status: str = 'unverified_software'
+    bypass_raw: int | None = None
+    bypass_limit_raw: int | None = None
     interval_ms: float | None = None
     advance_raw: int | None = None
     throttle_raw: int | None = None

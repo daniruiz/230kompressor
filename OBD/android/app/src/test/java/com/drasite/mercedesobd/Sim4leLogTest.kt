@@ -31,7 +31,8 @@ class Sim4leLogTest {
         assertEquals("SIM4LE", row[CsvLog.fields.indexOf("ecu_family")])
         assertEquals(load16.toString(), row[CsvLog.fields.indexOf("load_raw")])
         assertEquals(data[12].u().toString(), row[CsvLog.fields.indexOf("scaled_load_raw")])
-        assertEquals(data[177].u().toString(), row.last())
+        assertEquals(data[177].u().toString(), row[CsvLog.fields.indexOf("sim4le_2101_byte_177")])
+        assertEquals("", row[CsvLog.fields.indexOf("bypass_pct")])
     }
 
     @Test fun canonicalTrimsKeepRawTermsAndDutyInterpretationDistinct() {
@@ -47,7 +48,7 @@ class Sim4leLogTest {
         assertEquals(sample.values.ltftPercent, sample.ecuFields["ltft_pct"])
         assertFalse(values.containsKey("lambda_correction_pct"))
         assertFalse(values.containsKey("ltft_applied_pct"))
-        assertEquals("SIM4LE 2101 processed ECU airflow", values["maf_source"])
+        assertFalse(values.containsKey("maf_source"))
         assertEquals("base_4us_nominal_720deg", values["injection_breakdown_status"])
         assertFalse(values.containsKey("F746_raw"))
     }

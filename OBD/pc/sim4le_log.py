@@ -2,7 +2,7 @@
 
 EXTRA_FIELDS = (
     'ecu_family', 'load_unit', 'map_kpa', 'ecu_voltage_V', 'injection_basis',
-    'maf_source', 'cycle_ms', 'acquisition_ms',
+    'cycle_ms', 'acquisition_ms',
     'load_raw16', 'map_model_kpa', 'injection_base_raw', 'scaled_load_raw',
     'pressure_reference_raw', 'air_model_correction_raw', 'bypass_position_raw',
     'advance_base_deg', 'advance_idle_deg', 'ignition_temperature_correction_deg',
@@ -28,7 +28,6 @@ def snapshot_fields(sample):
         injection_basis=v.injection_basis, injection_breakdown_status=v.injection_basis,
         duty_over_100=None,  # A base occupancy is not evidence of electrical saturation.
         adapter_voltage_source=None,
-        maf_source='SIM4LE 2101 processed ECU airflow',
         maf_ecu_source='SIM4LE 2101 offset 10',
         sim4le_2101_raw=sample.ecu_raw.hex().upper(),
         **sample.ecu_fields,

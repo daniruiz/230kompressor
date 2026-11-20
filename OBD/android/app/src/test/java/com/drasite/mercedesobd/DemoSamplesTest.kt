@@ -29,8 +29,9 @@ class DemoSamplesTest {
         assertNull(sample.measurements)
         assertNotNull(sample.injectionMetrics)
         assertEquals(Decoder.ids.toList(), sample.diagnosticIds)
-        assertEquals("demo", sample.mafCalibrationStatus)
-        assertTrue(sample.mafGramsPerSecond!! > 0.0)
+        assertTrue(sample.values.mafGramsPerSecond!! > 0.0)
+        assertEquals(sample.values.mafGramsPerSecond, sample.values.ecuMafGramsPerSecond)
+        assertTrue(sample.values.bypassPercent!! in 0.0..100.0)
         assertEquals("ok", sample.adapterVoltageStatus)
         assertEquals(0L, sample.adapterVoltageAgeMs)
         assertTrue(sample.adapterVoltage!! in 13.5..14.1)
@@ -38,6 +39,29 @@ class DemoSamplesTest {
         assertNull(sample.values.mapKpa)
         assertEquals(42L, sample.at)
         assertEquals(125.0, sample.acquisitionMs, 0.0)
+    }
+
+    @Test fun me21GroupKeepsTwelveSlotsWithBypassAndProcessedAirflow() {
+        assertEquals(12, Decoder.ids.size)
+        assertFalse(Decoder.ids.contains(0x43))
+        val bytes = ByteArray(24)
+        fun pair(id: Int, low: Int, high: Int) {
+            val offset = Decoder.ids.indexOf(id) * 2
+            assertTrue(offset >= 0)
+            bytes[offset] = low.toByte()
+            bytes[offset + 1] = high.toByte()
+        }
+        pair(0x07, 100, 180)
+        for (command in listOf(0, 128, 255)) {
+            pair(0x8A, command, 200)
+            val sample = Decoder.pairs(bytes, 42)
+            assertEquals(command, sample.bypassRaw)
+            assertEquals(200, sample.bypassLimitRaw)
+            assertEquals(command * 100.0 / 255, sample.values.bypassPercent!!, 0.0)
+            assertEquals(180, sample.load)
+            assertEquals(111.08, sample.values.mafGramsPerSecond!!, 1e-9)
+            assertEquals(sample.values.mafGramsPerSecond, sample.values.ecuMafGramsPerSecond)
+        }
     }
 
     @Test fun sim4leExercisesSnapshotFieldsWithoutMe21RawReadings() {

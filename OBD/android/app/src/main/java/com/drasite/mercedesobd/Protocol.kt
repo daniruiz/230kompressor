@@ -20,8 +20,8 @@ class NegativeResponse(val service: Int, val code: Int) :
 
 object Decoder {
     // All twelve readings stay in the group; no slot redefinition is needed per cycle.
-    // 1143 is raw MAF ADC; 1107 returns processed ECU MAF and load together.
-    val ids = intArrayOf(0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x43, 0x0B, 0x0A, 0x1F, 0x07)
+    // 118A returns the bypass command; 1107 returns processed ECU MAF and load.
+    val ids = intArrayOf(0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x8A, 0x0B, 0x0A, 0x1F, 0x07)
     const val TICK_US = 8.0 / 3
 
     fun word(b: ByteArray, i: Int) = b[i].u() or (b[i + 1].u() shl 8)
@@ -46,14 +46,12 @@ object Decoder {
     fun pairs(
         b: ByteArray,
         at: Long,
-        ecuProfile: EcuProfile?,
     ): Sample {
         if (b.size != 24) throw DiagnosticException(tr("Se esperaban doce pares", "Expected twelve pairs"))
         val signals = ids.mapIndexed { i, id -> id to b.copyOfRange(i * 2, i * 2 + 2) }.toMap()
         fun pair(id: Int): ByteArray = signals[id]
             ?: throw DiagnosticException(tr("Falta la lectura 11%02X", "Missing reading 11%02X").format(id))
         fun value(id: Int) = word(pair(id), 0)
-        val mafWord = value(0x43)
         return Sample(
             rpm = value(0x04),
             injection = value(0x0D),
@@ -62,11 +60,8 @@ object Decoder {
             ltft = value(0x23),
             coolant = pair(0x01)[0].u(),
             iat = pair(0x01)[1].u(),
-            maf = mafWord and 0x03FF,
-            mafAdcWord = mafWord,
-            mafGramsPerSecond = MafCalibration.gramsPerSecond(mafWord),
-            mafCalibrationStatus = if (ecuProfile != null) "stock_curve_assumed"
-                else "stock_curve_assumed_unverified_software",
+            bypassRaw = pair(0x8A)[0].u(),
+            bypassLimitRaw = pair(0x8A)[1].u(),
             mafEcuRaw = pair(0x07)[0].u(),
             load = pair(0x07)[1].u(),
             advance = pair(0x0B)[0].u(),
@@ -406,7 +401,7 @@ class Elm(
         }
     }
 
-    private fun decodePairs(bytes: ByteArray): Sample = Decoder.pairs(bytes, now(), ecuProfile)
+    private fun decodePairs(bytes: ByteArray): Sample = Decoder.pairs(bytes, now())
 
     private fun decodeGroup(reply: String): Sample =
         decodePairs(Decoder.positive(reply, 0x2A, "6A01", 26).copyOfRange(2, 26))
@@ -504,9 +499,6 @@ class Elm(
                     "ltft_low_address" to addressHex(selected.ltftLowAddress),
                     "ltft_high_address" to addressHex(selected.ltftHighAddress),
                     "stored_corrections_available" to true,
-                    "maf_conversion_available" to true,
-                    "maf_calibration_source" to MafCalibration.SOURCE,
-                    "maf_curve_sha256" to MafCalibration.SHA256,
                     "additive_address" to addressHex(selected.additiveAddress),
                     "corrections_read_policy" to "on_demand",
                 )
@@ -533,10 +525,6 @@ class Elm(
             "reason" to reason,
             "method" to "ROM",
             "stored_corrections_available" to false,
-            "maf_conversion_available" to true,
-            "maf_calibration_status" to "stock_curve_assumed_unverified_software",
-            "maf_calibration_source" to MafCalibration.SOURCE,
-            "maf_curve_sha256" to MafCalibration.SHA256,
         )
         notice(tr("ECU sin perfil verificado · lectura de correcciones no disponible", "ECU profile unverified · correction readings unavailable"))
         return null

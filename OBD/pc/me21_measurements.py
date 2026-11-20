@@ -19,6 +19,7 @@ DEADTIME_NODES_404 = (112,112,112,112,112,63,43,33,26,21,21,21,21,21,21,21,21)
 
 def measurements(sample, tick_us=8/3):
     """Project legacy ME2.1 bytes into units shared by all dashboard readers."""
+    airflow = ecu_maf_g_s(sample.maf_ecu_raw)
     return Measurements(
         rpm=sample.rpm, load=sample.load,
         injection_ms=sample.injection * tick_us / 1000,
@@ -28,8 +29,11 @@ def measurements(sample, tick_us=8/3):
         temperatures_c=tuple(n - 40 for n in sample.temperatures),
         trims_percent=tuple(trim_percent(n) for n in sample.trims),
         throttle_percent=sample.throttle_raw * 100 / 255 if sample.throttle_raw is not None else None,
-        maf_g_s=sample.maf_g_s, maf_at_limit=sample.maf_raw == 1023,
-        ecu_maf_g_s=ecu_maf_g_s(sample.maf_ecu_raw),
+        # 118A exports a normalized command, not a measured angle or boost pressure.
+        bypass_percent=sample.bypass_raw * 100 / 255 if sample.bypass_raw is not None else None,
+        maf_g_s=airflow,
+        maf_at_limit=sample.maf_ecu_raw == 255 if sample.maf_ecu_raw is not None else None,
+        ecu_maf_g_s=airflow,
         advance_degrees=advance_degrees(sample.advance_raw) if sample.advance_raw is not None else None,
         oxygen_v=oxygen_voltage(sample.oxygen_raw),
     )

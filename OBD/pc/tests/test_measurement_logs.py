@@ -33,21 +33,25 @@ class MeasurementLogTests(unittest.TestCase):
         sample = Sample(3000, 3000, 180, (0, 4, 8, 2), at=5,
                         trims=(32768, 49152), temperatures=(130, 78),
                         throttle_raw=255, advance_raw=100, oxygen_raw=9912,
-                        maf_raw=1023, maf_g_s=100.0, maf_ecu_raw=100,
+                        bypass_raw=128, bypass_limit_raw=255, maf_ecu_raw=100,
                         diagnostic_ids=dashboard.IDS)
         records, rows = self.capture(sample)
         expected = dict(rpm=3000, load_raw=180, F746_raw=3000,
                         injection_ms=8.0, injector_duty_pct=20.0,
                         coolant_C=90, iat_C=38, stft_raw=32768, ltft_raw=49152,
                         stft_pct=0.0, ltft_pct=25.0,
-                        advance_deg=-9.0, oxygen_voltage_V=0.5, maf_ecu_g_s=111.08,
+                        advance_deg=-9.0, oxygen_voltage_V=0.5, maf_g_s=111.08, maf_ecu_g_s=111.08,
+                        bypass_command_raw=128, bypass_limit_raw=255, bypass_pct=128 * 100 / 255,
                         knock_channel_3_raw=8, knock_channel_3_deg=6.0)
         for key, value in expected.items():
             self.assertEqual(records[0][key], value, key)
-        self.assertEqual(records[0]['maf_source'], 'grouped_1143_adc')
+        for name in ('maf_raw', 'maf_adc_word', 'maf_source', 'maf_calibration_status',
+                     'maf_calibration_source', 'maf_curve_sha256'):
+            self.assertNotIn(name, records[0])
         self.assertEqual(records[0]['diagnostic_ids'], [f'11{i:02X}' for i in dashboard.IDS])
         self.assertEqual(rows[0]['Time'], '0.000')
         self.assertEqual(rows[0]['injection_ms'], '8.0')
+        self.assertAlmostEqual(float(rows[0]['bypass_pct']), 128 * 100 / 255)
 
     def test_external_reader_keeps_unknowns_blank_and_excludes_me21_claims(self):
         values = Measurements(rpm=4500, load=80, load_unit='%',

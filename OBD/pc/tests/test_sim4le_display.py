@@ -54,7 +54,8 @@ class DisplayTests(unittest.TestCase):
 
     def test_me21_keeps_adapter_voltage_and_only_airflow(self):
         sample = Sample(3000, 3000, 180, (0, 4, 8, 2), at=10,
-                        maf_g_s=100, adapter_voltage_v=12.8, adapter_voltage_status='ok')
+                        maf_ecu_raw=90, bypass_raw=128,
+                        adapter_voltage_v=12.8, adapter_voltage_status='ok')
         text = self.draw(sample)
         self.assertIn('Airflow', text)
         self.assertNotIn('MAP/MAF', text)

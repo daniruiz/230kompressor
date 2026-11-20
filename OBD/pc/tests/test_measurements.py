@@ -17,7 +17,7 @@ class MeasurementTests(unittest.TestCase):
         sample = Sample(3000, 3000, 180, (0, 4, 8, 2),
                         trims=(32768, 49152), temperatures=(130, 78),
                         throttle_raw=255, advance_raw=100, oxygen_raw=9912,
-                        maf_raw=1023, maf_g_s=100.0, maf_ecu_raw=100)
+                        bypass_raw=128, bypass_limit_raw=255, maf_ecu_raw=100)
         values = sample.values()
         self.assertEqual((values.rpm, values.load), (3000, 180))
         self.assertEqual((values.injection_ms, values.duty_percent), (8.0, 20.0))
@@ -26,8 +26,11 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(values.trims_percent, (0.0, 25.0))
         self.assertEqual((values.throttle_percent, values.advance_degrees), (100.0, -9.0))
         self.assertEqual((values.oxygen_v, values.oxygen_rich), (0.5, True))
-        self.assertEqual((values.maf_g_s, values.ecu_maf_g_s), (100.0, 111.08))
-        self.assertTrue(values.maf_at_limit)
+        self.assertEqual((values.maf_g_s, values.ecu_maf_g_s), (111.08, 111.08))
+        self.assertAlmostEqual(values.bypass_percent, 128 * 100 / 255)
+        self.assertFalse(values.maf_at_limit)
+        sample.maf_ecu_raw = 255
+        self.assertTrue(sample.values().maf_at_limit)
         sample.injection = 6000
         self.assertEqual(sample.values().injection_ms, 16.0)
         self.assertEqual(sample.values(tick_us=1).injection_ms, 6.0)

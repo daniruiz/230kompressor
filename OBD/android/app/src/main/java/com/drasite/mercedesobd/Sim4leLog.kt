@@ -4,7 +4,7 @@ package com.drasite.mercedesobd
 internal object Sim4leLog {
     val fields = listOf(
         "ecu_family", "load_unit", "map_kpa", "ecu_voltage_V", "injection_basis",
-        "maf_source", "cycle_ms", "acquisition_ms",
+        "cycle_ms", "acquisition_ms",
         "load_raw16", "map_model_kpa", "injection_base_raw", "scaled_load_raw",
         "pressure_reference_raw", "air_model_correction_raw", "bypass_position_raw",
         "advance_base_deg", "advance_idle_deg", "ignition_temperature_correction_deg",
@@ -28,7 +28,6 @@ internal object Sim4leLog {
             "injection_basis" to v.injectionBasis, "injection_breakdown_status" to v.injectionBasis,
             "duty_over_100" to null, // Base occupancy does not prove electrical saturation.
             "adapter_voltage_source" to null,
-            "maf_source" to "SIM4LE 2101 processed ECU airflow",
             "maf_ecu_source" to "SIM4LE 2101 offset 10",
             "sim4le_2101_raw" to sample.ecuRaw.hex(),
         )

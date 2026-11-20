@@ -30,7 +30,7 @@ class CsvSchemaTests(unittest.TestCase):
         me21 = Sample(3000, 3000, 180, (0, 4, 8, 2), at=5,
                       trims=(32768, 49152), temperatures=(130, 78),
                       throttle_raw=255, advance_raw=100, oxygen_raw=9912,
-                      maf_raw=1023, maf_g_s=100.0, maf_ecu_raw=100,
+                      bypass_raw=128, bypass_limit_raw=255, maf_ecu_raw=100,
                       adapter_voltage_v=13.8)
         path = Path(__file__).resolve().parents[2] / 'fixtures/sim4le_5116_fixed.json'
         reply = json.loads(path.read_text())[1]['reply']
@@ -56,8 +56,12 @@ class CsvSchemaTests(unittest.TestCase):
                 self.assertEqual(record[name], value, name)
                 self.assertEqual(float(row[name]), value, name)
         # Similar gauges do not imply interchangeable source signals or raw scales.
-        self.assertEqual(rows[0]['maf_source'], 'grouped_1143_adc')
-        self.assertEqual(rows[1]['maf_source'], 'SIM4LE 2101 processed ECU airflow')
+        for record, row in zip(records, rows):
+            self.assertNotIn('maf_source', record)
+            self.assertNotIn('maf_source', row)
+            self.assertEqual(row['maf_g_s'], row['maf_ecu_g_s'])
+        self.assertAlmostEqual(float(rows[0]['bypass_pct']), me21.values().bypass_percent)
+        self.assertEqual(rows[1]['bypass_pct'], '')
         self.assertEqual(rows[0]['adapter_voltage_V'], '13.8')
         self.assertEqual(rows[0]['ecu_voltage_V'], '')
         self.assertEqual(rows[1]['adapter_voltage_V'], '')

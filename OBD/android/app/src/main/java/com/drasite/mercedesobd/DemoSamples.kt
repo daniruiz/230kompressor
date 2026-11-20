@@ -31,13 +31,14 @@ internal object DemoSamples {
         // Hold lean, boundary, neutral and rich readings long enough to see their labels.
         val oxygen = intArrayOf(36, 85, 86, 87, 88, 89, 164)[(seconds / 2).toInt() % 7]
         if (ecu == DemoEcu.ME21) {
-            val mafAdc = (256 + 767 * (load / 255.0) * (rpm / 6500.0)).toInt().coerceIn(0, 1023)
             return Sample(
                 rpm, 700 + (7500 * (.5 + .5 * sin(seconds / 3 - 1))).roundToInt(), load,
                 intArrayOf(correction, maxOf(0, correction - 2), 0, 0),
                 stft = (32768 + 2500 * sin(seconds)).toInt(), ltft = 34000,
-                coolant = coolant, iat = intake, maf = mafAdc, mafAdcWord = mafAdc,
-                mafGramsPerSecond = MafCalibration.gramsPerSecond(mafAdc), mafCalibrationStatus = "demo",
+                coolant = coolant, iat = intake,
+                mafEcuRaw = (20 + 235 * (load / 255.0) * (rpm / 6500.0)).toInt().coerceIn(0, 255),
+                bypassRaw = (255 * (.5 + .5 * sin(seconds / 3 - .5))).roundToInt(),
+                bypassLimitRaw = 255,
                 advance = ((-15 + 20 * sin(seconds / 4) + 66) / .75).toInt(),
                 throttle = (255 * (.5 + .5 * sin(seconds / 3))).toInt(),
                 oxygen = 3512 + oxygen * 64, diagnosticIds = Decoder.ids.toList(),

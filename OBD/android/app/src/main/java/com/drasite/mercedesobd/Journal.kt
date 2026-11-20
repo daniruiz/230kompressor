@@ -129,21 +129,18 @@ class Journal(
                 "diagnostic_ids" to s.diagnosticIds.map { "11%02X".format(it) },
                 "throttle_raw" to s.throttle,
                 "throttle_pct" to values.throttlePercent,
+                "bypass_pct" to values.bypassPercent,
+                "bypass_command_raw" to s.bypassRaw,
+                "bypass_limit_raw" to s.bypassLimitRaw,
                 "oxygen_raw" to s.oxygen,
                 "oxygen_voltage_V" to values.oxygenVolts,
                 "oxygen_state" to values.oxygenRich?.let { if (it) "rico" else "pobre" },
-                "maf_raw" to s.maf,
-                "maf_adc_word" to s.mafAdcWord,
                 "maf_g_s" to values.mafGramsPerSecond,
                 "maf_ecu_raw" to s.mafEcuRaw,
                 "maf_ecu_g_s" to values.ecuMafGramsPerSecond,
                 "maf_ecu_source" to "grouped_1107_processed",
                 "maf_ecu_at_limit" to s.mafEcuRaw?.let { it == 255 },
                 "maf_saturated" to values.mafAtLimit,
-                "maf_source" to "grouped_1143_adc",
-                "maf_calibration_status" to s.mafCalibrationStatus,
-                "maf_calibration_source" to if (s.mafGramsPerSecond != null) MafCalibration.SOURCE else null,
-                "maf_curve_sha256" to if (s.mafGramsPerSecond != null) MafCalibration.SHA256 else null,
                 "advance_raw" to s.advance,
                 "advance_deg" to values.advanceDegrees,
                 "ecu_voltage_raw" to null,
@@ -175,7 +172,6 @@ class Journal(
         if (s.measurements != null) {
             // A different reader must not inherit ME2.1 addresses or sensor-curve claims.
             val legacyMetadata = setOf("diagnostic_ids", "maf_ecu_source", "maf_ecu_at_limit",
-                "maf_source", "maf_calibration_status", "maf_calibration_source", "maf_curve_sha256",
                 "ltft_low_address", "ltft_high_address")
             v.keys.removeAll { it.endsWith("_raw") || it in legacyMetadata }
             v["load_value"] = values.load

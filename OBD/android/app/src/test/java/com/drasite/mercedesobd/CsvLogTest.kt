@@ -7,6 +7,8 @@ class CsvLogTest {
     @Test fun bothFamiliesExportTheirCanonicalLogKeysWithoutTranslation() {
         assertEquals(240, CsvLog.fields.size)
         assertEquals(CsvLog.fields.size, CsvLog.fields.toSet().size)
+        assertFalse(CsvLog.fields.contains("maf_source"))
+        assertEquals(listOf("bypass_pct", "app_version"), CsvLog.fields.takeLast(2))
         assertTrue(CsvLog.fields.none { it.contains("_est") })
         assertTrue(CsvLog.fields.none { it in listOf("stft_a_pct", "ltft_a_pct",
             "lambda_correction_pct", "ltft_applied_pct") })
@@ -18,6 +20,7 @@ class CsvLogTest {
             val source = linkedMapOf<String, Any?>(
                 "ecu_family" to sample.ecuFamily, "rpm" to v.rpm, "load_raw" to sample.load,
                 "throttle_pct" to v.throttlePercent, "advance_deg" to v.advanceDegrees,
+                "bypass_pct" to v.bypassPercent,
                 "coolant_C" to v.coolantC, "iat_C" to v.iatC, "oxygen_voltage_V" to v.oxygenVolts,
                 "maf_g_s" to v.mafGramsPerSecond, "maf_ecu_g_s" to v.ecuMafGramsPerSecond,
                 "injection_ms" to v.injectionMs, "injector_duty_pct" to v.dutyPercent,
@@ -32,6 +35,7 @@ class CsvLogTest {
             fun cell(name: String) = cells[CsvLog.fields.indexOf(name)]
             assertEquals(CsvLog.fields.size, cells.size)
             assertEquals("1.250", cell("Time"))
+            assertEquals(v.bypassPercent?.toString().orEmpty(), cell("bypass_pct"))
             for (key in listOf("rpm", "throttle_pct", "advance_deg", "coolant_C", "iat_C",
                     "oxygen_voltage_V", "maf_g_s", "maf_ecu_g_s", "injection_ms",
                     "injector_duty_pct", "stft_pct", "ltft_pct") +

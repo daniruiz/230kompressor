@@ -11,7 +11,7 @@ five seconds, independently of the fixed ECU group. Voltage-dependent injection
 breakdown fields remain unavailable; total injection and duty use F746 and RPM.
 The ECU knock correction loop rotates four internal channels (8398..839B).
 The fast group reads four correction bytes, STFT, temperatures, RPM, injection,
-load, raw sensor MAF, ignition advance, throttle and narrowband oxygen.
+load, bypass command, ignition advance, throttle and narrowband oxygen.
 LTFT occupies the remaining slot: twelve fixed IDs, one group read per cycle.
 STN/OBDLink: validate P4=0 replies, then measure 60/25 ms P3 with rollback.
 ELM clones: automatically benchmark shorter host-side waits on grouped reads.
@@ -24,14 +24,11 @@ Unknown/unverified software disables only the on-demand correction readings.
 Identification runs once, before grouping/timing optimisation; no extra fast IDs.
 This on-demand policy does not change the ECU's adaptation timing.
 Oxygen sensor voltage follows the stock PID 14 conversion, NOT wideband lambda/AFR.
-MAF uses grouped ID1143's ten-bit ADC sample and the stock 512-node curve
-shared by the ten verified originals. It is an instantaneous sensor conversion,
-not the ECU averaged/corrected or substituted airflow. A modified sensor curve
-requires its own calibration. The same original curve is assumed for unknown
-software, with that assumption explicitly identified in the logs.
-Logs also include ID1107's processed ECU airflow byte (F74C), converted
+MAF uses ID1107's processed ECU airflow byte (F74C), converted
 at 1.1108 g/s per unit. This quantized value can be model-substituted and
 saturates at 255; the same ID supplies the internal load byte (F74D).
+ID118A supplies the final bypass command and an auxiliary limit. Boost displays
+the normalized command as a percentage, not measured position or boost pressure.
 ME2.1 ignition uses 66 - raw*0.75: positive before TDC, unlike its native sign.
 Memory service framing is derived from ECU code, pending on-car validation.
 """
@@ -67,7 +64,6 @@ if __package__:
     from .fuel_corrections import FuelCorrections
     from .temperature_alerts import TemperatureAlerts
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
-    from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
     from build_version import APP_VERSION, BUILD_DATE
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
@@ -82,7 +78,6 @@ else:
     from fuel_corrections import FuelCorrections
     from temperature_alerts import TemperatureAlerts
     from dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
-    from maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 
 try:
     from rich import box
@@ -109,8 +104,8 @@ MIN_HEIGHT = 29
 # ROM pointer table 0xDE48, service 22 at 0x3ABC0 and group at 0x3AF14.
 # 1107 -> F74C/F74D: processed ECU airflow first, internal load second.
 # 1123 -> active LTFT; supply voltage (1110) is not polled.
-# 1143 -> raw MAF ADC word; low ten bits feed the stock sensor curve.
-IDS = (0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x43, 0x0B, 0x0A, 0x1F, 0x07)
+# 118A -> final bypass command and its auxiliary limit; not measured position.
+IDS = (0x04, 0x0D, 0x2B, 0x2D, 0x1B, 0x23, 0x01, 0x8A, 0x0B, 0x0A, 0x1F, 0x07)
 # The fixed layout is configured once, before the first grouped read.
 ADAPTER_VOLTAGE_INTERVAL_S = 5.0
 ADAPTER_VOLTAGE_TIMEOUT_S = 1.0
@@ -648,8 +643,8 @@ def from_pairs(pairs: list[bytes]) -> Sample:
                   tuple(signals[0x2B] + signals[0x2D]),
                   trims=tuple(int.from_bytes(signals[i], 'little') for i in (0x1B, 0x23)),
                   temperatures=tuple(signals[0x01]), pairs_raw=b''.join(pairs).hex(),
-                  maf_raw=int.from_bytes(signals[0x43], 'little') & 0x03FF,
-                  maf_adc_word=int.from_bytes(signals[0x43], 'little'), advance_raw=signals[0x0B][0],
+                  bypass_raw=signals[0x8A][0], bypass_limit_raw=signals[0x8A][1],
+                  advance_raw=signals[0x0B][0],
                   throttle_raw=signals[0x0A][0], oxygen_raw=int.from_bytes(signals[0x1F], 'little'),
                   diagnostic_ids=IDS, maf_ecu_raw=signals[0x07][0])
 
@@ -701,7 +696,7 @@ class Journal:
             self.csv_fields += [f'knock_channel_{i}_deg' for i in range(1,5)]
             self.csv_fields += ['stft_pct','ltft_pct',
                                 'coolant_C','iat_C','oxygen_voltage_V','adapter_voltage_V']
-            self.csv_fields += EXTRA_FIELDS + ('app_version',)
+            self.csv_fields += EXTRA_FIELDS + ('bypass_pct', 'app_version')
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
@@ -731,18 +726,15 @@ class Journal:
                       adapter_voltage_source='ATRV',
                       throttle_raw=sample.throttle_raw,
                       throttle_pct=readings.throttle_percent,
+                      bypass_command_raw=sample.bypass_raw,
+                      bypass_limit_raw=sample.bypass_limit_raw,
+                      bypass_pct=readings.bypass_percent,
                       oxygen_raw=sample.oxygen_raw,
                       oxygen_voltage_V=readings.oxygen_v,
                       oxygen_state=(('rico' if readings.oxygen_rich else 'pobre')
                                     if readings.oxygen_rich is not None else
                                     ('' if readings.oxygen_v is not None else 'sin datos')),
-                      maf_raw=sample.maf_raw,
-                      maf_adc_word=sample.maf_adc_word,
                       maf_g_s=readings.maf_g_s,
-                      maf_source='grouped_1143_adc',
-                      maf_calibration_status=sample.maf_calibration_status,
-                      maf_calibration_source=MAF_CALIBRATION_SOURCE if sample.maf_g_s is not None else None,
-                      maf_curve_sha256=MAF_CURVE_SHA256 if sample.maf_g_s is not None else None,
                       maf_saturated=readings.maf_at_limit,
                       maf_ecu_raw=sample.maf_ecu_raw,
                       maf_ecu_g_s=readings.ecu_maf_g_s,
@@ -758,9 +750,8 @@ class Journal:
                           ltft_high_address=f'0x{profile.ltft_high_address:04X}' if profile else None)
         if sample.measurements is not None:
             # Other readers must not inherit ME2.1 addresses or sensor-curve claims.
-            legacy = {'diagnostic_ids', 'maf_ecu_source', 'maf_ecu_at_limit', 'maf_source',
-                      'maf_calibration_status', 'maf_calibration_source', 'maf_curve_sha256',
-                      'ltft_low_address', 'ltft_high_address', 'maf_adc_word',
+            legacy = {'diagnostic_ids', 'maf_ecu_source', 'maf_ecu_at_limit',
+                      'ltft_low_address', 'ltft_high_address',
                       'ecu_voltage_V', 'ecu_voltage_scale_V_per_raw'}
             values = {key: value for key, value in values.items()
                       if not key.endswith('_raw') and key not in legacy}
@@ -1032,7 +1023,7 @@ class ELM:
         self.journal.write('adapter_details', identity=identity, firmware=firmware, hardware=hardware,
                            port=self.port, baud=self.baud, **self.port_metadata,
                            group_ids=[f'11{x:02X}' for x in IDS],
-                           decoder_revision='12_ids_sensor_maf_1143_ecu_maf_load_1107_fixed_ltft_v6')
+                           decoder_revision='12_ids_bypass_118a_ecu_maf_load_1107_fixed_ltft_v7')
         self.at('ATPC')
         self.last_bus_reply = self.last_command = None
         # Let a previous ECU session expire before starting another slow init.
@@ -1332,15 +1323,6 @@ class ELM:
 
     def _complete_sample(self, sample, start):
         ended = time.monotonic()
-        # A recognised software reference validates the layout, not whether a
-        # tuned ECU retained the stock sensor calibration. Record that assumption.
-        if sample.maf_raw is not None:
-            sample.maf_g_s = flow_g_s(sample.maf_raw)
-            sample.maf_calibration_status = ('stock_curve_assumed' if self.ecu_profile is not None
-                                             else 'stock_curve_assumed_unverified_software')
-        else:
-            sample.maf_g_s = None
-            sample.maf_calibration_status = 'missing_adc_sample'
         sample.at = ended
         sample.duration_ms = (ended-start)*1000
         sample.adapter_voltage_v = self.adapter_voltage_v
@@ -1420,9 +1402,6 @@ class ELM:
                     ltft_low_address=f'0x{profile.ltft_low_address:04X}',
                     ltft_high_address=f'0x{profile.ltft_high_address:04X}',
                     stored_corrections_available=True,
-                    maf_conversion_available=True,
-                    maf_calibration_source=MAF_CALIBRATION_SOURCE,
-                    maf_curve_sha256=MAF_CURVE_SHA256,
                     additive_address=f'0x{profile.additive_address:04X}',
                     corrections_read_policy='on_demand')
                 notice(tr(f'ECU {profile.software} · perfil de correcciones seleccionado', f'ECU {profile.software} · correction profile selected'))
@@ -1441,9 +1420,7 @@ class ELM:
         self.journal.write('ecu_identification', software=self.ecu_software,
             status=self.ecu_identification_status, reason=reason,
             method='ROM',
-            stored_corrections_available=False, maf_conversion_available=True,
-            maf_calibration_status='stock_curve_assumed_unverified_software',
-            maf_calibration_source=MAF_CALIBRATION_SOURCE, maf_curve_sha256=MAF_CURVE_SHA256)
+            stored_corrections_available=False)
         notice(tr('ECU sin perfil verificado · lectura de correcciones no disponible',
                   'ECU profile unverified · correction readings unavailable'))
         return None
@@ -1812,11 +1789,12 @@ def spark(values, ceiling, width=48, height=7, color=None, full=False):
     return styled if color else '\n'.join(lines)
 
 
-def metric(title, value, unit, detail, color, fraction, trace, bg):
+def metric(title, value, unit, detail, color, fraction, trace, bg, *, bar_label=None):
     text = Text(justify='center')
     text.append(value, style=f'bold {color}')
     text.append(' '+unit, style=MUTED)
-    content = Group('', text, '', Align.center(bar(fraction,1,color=color)),
+    label = Align.center(Text(bar_label, style=MUTED)) if bar_label is not None else ''
+    content = Group('', text, label, Align.center(bar(fraction,1,color=color)),
                     Align.center(Text(detail, style=MUTED)),
                     Align.center(trace if isinstance(trace, Text) else Text(trace, style=color)))
     return Panel(content, title=Text(title, style=f'bold {color}'),
@@ -1851,9 +1829,13 @@ def render(model, args, width=110, height=44, now=None):
         layout['rpm'].update(metric(tr('RÉGIMEN', 'ENGINE SPEED'), rpm_text(rpm) if shown and values.rpm is not None else '—', 'rpm',
             tr('0–6.500 rpm', '0–6,500 rpm'), CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
+        throttle = (tr(f'Mariposa {values.throttle_percent:.1f} %', f'Throttle {values.throttle_percent:.1f} %')
+                    if shown and values.throttle_percent is not None else tr('Mariposa —', 'Throttle —'))
+        boost = f'Boost {values.bypass_percent:.1f} %' if shown and values.bypass_percent is not None else 'Boost —'
         layout['load'].update(metric(tr('CARGA INTERNA', 'INTERNAL LOAD'), str(load) if shown and values.load is not None else '—', values.load_unit,
-            (tr(f'Mariposa: {values.throttle_percent:.1f} %', f'Throttle: {values.throttle_percent:.1f} %') if shown and values.throttle_percent is not None else tr('Mariposa: —', 'Throttle: —')), AMBER, load/values.load_maximum,
-            spark(model.history['load'],values.load_maximum,trace_width,color=AMBER),bg))
+            boost, AMBER, load/values.load_maximum,
+            spark(model.history['load'],values.load_maximum,trace_width,color=AMBER),bg,
+            bar_label=throttle))
         duty = values.duty_percent or 0
         duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
         detail = (
@@ -2050,14 +2032,13 @@ def main(argv=None):
         return 1
     journal.write('session', demo=args.demo, port=args.port, baud=args.baud,
                   diagnostic_ids=[f'11{i:02X}' for i in IDS],
-                  decoder_revision='12_ids_sensor_maf_1143_ecu_maf_load_1107_fixed_ltft_v6',
+                  decoder_revision='12_ids_bypass_118a_ecu_maf_load_1107_fixed_ltft_v7',
                   group_read_policy='fixed 12 identifiers; one grouped request per acquisition',
                   ecu_voltage_acquired=False,
                   adapter_voltage_source='ATRV',
                   adapter_voltage_interval_ms=int(ADAPTER_VOLTAGE_INTERVAL_S*1000),
-                  maf_source='grouped_1143_adc', maf_calibration_source=MAF_CALIBRATION_SOURCE,
-                  maf_curve_sha256=MAF_CURVE_SHA256,
-                  maf_conversion_basis='instantaneous stock curve; excludes ECU averaging and conditional correction',
+                  bypass_source='grouped_118A_command',
+                  bypass_conversion_basis='normalized command raw*100/255; not measured position or pressure',
                   maf_ecu_source='grouped_1107_processed', maf_ecu_scale_g_s_per_raw=1.1108,
                   maf_ecu_conversion_basis='quantized processed airflow after load selection/filtering/limiting; capped at raw 255',
                   ecu_identification_policy='ROM software reference; once at connection',

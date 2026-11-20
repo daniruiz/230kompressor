@@ -3,12 +3,10 @@ import math
 
 if __package__:
     from .dashboard_sample import Sample
-    from .maf_calibration import flow_g_s
     from .sim4le_measurements import decode_snapshot
     from .fuel_corrections import CorrectionMeasurements, FuelCorrections
 else:
     from dashboard_sample import Sample
-    from maf_calibration import flow_g_s
     from sim4le_measurements import decode_snapshot
     from fuel_corrections import CorrectionMeasurements, FuelCorrections
 
@@ -68,14 +66,13 @@ def demo_sample(t, family='ME2.1', *, at, duration_ms):
         return decode_snapshot(b'\x61\x01' + data, at=at, duration_ms=duration_ms)
     if family != 'ME2.1':
         raise ValueError(f'Unknown demo ECU: {family}')
-    maf_raw = min(1023, max(0, int(256 + 767 * load / 255 * rpm / 6500)))
     return Sample(
         rpm, 600 + round(7500 * effort), load, corrections,
         duration_ms=duration_ms, at=at,
         throttle_raw=round(255 * (.5 + .5 * math.sin(t / 3))),
         oxygen_raw=3512 + oxygen * 64,
-        maf_raw=maf_raw, maf_adc_word=maf_raw, maf_g_s=flow_g_s(maf_raw),
-        maf_calibration_status='demo',
+        maf_ecu_raw=min(255, round((20 + 180 * effort * rpm / 6500) / 1.1108)),
+        bypass_raw=round(255 * effort), bypass_limit_raw=255,
         advance_raw=round((-15 + 20 * math.sin(t / 4) + 66) / .75),
         temperatures=(coolant + 40, iat + 40),
         trims=(int(32768 + 2500 * math.sin(t)), 34000),

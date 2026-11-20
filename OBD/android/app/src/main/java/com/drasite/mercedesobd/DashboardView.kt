@@ -374,6 +374,7 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         ceiling: Double,
         fraction: Double,
         color: Int,
+        meterLabel: String? = null,
     ) {
         drawCard(canvas, bounds, title, color)
         drawText(
@@ -391,18 +392,23 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             canvas,
             detail,
             bounds.centerX(),
-            bounds.top + 100,
+            bounds.top + if (meterLabel == null) 100 else 124,
             13f,
             muted,
             false,
             bounds.width() - 20,
             Paint.Align.CENTER,
         )
+        val meterTop = bounds.top + if (meterLabel == null) 113 else 104
         drawMeter(
             canvas,
-            RectF(bounds.left + 12, bounds.top + 113, bounds.right - 12, bounds.top + 119),
+            RectF(bounds.left + 12, meterTop, bounds.right - 12, meterTop + 6),
             fraction,
             color,
+        )
+        if (meterLabel != null) drawText(
+            canvas, meterLabel, bounds.centerX(), bounds.top + 96, 13f,
+            muted, false, bounds.width() - 24, Paint.Align.CENTER,
         )
         drawChart(
             canvas,
@@ -518,12 +524,13 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             tr("CARGA INTERNA", "INTERNAL LOAD"),
             load?.let { n -> values?.loadUnit.orEmpty().let { unit -> if (unit.isEmpty()) "$n" else "$n $unit" } }
                 ?: "—",
-            values?.throttlePercent?.let { formatValue(tr("Mariposa %.1f %%", "Throttle %.1f %%"), it) }
-                ?: tr("Mariposa —", "Throttle —"),
+            values?.bypassPercent?.let { formatValue("Boost %.1f %%", it) } ?: "Boost —",
             display.load,
             loadMaximum,
             (load ?: 0) / loadMaximum,
             amber,
+            meterLabel = values?.throttlePercent?.let { formatValue(tr("Mariposa %.1f %%", "Throttle %.1f %%"), it) }
+                ?: tr("Mariposa —", "Throttle —"),
         )
         val injColor = if ((duty ?: 0.0) > 100) red else if ((duty ?: 0.0) >= 90) amber else green
         drawMetric(
