@@ -155,15 +155,26 @@ ECU_PROFILES_BY_SOFTWARE = {p.software: p for p in ECU_PROFILES}
 
 
 class KnockSound:
-    """Play six quick tones away from the acquisition and rendering threads."""
+    """Play finite knock bursts or continuous temperature beeps off the ECU thread."""
     def __init__(self):
-        self.pending = queue.Queue()
+        self.condition = threading.Condition()
+        self.temperature_warning = False
+        self.remaining_beeps = 0
         self.stopped = threading.Event()
         self.thread = threading.Thread(target=self._run, name='knock-sound', daemon=True)
         self.thread.start()
 
-    def notify(self):
-        self.pending.put_nowait(True)
+    def update(self, *, retard=False, temperature=False):
+        with self.condition:
+            if self.stopped.is_set():
+                return
+            # Temperature takes priority; never queue knock bursts behind it.
+            if temperature or self.temperature_warning:
+                self.remaining_beeps = 0
+            if retard and not temperature and not self.remaining_beeps:
+                self.remaining_beeps = 6
+            self.temperature_warning = temperature
+            self.condition.notify()
 
     def _tone(self):
         if sys.platform == 'win32':
@@ -175,27 +186,31 @@ class KnockSound:
             sys.stdout.flush()
             self.stopped.wait(0.07)
 
-    def _burst(self):
-        for i in range(6):
-            if self.stopped.is_set():
-                return
+    def _run(self):
+        while not self.stopped.is_set():
+            with self.condition:
+                self.condition.wait_for(lambda: self.stopped.is_set() or
+                                        self.temperature_warning or self.remaining_beeps)
+                if self.stopped.is_set():
+                    return
+                if not self.temperature_warning:
+                    self.remaining_beeps -= 1
             try:
                 self._tone()
             except (OSError, RuntimeError):
                 pass  # Audio support must never interrupt ECU acquisition.
-            if i < 5 and self.stopped.wait(0.04):
+            if self.stopped.wait(0.04):
                 return
 
-    def _run(self):
-        while not self.stopped.is_set():
-            item = self.pending.get()
-            if item is None:
-                return
-            self._burst()
+    def cancel(self):
+        with self.condition:
+            self.temperature_warning = False
+            self.remaining_beeps = 0
 
     def close(self):
-        self.stopped.set()
-        self.pending.put_nowait(None)
+        with self.condition:
+            self.stopped.set()
+            self.condition.notify()
         self.thread.join(timeout=0.5)
 
 
@@ -1588,9 +1603,10 @@ class Model:
                 self.alert_until = sample.at + 3.0
                 slots = ','.join(str(i+1) for i in raised)
                 self.events.appendleft((sample.at, tr(f'Aumento en canal(es): {slots}', f'Increase in channel(s): {slots}')))
-            temperature_raised = self.temperature_alerts.accept(values)
-            if self.sound is not None and ((raised and values.high_retard) or temperature_raised):
-                self.sound.notify()
+            temperature_hot = self.temperature_alerts.accept(values)
+            if self.sound is not None:
+                self.sound.update(retard=bool(raised) and values.high_retard,
+                                  temperature=temperature_hot)
             self.previous = self.sample = sample
             self.failed = False
             self.samples += 1
@@ -1701,6 +1717,8 @@ def worker(args, model, stop, journal, faults=None, corrections=None,
             model.status = f'{type(exc).__name__}: {exc}'
         journal.write('fatal', error=str(exc))
     finally:
+        if model.sound is not None:
+            model.sound.cancel()
         if faults:
             faults.ready = False
         if corrections:

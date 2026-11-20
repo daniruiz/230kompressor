@@ -7,13 +7,14 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 
-/** Owns focus and volume through bursts, repeating while temperatures remain high. */
+/** Keeps a steady beep cadence while hot; knock warnings remain finite bursts. */
 internal class AlertPlayer(context: Context, private val model: Model) {
     private val handler = Handler(Looper.getMainLooper())
     private val audio = context.getSystemService(AudioManager::class.java)
     private var tone: AlertTone? = null
     private var playing = false
     private var temperatureWarning = false
+    private val finishBurst = Runnable { cancel() }
     private val volume = AlertVolume(
         { audio.getStreamVolume(AudioManager.STREAM_MUSIC) },
         { audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC) },
@@ -37,9 +38,14 @@ internal class AlertPlayer(context: Context, private val model: Model) {
     }
 
     fun update(demo: Boolean, retard: Boolean, temperature: Boolean) {
+        val startLoop = temperature && !temperatureWarning
         if (temperatureWarning && !temperature) cancel()
         temperatureWarning = temperature
-        if (temperature || retard) play(demo)
+        if (playing && startLoop) {
+            // Promote an active knock burst once; subsequent samples leave the loop alone.
+            handler.removeCallbacks(finishBurst)
+            playTone()
+        } else if (temperature || retard) play(demo)
     }
 
     private fun play(demo: Boolean) {
@@ -50,18 +56,16 @@ internal class AlertPlayer(context: Context, private val model: Model) {
             playing = true
             volume.begin(demo)
             // Audio focus is transient system coordination, not a user permission dialog.
-            playBurst()
+            playTone()
         } catch (e: RuntimeException) {
             playbackFailed(e)
         }
     }
 
-    private fun playBurst() {
+    private fun playTone() {
         try {
-            tone!!.play()
-            handler.postDelayed({
-                if (temperatureWarning) playBurst() else cancel()
-            }, AlertTone.DURATION_MS + 250)
+            tone!!.play(continuous = temperatureWarning)
+            if (!temperatureWarning) handler.postDelayed(finishBurst, AlertTone.DURATION_MS + 250)
         } catch (e: RuntimeException) {
             playbackFailed(e)
         }

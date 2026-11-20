@@ -1,8 +1,9 @@
-"""Temperature entry warnings, demo motion and presentation without real audio."""
+"""Persistent temperature warnings, demo motion and playback without real audio."""
 from pathlib import Path
 import sys
+import threading
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import mercedes_dashboard as dashboard
@@ -18,13 +19,15 @@ class TemperatureTests(unittest.TestCase):
             return alerts.accept(Measurements(temperatures_c=(coolant, iat)))
         self.assertFalse(accept(110, 70))
         self.assertTrue(accept(111, 70))
-        self.assertFalse(accept(115, 70))
+        self.assertTrue(accept(115, 70))
         self.assertTrue(accept(115, 71))  # IAT enters while coolant stays hot.
-        self.assertFalse(accept(116, 75))
-        self.assertFalse(accept(110, 75))
+        self.assertTrue(accept(116, 75))
+        self.assertTrue(accept(110, 75))
         self.assertTrue(accept(111, 75))
-        self.assertFalse(accept(None, None))
-        self.assertTrue(accept(111, None))  # Matches Android rearming after missing data.
+        self.assertTrue(accept(None, None))
+        self.assertTrue(accept(110, None))  # Missing IAT is not evidence of cooling.
+        self.assertFalse(accept(None, 70))
+        self.assertFalse(accept(110, 70))
 
     def test_first_hot_sample_warns_without_creating_a_knock_event(self):
         sound = Mock()
@@ -32,11 +35,12 @@ class TemperatureTests(unittest.TestCase):
         for at in (10, 10.1, 10.2):
             self.assertFalse(model.accept(Sample.from_measurements(
                 Measurements(rpm=1000, temperatures_c=(111, 71)), at=at)))
-        sound.notify.assert_called_once()
+        self.assertEqual(sound.update.call_args_list,
+                         [call(retard=False, temperature=True)] * 3)
         self.assertEqual(model.count, 0)
         self.assertEqual(model.alert_until, 0)
 
-    def test_simultaneous_knock_and_temperature_produce_one_burst(self):
+    def test_simultaneous_knock_and_temperature_share_the_playback_update(self):
         sound = Mock()
         model = dashboard.Model(sound=sound)
         def sample(at, temperature, retard):
@@ -45,8 +49,61 @@ class TemperatureTests(unittest.TestCase):
         model.accept(sample(10, 110, 0))
         self.assertTrue(model.accept(sample(10.1, 111, 3.75)))
         self.assertFalse(model.accept(sample(10.2, 111, 3.75)))
-        sound.notify.assert_called_once()
+        self.assertEqual(sound.update.call_args_list, [
+            call(retard=False, temperature=False),
+            call(retard=True, temperature=True),
+            call(retard=False, temperature=True),
+        ])
         self.assertEqual(model.count, 1)
+
+    def test_temperature_beeps_continue_past_one_burst_without_new_samples(self):
+        recovered, extra = threading.Event(), threading.Event()
+        tones = []
+        def tone():
+            tones.append(True)
+            if len(tones) == 3:
+                sound.update(retard=True, temperature=True)
+            if len(tones) == 8:
+                sound.update(temperature=False)
+                recovered.set()
+            elif len(tones) > 8:
+                extra.set()
+        with patch.object(dashboard.KnockSound, '_tone', side_effect=tone):
+            sound = dashboard.KnockSound()
+            try:
+                sound.update(retard=True, temperature=True)
+                self.assertTrue(recovered.wait(2))
+                self.assertFalse(extra.wait(.15))
+            finally:
+                sound.close()
+            self.assertFalse(sound.thread.is_alive())
+
+    def test_knock_beeps_remain_a_finite_six_tone_burst(self):
+        finished, extra = threading.Event(), threading.Event()
+        tones = []
+        def tone():
+            tones.append(True)
+            if len(tones) == 6:
+                finished.set()
+            elif len(tones) > 6:
+                extra.set()
+        with patch.object(dashboard.KnockSound, '_tone', side_effect=tone):
+            sound = dashboard.KnockSound()
+            try:
+                sound.update(retard=True)
+                self.assertTrue(finished.wait(2))
+                self.assertFalse(extra.wait(.15))
+            finally:
+                sound.close()
+
+    def test_session_failure_cancels_pending_sound(self):
+        sound = Mock()
+        model = dashboard.Model(sound=sound)
+        factory = Mock(side_effect=RuntimeError('connection lost'))
+        dashboard.worker(dashboard.parse_args(['--no-log']), model,
+                         threading.Event(), Mock(), reader_factory=factory)
+        self.assertTrue(model.fatal)
+        sound.cancel.assert_called_once()
 
     def test_demo_temperatures_move_and_cross_both_warning_thresholds(self):
         args = dashboard.parse_args(['--demo', '--no-log'])

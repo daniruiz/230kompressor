@@ -13,9 +13,8 @@ class TemperatureAlerts:
         return temperature is not None and temperature > limit
 
     def accept(self, values):
-        """Warn once on entry; each temperature rearms when it recovers."""
-        hot = tuple(self.is_hot(t, limit) for t, limit in zip(
-            values.temperatures_c, (self.MOTOR_LIMIT, self.INTAKE_LIMIT)))
-        raised = any(current and not previous for current, previous in zip(hot, self._hot))
-        self._hot = hot
-        return raised
+        """Keep warning until valid readings confirm both temperatures recovered."""
+        self._hot = tuple(previous if t is None else self.is_hot(t, limit)
+                          for t, limit, previous in zip(values.temperatures_c,
+                              (self.MOTOR_LIMIT, self.INTAKE_LIMIT), self._hot))
+        return any(self._hot)
