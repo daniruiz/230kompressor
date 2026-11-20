@@ -418,7 +418,7 @@ class MainActivity : Activity() {
     private fun settings() {
         val names =
             arrayOf(
-                tr("Sonido: retardo > 3° o temperatura alta", "Sound: retard > 3° or high temperature"),
+                tr("Sonido por retardo > 3°", "Sound for retard > 3°"),
                 tr("Pantalla completa", "Fullscreen"),
                 tr("Optimizar tiempos del adaptador (próxima conexión)", "Optimize adapter timings (next connection)"),
                 tr("Conectar al último OBD al abrir (3 intentos)", "Connect to the last OBD on launch (3 attempts)"),
@@ -434,7 +434,7 @@ class MainActivity : Activity() {
                 edit.apply()
                 applyFullscreen()
                 if (values[0] && runtime.active) runtime.alerts.prepare()
-                if (!values[0]) cancelSound()
+                if (!values[0]) runtime.alerts.cancelRetard()
                 model.notice(tr("Ajustes guardados", "Settings saved"))
             }
             .setNegativeButton(tr("Cancelar", "Cancel"), null)

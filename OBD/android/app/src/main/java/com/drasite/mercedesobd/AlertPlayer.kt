@@ -13,6 +13,7 @@ internal class AlertPlayer(context: Context, private val model: Model) {
     private val audio = context.getSystemService(AudioManager::class.java)
     private var tone: AlertTone? = null
     private var playing = false
+    private var temperatureWarning = false
     private val volume = AlertVolume(
         { audio.getStreamVolume(AudioManager.STREAM_MUSIC) },
         { audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC) },
@@ -35,12 +36,18 @@ internal class AlertPlayer(context: Context, private val model: Model) {
         }
     }
 
-    fun play(demo: Boolean) {
+    fun play(demo: Boolean, temperature: Boolean) {
         // Coalesce overlapping alerts instead of accumulating delayed warnings.
-        if (playing || !prepare()) return
+        if (playing) {
+            // Muting retard must not cut a burst that also warns about temperature.
+            temperatureWarning = temperatureWarning || temperature
+            return
+        }
+        if (!prepare()) return
         try {
             if (audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return
             playing = true
+            temperatureWarning = temperature
             volume.begin(demo)
             // Audio focus is transient system coordination, not a user permission dialog.
             tone!!.play()
@@ -51,9 +58,14 @@ internal class AlertPlayer(context: Context, private val model: Model) {
         }
     }
 
+    fun cancelRetard() {
+        if (!temperatureWarning) cancel()
+    }
+
     fun cancel() {
         handler.removeCallbacksAndMessages(null)
         playing = false
+        temperatureWarning = false
         try { tone?.stop() } catch (_: IllegalStateException) { }
         try { volume.restore() } catch (_: SecurityException) {
             model.notice(tr("Android no permite restaurar el volumen anterior", "Android does not allow restoring the previous volume"))

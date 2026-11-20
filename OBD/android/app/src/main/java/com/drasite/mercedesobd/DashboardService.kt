@@ -67,7 +67,7 @@ class DashboardService : Service() {
             check(runtime.session.start(demo, intent.getStringExtra("address"), tuning,
                 automatic = intent.getBooleanExtra("automatic", false) && !demo))
             runtime.startRequested = false
-            if (getSharedPreferences("settings", MODE_PRIVATE).getBoolean("sound", true)) runtime.alerts.prepare()
+            runtime.alerts.prepare()
             handler.removeCallbacks(monitor)
             handler.post(monitor)
         } catch (e: RuntimeException) {

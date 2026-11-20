@@ -15,7 +15,7 @@ class Session(
     private val connected: (String) -> Unit = {},
     private val readerFactory: ((Wire, Events) -> EcuReader)? = null,
     private val ecuMemory: EcuMemory? = null,
-    private val alert: () -> Unit,
+    private val alert: (temperature: Boolean) -> Unit,
 ) {
     @Volatile private var thread: Thread? = null
     @Volatile private var socket: BluetoothSocket? = null
@@ -153,7 +153,7 @@ class Session(
                 val (sample, raised) = model.accept(s)
                 j.sample(sample, model.snapshot(0), raised)
                 val temperatureRaised = temperatureAlerts.accept(sample)
-                if ((raised && sample.values.highRetard) || temperatureRaised) alert()
+                if ((raised && sample.values.highRetard) || temperatureRaised) alert(temperatureRaised)
             }
             if (demo) {
                 faultScope = if (demoEcu == DemoEcu.SIM4LE) "confirmed_obd" else null
