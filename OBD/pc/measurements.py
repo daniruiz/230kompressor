@@ -19,7 +19,6 @@ class Measurements:
     bypass_percent: float | None = None
     maf_g_s: float | None = None
     maf_at_limit: bool | None = None
-    ecu_maf_g_s: float | None = None
     advance_degrees: float | None = None
     oxygen_v: float | None = None
     map_kpa: float | None = None

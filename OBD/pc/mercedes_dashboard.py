@@ -689,9 +689,9 @@ class Journal:
             except OSError:
                 self.stream.close()
                 raise
-            # Preserve the original column order; SIM4LE adds the complete block.
+            # Common engine readings first; SIM4LE adds the complete block.
             # Load stays in ECU units because its physical scale is not verified.
-            self.csv_fields = ['Time','utc','rpm','load_raw','throttle_pct','maf_g_s','maf_ecu_g_s',
+            self.csv_fields = ['Time','utc','rpm','load_raw','throttle_pct','maf_g_s',
                 'injection_ms','injector_duty_pct','advance_deg']
             self.csv_fields += [f'knock_channel_{i}_deg' for i in range(1,5)]
             self.csv_fields += ['stft_pct','ltft_pct',
@@ -737,7 +737,6 @@ class Journal:
                       maf_g_s=readings.maf_g_s,
                       maf_saturated=readings.maf_at_limit,
                       maf_ecu_raw=sample.maf_ecu_raw,
-                      maf_ecu_g_s=readings.ecu_maf_g_s,
                       maf_ecu_source='grouped_1107_processed',
                       maf_ecu_at_limit=sample.maf_ecu_raw == 255 if sample.maf_ecu_raw is not None else None,
                       advance_raw=sample.advance_raw,

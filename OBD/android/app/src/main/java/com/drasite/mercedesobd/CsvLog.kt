@@ -7,10 +7,10 @@ import java.util.Locale
 
 /** Wire format shared with the PC Journal's csv.DictWriter (excel dialect). */
 internal object CsvLog {
-    // Keep the original ME2.1 columns first; SIM4LE appends decoded and raw fields.
+    // Common engine readings first; SIM4LE appends decoded and raw fields.
     // Load stays in ECU units because its physical scale is not verified.
     val fields = listOf(
-        "Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s", "maf_ecu_g_s",
+        "Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s",
         "injection_ms", "injector_duty_pct", "advance_deg",
     ) + (1..4).map { "knock_channel_${it}_deg" } +
         listOf(

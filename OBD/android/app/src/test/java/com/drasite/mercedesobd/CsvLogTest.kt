@@ -5,14 +5,15 @@ import org.junit.Test
 
 class CsvLogTest {
     @Test fun bothFamiliesExportTheirCanonicalLogKeysWithoutTranslation() {
-        assertEquals(240, CsvLog.fields.size)
+        assertEquals(239, CsvLog.fields.size)
         assertEquals(CsvLog.fields.size, CsvLog.fields.toSet().size)
         assertFalse(CsvLog.fields.contains("maf_source"))
+        assertFalse(CsvLog.fields.contains("maf_ecu_g_s"))
         assertEquals(listOf("bypass_pct", "app_version"), CsvLog.fields.takeLast(2))
         assertTrue(CsvLog.fields.none { it.contains("_est") })
         assertTrue(CsvLog.fields.none { it in listOf("stft_a_pct", "ltft_a_pct",
             "lambda_correction_pct", "ltft_applied_pct") })
-        assertEquals(listOf("stft_pct", "ltft_pct"), CsvLog.fields.subList(14, 16))
+        assertEquals(listOf("stft_pct", "ltft_pct"), CsvLog.fields.subList(13, 15))
         for (family in DemoEcu.entries) {
             val demo = DemoSamples.sample(family, 2.0, 2000)
             val sample = if (family == DemoEcu.ME21) demo.copy(mafEcuRaw = 100) else demo
@@ -22,7 +23,7 @@ class CsvLogTest {
                 "throttle_pct" to v.throttlePercent, "advance_deg" to v.advanceDegrees,
                 "bypass_pct" to v.bypassPercent,
                 "coolant_C" to v.coolantC, "iat_C" to v.iatC, "oxygen_voltage_V" to v.oxygenVolts,
-                "maf_g_s" to v.mafGramsPerSecond, "maf_ecu_g_s" to v.ecuMafGramsPerSecond,
+                "maf_g_s" to v.mafGramsPerSecond,
                 "injection_ms" to v.injectionMs, "injector_duty_pct" to v.dutyPercent,
                 "stft_pct" to v.stftPercent, "ltft_pct" to v.ltftPercent,
                 "adapter_voltage_V" to sample.adapterVoltage,
@@ -37,7 +38,7 @@ class CsvLogTest {
             assertEquals("1.250", cell("Time"))
             assertEquals(v.bypassPercent?.toString().orEmpty(), cell("bypass_pct"))
             for (key in listOf("rpm", "throttle_pct", "advance_deg", "coolant_C", "iat_C",
-                    "oxygen_voltage_V", "maf_g_s", "maf_ecu_g_s", "injection_ms",
+                    "oxygen_voltage_V", "maf_g_s", "injection_ms",
                     "injector_duty_pct", "stft_pct", "ltft_pct") +
                     (1..4).map { "knock_channel_${it}_deg" }) {
                 assertEquals(source[key].toString(), cell(key))

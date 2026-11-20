@@ -19,6 +19,8 @@ class CsvSchemaTests(unittest.TestCase):
             journal = Journal(Path(directory), True)
             try:
                 self.assertEqual(len(journal.csv_fields), len(set(journal.csv_fields)))
+                self.assertEqual(len(journal.csv_fields), 239)
+                self.assertNotIn('maf_ecu_g_s', journal.csv_fields)
                 self.assertFalse(any('_est' in name for name in journal.csv_fields))
                 self.assertTrue({'stft_pct', 'ltft_pct'}.issubset(journal.csv_fields))
                 self.assertFalse({'stft_a_pct', 'ltft_a_pct', 'lambda_correction_pct',
@@ -46,7 +48,7 @@ class CsvSchemaTests(unittest.TestCase):
             expected = dict(rpm=values.rpm, throttle_pct=values.throttle_percent,
                             maf_g_s=values.maf_g_s, injection_ms=values.injection_ms,
                             injector_duty_pct=values.duty_percent,
-                            maf_ecu_g_s=values.ecu_maf_g_s, advance_deg=values.advance_degrees,
+                            advance_deg=values.advance_degrees,
                             coolant_C=values.temperatures_c[0], iat_C=values.temperatures_c[1],
                             oxygen_voltage_V=values.oxygen_v,
                             stft_pct=values.trims_percent[0], ltft_pct=values.trims_percent[1])
@@ -59,7 +61,8 @@ class CsvSchemaTests(unittest.TestCase):
         for record, row in zip(records, rows):
             self.assertNotIn('maf_source', record)
             self.assertNotIn('maf_source', row)
-            self.assertEqual(row['maf_g_s'], row['maf_ecu_g_s'])
+            self.assertNotIn('maf_ecu_g_s', record)
+            self.assertNotIn('maf_ecu_g_s', row)
         self.assertAlmostEqual(float(rows[0]['bypass_pct']), me21.values().bypass_percent)
         self.assertEqual(rows[1]['bypass_pct'], '')
         self.assertEqual(rows[0]['adapter_voltage_V'], '13.8')

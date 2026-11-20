@@ -137,7 +137,6 @@ class Journal(
                 "oxygen_state" to values.oxygenRich?.let { if (it) "rico" else "pobre" },
                 "maf_g_s" to values.mafGramsPerSecond,
                 "maf_ecu_raw" to s.mafEcuRaw,
-                "maf_ecu_g_s" to values.ecuMafGramsPerSecond,
                 "maf_ecu_source" to "grouped_1107_processed",
                 "maf_ecu_at_limit" to s.mafEcuRaw?.let { it == 255 },
                 "maf_saturated" to values.mafAtLimit,

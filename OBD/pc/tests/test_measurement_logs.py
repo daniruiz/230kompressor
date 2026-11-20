@@ -40,13 +40,13 @@ class MeasurementLogTests(unittest.TestCase):
                         injection_ms=8.0, injector_duty_pct=20.0,
                         coolant_C=90, iat_C=38, stft_raw=32768, ltft_raw=49152,
                         stft_pct=0.0, ltft_pct=25.0,
-                        advance_deg=-9.0, oxygen_voltage_V=0.5, maf_g_s=111.08, maf_ecu_g_s=111.08,
+                        advance_deg=-9.0, oxygen_voltage_V=0.5, maf_g_s=111.08,
                         bypass_command_raw=128, bypass_limit_raw=255, bypass_pct=128 * 100 / 255,
                         knock_channel_3_raw=8, knock_channel_3_deg=6.0)
         for key, value in expected.items():
             self.assertEqual(records[0][key], value, key)
         for name in ('maf_raw', 'maf_adc_word', 'maf_source', 'maf_calibration_status',
-                     'maf_calibration_source', 'maf_curve_sha256'):
+                     'maf_calibration_source', 'maf_curve_sha256', 'maf_ecu_g_s'):
             self.assertNotIn(name, records[0])
         self.assertEqual(records[0]['diagnostic_ids'], [f'11{i:02X}' for i in dashboard.IDS])
         self.assertEqual(rows[0]['Time'], '0.000')
@@ -57,7 +57,7 @@ class MeasurementLogTests(unittest.TestCase):
         values = Measurements(rpm=4500, load=80, load_unit='%',
                               advance_degrees=14.25, retard_degrees=(0, 3.375),
                               trims_percent=(-1.25, None), temperatures_c=(None, 33),
-                              maf_g_s=37.5, ecu_maf_g_s=38.0)
+                              maf_g_s=37.5)
         records, rows = self.capture(Sample.from_measurements(values, at=5))
         row = records[0]
         self.assertEqual(row['knock_channel_2_deg'], 3.375)

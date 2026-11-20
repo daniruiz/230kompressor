@@ -18,7 +18,6 @@ data class Measurements(
     val ltftPercent: Double? = null,
     val mafGramsPerSecond: Double? = null,
     val mafAtLimit: Boolean? = null,
-    val ecuMafGramsPerSecond: Double? = null,
     val advanceDegrees: Double? = null,
     val oxygenVolts: Double? = null,
     val mapKpa: Double? = null,
@@ -40,7 +39,6 @@ data class Measurements(
 /** The legacy ME2.1 conversions live here, rather than in dashboard rendering. */
 internal object Me21Measurements {
     fun from(sample: Sample, injection: InjectionMetrics): Measurements {
-        val airflow = Decoder.ecuMaf(sample.mafEcuRaw)
         return Measurements(
             rpm = sample.rpm,
             load = sample.load,
@@ -55,9 +53,8 @@ internal object Me21Measurements {
             bypassPercent = sample.bypassRaw?.let { it * 100.0 / 255 },
             stftPercent = Decoder.trim(sample.stft),
             ltftPercent = Decoder.trim(sample.ltft),
-            mafGramsPerSecond = airflow,
+            mafGramsPerSecond = Decoder.ecuMaf(sample.mafEcuRaw),
             mafAtLimit = sample.mafEcuRaw?.let { it == 255 },
-            ecuMafGramsPerSecond = airflow,
             advanceDegrees = Decoder.advance(sample.advance),
             oxygenVolts = Decoder.oxygen(sample.oxygen),
         )

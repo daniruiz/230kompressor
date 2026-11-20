@@ -26,7 +26,7 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(values.trims_percent, (0.0, 25.0))
         self.assertEqual((values.throttle_percent, values.advance_degrees), (100.0, -9.0))
         self.assertEqual((values.oxygen_v, values.oxygen_rich), (0.5, True))
-        self.assertEqual((values.maf_g_s, values.ecu_maf_g_s), (111.08, 111.08))
+        self.assertEqual(values.maf_g_s, 111.08)
         self.assertAlmostEqual(values.bypass_percent, 128 * 100 / 255)
         self.assertFalse(values.maf_at_limit)
         sample.maf_ecu_raw = 255

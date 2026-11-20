@@ -5,7 +5,7 @@ import org.junit.Test
 
 class Sim4leLogTest {
     @Test fun keepsColumnOrderAndAllRawBytesWithCleanCsvHeadings() {
-        val old = listOf("Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s", "maf_ecu_g_s",
+        val old = listOf("Time", "utc", "rpm", "load_raw", "throttle_pct", "maf_g_s",
             "injection_ms", "injector_duty_pct", "advance_deg") +
             (1..4).map { "knock_channel_${it}_deg" } + listOf("stft_pct", "ltft_pct",
                 "coolant_C", "iat_C", "oxygen_voltage_V", "adapter_voltage_V")

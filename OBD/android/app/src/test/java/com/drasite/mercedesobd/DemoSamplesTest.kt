@@ -30,7 +30,6 @@ class DemoSamplesTest {
         assertNotNull(sample.injectionMetrics)
         assertEquals(Decoder.ids.toList(), sample.diagnosticIds)
         assertTrue(sample.values.mafGramsPerSecond!! > 0.0)
-        assertEquals(sample.values.mafGramsPerSecond, sample.values.ecuMafGramsPerSecond)
         assertTrue(sample.values.bypassPercent!! in 0.0..100.0)
         assertEquals("ok", sample.adapterVoltageStatus)
         assertEquals(0L, sample.adapterVoltageAgeMs)
@@ -60,7 +59,6 @@ class DemoSamplesTest {
             assertEquals(command * 100.0 / 255, sample.values.bypassPercent!!, 0.0)
             assertEquals(180, sample.load)
             assertEquals(111.08, sample.values.mafGramsPerSecond!!, 1e-9)
-            assertEquals(sample.values.mafGramsPerSecond, sample.values.ecuMafGramsPerSecond)
         }
     }
 
