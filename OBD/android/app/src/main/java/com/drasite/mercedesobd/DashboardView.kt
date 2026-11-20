@@ -524,12 +524,12 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             tr("CARGA INTERNA", "INTERNAL LOAD"),
             load?.let { n -> values?.loadUnit.orEmpty().let { unit -> if (unit.isEmpty()) "$n" else "$n $unit" } }
                 ?: "—",
-            values?.bypassPercent?.let { formatValue("Boost %.1f %%", it) } ?: "Boost —",
+            values?.bypassPercent?.let { formatValue("Boost %.0f %%", it) } ?: "Boost —",
             display.load,
             loadMaximum,
             (load ?: 0) / loadMaximum,
             amber,
-            meterLabel = values?.throttlePercent?.let { formatValue(tr("Mariposa %.1f %%", "Throttle %.1f %%"), it) }
+            meterLabel = values?.throttlePercent?.let { formatValue(tr("Mariposa %.0f %%", "Throttle %.0f %%"), it) }
                 ?: tr("Mariposa —", "Throttle —"),
         )
         val injColor = if ((duty ?: 0.0) > 100) red else if ((duty ?: 0.0) >= 90) amber else green

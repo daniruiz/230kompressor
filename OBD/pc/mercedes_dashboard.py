@@ -1829,9 +1829,9 @@ def render(model, args, width=110, height=44, now=None):
         layout['rpm'].update(metric(tr('RÉGIMEN', 'ENGINE SPEED'), rpm_text(rpm) if shown and values.rpm is not None else '—', 'rpm',
             tr('0–6.500 rpm', '0–6,500 rpm'), CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
-        throttle = (tr(f'Mariposa {values.throttle_percent:.1f} %', f'Throttle {values.throttle_percent:.1f} %')
+        throttle = (tr(f'Mariposa {values.throttle_percent:.0f} %', f'Throttle {values.throttle_percent:.0f} %')
                     if shown and values.throttle_percent is not None else tr('Mariposa —', 'Throttle —'))
-        boost = f'Boost {values.bypass_percent:.1f} %' if shown and values.bypass_percent is not None else 'Boost —'
+        boost = f'Boost {values.bypass_percent:.0f} %' if shown and values.bypass_percent is not None else 'Boost —'
         layout['load'].update(metric(tr('CARGA INTERNA', 'INTERNAL LOAD'), str(load) if shown and values.load is not None else '—', values.load_unit,
             boost, AMBER, load/values.load_maximum,
             spark(model.history['load'],values.load_maximum,trace_width,color=AMBER),bg,
