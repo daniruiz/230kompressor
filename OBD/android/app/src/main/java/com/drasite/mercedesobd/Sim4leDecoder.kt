@@ -3,6 +3,8 @@ package com.drasite.mercedesobd
 /** SIM4LE fixed 21 01 snapshot; offsets start after the 61 01 response prefix. */
 internal object Sim4leDecoder {
     const val DATA_SIZE = 178
+    // Observed open reference: Boost estimates closure, not a calibrated flap angle.
+    const val BYPASS_OPEN_REFERENCE_RAW = 3004
     fun pressure(raw: Int): Int = minOf(255, raw * 0x10FA shr 19)
     fun temperature(raw: Int): Int = maxOf(0, raw * 96 / 128 - 8) - 40
 
@@ -49,6 +51,7 @@ internal object Sim4leDecoder {
             coolantC = temperature(raw(0)), iatC = temperature(raw(1)),
             stftPercent = percent(51), ltftPercent = percent(45),
             throttlePercent = throttle * 100.0 / 255,
+            bypassPercent = (100.0 * (1 - word(25).toDouble() / BYPASS_OPEN_REFERENCE_RAW)).coerceIn(0.0, 100.0),
             mafGramsPerSecond = maf,
             mapKpa = pressure(word(4)).toDouble(), ecuVoltageV = raw(73) / 10.0,
             advanceDegrees = angle(30), oxygenVolts = minOf(word(74), 200) / 200.0,

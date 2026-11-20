@@ -68,6 +68,17 @@ class DisplayTests(unittest.TestCase):
         line = next(line for line in text.splitlines() if 'MAP/MAF' in line)
         self.assertIn('—', line)
 
+    def test_sim4le_closed_bypass_shows_full_boost_and_hides_stale_value(self):
+        data = bytearray(self.sim_sample().ecu_raw)
+        data[25:27] = b'\x00\x00'
+        sample = decode_snapshot(b'\x61\x01' + data, at=10)
+        for language in ('en', 'es'):
+            for width, height in ((78, 30), (110, 44)):
+                text = self.draw(sample, width, height, language)
+                self.assertRegex(text, r'Boost\s+100 %')
+                stale = self.draw(sample, width, height, language, now=14)
+                self.assertRegex(stale, r'Boost\s+—')
+
     def test_demo_layouts_and_oxygen_labels_in_both_languages(self):
         for family in ('ME2.1', 'SIM4LE'):
             for language, lean, rich in (('en', 'lean', 'rich'), ('es', 'pobre', 'rico')):

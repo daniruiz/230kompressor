@@ -3,11 +3,11 @@ import math
 
 if __package__:
     from .dashboard_sample import Sample
-    from .sim4le_measurements import decode_snapshot
+    from .sim4le_measurements import BYPASS_OPEN_REFERENCE_RAW, decode_snapshot
     from .fuel_corrections import CorrectionMeasurements, FuelCorrections
 else:
     from dashboard_sample import Sample
-    from sim4le_measurements import decode_snapshot
+    from sim4le_measurements import BYPASS_OPEN_REFERENCE_RAW, decode_snapshot
     from fuel_corrections import CorrectionMeasurements, FuelCorrections
 
 
@@ -50,7 +50,8 @@ def demo_sample(t, family='ME2.1', *, at, duration_ms):
         data[12] = load
         word(17, (3 + 15 * effort) / .004)
         word(19, 100 * (1 << 19) / 0x10FA)
-        word(25, 50000 * (1 - effort))
+        bypass_position = round(BYPASS_OPEN_REFERENCE_RAW * (1 - effort))
+        word(25, bypass_position)
         data[30] = round((10 + 20 * math.sin(t / 4) + 23.625) / .375)
         for offset, correction in zip((37, 39, 40, 38), corrections):
             data[offset] = 128 - correction * 2
@@ -63,6 +64,8 @@ def demo_sample(t, family='ME2.1', *, at, duration_ms):
         word(102, 2 * 65536 / 100)
         word(104, -3 * 65536 / 100)
         word(147, 850)
+        word(149, 672)
+        word(171, 672 + bypass_position)
         return decode_snapshot(b'\x61\x01' + data, at=at, duration_ms=duration_ms)
     if family != 'ME2.1':
         raise ValueError(f'Unknown demo ECU: {family}')

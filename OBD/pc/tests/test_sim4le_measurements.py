@@ -10,6 +10,16 @@ from dashboard_sample import Sample
 
 
 class Sim4leMeasurementsTests(unittest.TestCase):
+    def test_boost_estimates_closure_from_feedback_and_preserves_raw_position(self):
+        for raw, expected in ((0, 100), (1502, 50), (3004, 0), (65535, 0)):
+            with self.subTest(raw=raw):
+                data = bytearray(178)
+                data[25:27] = raw.to_bytes(2, 'little')
+                sample = decode_snapshot(b'\x61\x01' + data)
+                self.assertEqual(sample.values().bypass_percent, expected)
+                self.assertEqual(sample.ecu_fields['bypass_position_raw'], raw)
+                self.assertEqual(sample.ecu_raw, data)
+
     def test_ecu_knock_retard_reduces_positive_before_tdc_advance(self):
         # 404 adds eight 0.75-degree counts; SIM4LE subtracts sixteen 0.375-degree
         # counts per channel. These opposite native directions both retard by 6°.

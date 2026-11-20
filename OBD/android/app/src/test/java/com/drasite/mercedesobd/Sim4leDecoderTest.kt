@@ -5,6 +5,19 @@ import org.junit.Test
 import java.util.Locale
 
 class Sim4leDecoderTest {
+    @Test fun boostEstimatesClosureFromCorrectedBypassPosition() {
+        for ((raw, expected) in listOf(0 to 100.0, 1502 to 50.0, 3004 to 0.0, 65535 to 0.0)) {
+            val sample = Sim4leDecoder.decode(payload().apply {
+                word(25, raw)
+                // The corrected position already accounts for the learned reference.
+                word(149, 672)
+            })
+            assertEquals(expected, sample.values.bypassPercent!!, 0.0)
+            assertEquals(raw, sample.ecuFields["bypass_position_raw"])
+            assertEquals(raw, sample.ecuRaw[25].u() or (sample.ecuRaw[26].u() shl 8))
+        }
+    }
+
     @Test fun nativeKnockRetardReducesPositiveBeforeTdcAdvanceInBothEcus() {
         // 404 adds raw counts; SIM4LE subtracts them. Both changes retard by 6°.
         assertEquals(15.0, Decoder.advance(68), 0.0)

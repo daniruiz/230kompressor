@@ -13,6 +13,10 @@ else:
     from ecu_reader import DiagnosticError
 
 
+# Observed open reference in the SIM4LE road log, not a calibrated angle range.
+BYPASS_OPEN_REFERENCE_RAW = 3004
+
+
 def signed(value, bits=16):
     return value - (1 << bits) if value & (1 << (bits - 1)) else value
 
@@ -67,6 +71,8 @@ def decode_snapshot(payload, **timing):
         temperatures_c=(temperature(data[0]), temperature(data[1])),
         trims_percent=(percent(51), percent(45)),
         throttle_percent=throttle * 100 / 255, maf_g_s=maf,
+        # Boost estimates bypass closure: zero feedback means fully closed.
+        bypass_percent=max(0.0, min(100.0, 100 * (1 - word(25) / BYPASS_OPEN_REFERENCE_RAW))),
         map_kpa=pressure(word(4)), ecu_voltage_v=data[73] / 10,
         advance_degrees=angle(30), oxygen_v=min(word(74), 200) / 200,
     )

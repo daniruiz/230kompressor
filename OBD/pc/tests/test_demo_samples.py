@@ -24,8 +24,9 @@ class DemoTests(unittest.TestCase):
                        for t in range(64)]
             values = [s.values() for s in samples]
             for name in ('rpm', 'load', 'injection_ms', 'duty_percent', 'throttle_percent',
-                         'trims_percent', 'maf_g_s', 'advance_degrees', 'oxygen_v'):
+                         'trims_percent', 'maf_g_s', 'advance_degrees', 'oxygen_v', 'bypass_percent'):
                 self.assertGreater(len({getattr(v, name) for v in values}), 1, (family, name))
+            self.assertTrue(all(0 <= v.bypass_percent <= 100 for v in values))
             self.assertEqual({v.oxygen_rich for v in values}, {True, False, None})
             self.assertEqual({v.high_retard for v in values}, {True, False})
             for channel, limit in ((0, 110), (1, 70)):

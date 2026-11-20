@@ -46,6 +46,7 @@ class CsvSchemaTests(unittest.TestCase):
             self.assertFalse({'stft_a_raw', 'ltft_a_raw'}.intersection(record))
             values = sample.values()
             expected = dict(rpm=values.rpm, throttle_pct=values.throttle_percent,
+                            bypass_pct=values.bypass_percent,
                             maf_g_s=values.maf_g_s, injection_ms=values.injection_ms,
                             injector_duty_pct=values.duty_percent,
                             advance_deg=values.advance_degrees,
@@ -63,8 +64,6 @@ class CsvSchemaTests(unittest.TestCase):
             self.assertNotIn('maf_source', row)
             self.assertNotIn('maf_ecu_g_s', record)
             self.assertNotIn('maf_ecu_g_s', row)
-        self.assertAlmostEqual(float(rows[0]['bypass_pct']), me21.values().bypass_percent)
-        self.assertEqual(rows[1]['bypass_pct'], '')
         self.assertEqual(rows[0]['adapter_voltage_V'], '13.8')
         self.assertEqual(rows[0]['ecu_voltage_V'], '')
         self.assertEqual(rows[1]['adapter_voltage_V'], '')

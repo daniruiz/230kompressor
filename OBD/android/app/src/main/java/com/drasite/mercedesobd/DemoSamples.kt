@@ -64,6 +64,10 @@ internal object DemoSamples {
         // Nominal 5126 demo relationship only; live decoding reads byte 12 directly.
         word(13, load * 254 + 127)
         word(17, 250 + (3500 * (.5 + .5 * sin(seconds / 3 - 1))).roundToInt())
+        val bypassPosition = (Sim4leDecoder.BYPASS_OPEN_REFERENCE_RAW * (.5 - .5 * sin(seconds / 3 - .5))).roundToInt()
+        word(25, bypassPosition)
+        word(149, 672)
+        word(171, 672 + bypassPosition)
         byte(30, ((-2 + 20 * sin(seconds / 4) + 23.625) / .375).roundToInt())
         listOf(37, 39, 40, 38).forEachIndexed { channel, offset ->
             byte(offset, 128 - if (channel < 2) maxOf(0, correction - channel * 2) * 2 else 0)
