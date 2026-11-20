@@ -679,11 +679,12 @@ class Journal:
         self.stream = None
         self.path = None
         self.csv_path = None
+        self.ecu_family = None
         self.last_flush = 0.0
         self.csv_started_at = None
         if enabled:
             root.mkdir(parents=True, exist_ok=True)
-            self.path = root / dt.datetime.now().strftime('me21_%Y%m%d_%H%M%S_%f.jsonl')
+            self.path = root / dt.datetime.now().strftime('obd_%Y%m%d_%H%M%S_%f.jsonl')
             self.stream = self.path.open('x', encoding='utf-8')
             self.csv_path = self.path.with_suffix('.csv')
             try:
@@ -772,6 +773,8 @@ class Journal:
             row = {'utc': dt.datetime.now(dt.timezone.utc).isoformat(), 'type': kind, **values}
             self.stream.write(json.dumps(row, ensure_ascii=False) + '\n')
             if kind == 'csv_sample':
+                if self.ecu_family is None and row.get('ecu_family') in ('ME2.1', 'SIM4LE'):
+                    self.ecu_family = row['ecu_family']
                 # Use acquisition time, independent of wall-clock changes or disk delays.
                 at = time.monotonic() if csv_sample_at is None else csv_sample_at
                 if self.csv_started_at is None:
@@ -786,10 +789,28 @@ class Journal:
                 self.last_flush = now
 
     def close(self):
-        if self.csv_stream:
-            self.csv_stream.close()
-        if self.stream:
-            self.stream.close()
+        try:
+            if self.csv_stream:
+                self.csv_stream.close()
+        finally:
+            if self.stream:
+                self.stream.close()
+        prefix = {'ME2.1': 'me21', 'SIM4LE': 'sim4le'}.get(self.ecu_family)
+        if not prefix or self.path is None or not self.path.name.startswith('obd_'):
+            return
+        # Rename only after both streams close (Windows); never interrupt acquisition.
+        path = self.path.with_name(prefix + self.path.name[3:])
+        csv_path = path.with_suffix('.csv')
+        for target in (path, csv_path):
+            if target.exists():
+                raise FileExistsError(f'Log already exists: {target}')
+        previous_path = self.path
+        self.path = self.path.rename(path)
+        try:
+            self.csv_path = self.csv_path.rename(csv_path)
+        except OSError:
+            self.path = self.path.rename(previous_path)
+            raise
 
 
 class ELM:
@@ -1706,7 +1727,10 @@ def worker(args, model, stop, journal, faults=None, corrections=None,
             corrections.finish()
         if elm:
             elm.close()
-        journal.close()
+        try:
+            journal.close()
+        except OSError as exc:
+            model.reject(tr('Error cerrando registros: ', 'Error closing logs: ') + str(exc))
 
 
 def gradient_color(color, level):

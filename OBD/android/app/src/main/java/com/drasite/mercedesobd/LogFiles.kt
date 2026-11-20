@@ -29,7 +29,7 @@ internal class LogFiles(private val root: File, private val exports: File) {
         val directory = File(exports, UUID.randomUUID().toString())
         check(directory.mkdirs()) { tr("No se pudo preparar la exportación", "Could not prepare export") }
         if (files.size == 1) return files.single().copyTo(File(directory, files.single().name))
-        val zip = File(directory, "me21_logs.zip")
+        val zip = File(directory, "obd_logs.zip")
         ZipOutputStream(zip.outputStream().buffered()).use { out ->
             files.forEach { file ->
                 out.putNextEntry(ZipEntry(file.name))

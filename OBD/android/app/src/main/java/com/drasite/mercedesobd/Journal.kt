@@ -2,6 +2,8 @@ package com.drasite.mercedesobd
 
 import java.io.Closeable
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -18,8 +20,11 @@ class Journal(
         DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS")
             .withZone(ZoneOffset.UTC)
             .format(Instant.now())
-    val jsonFile: File? = if (demo) null else File(root, "me21_${stamp}_${System.nanoTime()}.jsonl")
-    val csvFile: File? = jsonFile?.let { File(root, it.nameWithoutExtension + ".csv") }
+    var jsonFile: File? = if (demo) null else File(root, "obd_${stamp}_${System.nanoTime()}.jsonl")
+        private set
+    var csvFile: File? = jsonFile?.let { File(root, it.nameWithoutExtension + ".csv") }
+        private set
+    private var ecuPrefix: String? = null
     private var json: java.io.BufferedWriter? = null
     private var csv: java.io.BufferedWriter? = null
     private val pending = ArrayList<String>()
@@ -98,6 +103,11 @@ class Journal(
     @Synchronized
     fun sample(s: Sample, d: Display, raised: Boolean) {
         val csvWriter = csv ?: return
+        if (ecuPrefix == null) ecuPrefix = when (s.ecuFamily) {
+            "ME2.1" -> "me21"
+            "SIM4LE" -> "sim4le"
+            else -> null
+        }
         val values = s.values
         val v =
             linkedMapOf<String, Any?>(
@@ -186,9 +196,37 @@ class Journal(
         try {
             csv?.close()
         } finally {
-            json?.close()
-            csv = null
-            json = null
+            try {
+                json?.close()
+            } finally {
+                csv = null
+                json = null
+            }
+        }
+        renameLogs()
+    }
+
+    /** Finalize both names after closing, without extra disk work during acquisition. */
+    private fun renameLogs() {
+        val prefix = ecuPrefix ?: return
+        val previousJson = jsonFile ?: return
+        val previousCsv = csvFile ?: return
+        val targetJson = File(root, prefix + "_" + previousJson.name.substringAfter('_'))
+        val targetCsv = File(root, targetJson.nameWithoutExtension + ".csv")
+        // Files.move without REPLACE_EXISTING preserves any existing destination.
+        Files.move(previousJson.toPath(), targetJson.toPath())
+        jsonFile = targetJson
+        try {
+            Files.move(previousCsv.toPath(), targetCsv.toPath())
+            csvFile = targetCsv
+        } catch (e: IOException) {
+            try {
+                Files.move(targetJson.toPath(), previousJson.toPath())
+                jsonFile = previousJson
+            } catch (rollback: IOException) {
+                e.addSuppressed(rollback)
+            }
+            throw e
         }
     }
 }
