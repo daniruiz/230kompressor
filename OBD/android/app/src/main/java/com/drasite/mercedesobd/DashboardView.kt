@@ -374,7 +374,9 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
         ceiling: Double,
         fraction: Double,
         color: Int,
-        meterLabel: String? = null,
+        meterLabel: List<TextRun>? = null,
+        detailRuns: List<TextRun>? = null,
+        meterValue: String? = null,
     ) {
         drawCard(canvas, bounds, title, color)
         drawText(
@@ -388,27 +390,29 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             bounds.width() - 24,
             Paint.Align.CENTER,
         )
-        drawText(
+        drawTextRuns(
             canvas,
-            detail,
+            detailRuns ?: listOf(TextRun(detail, muted)),
             bounds.centerX(),
             bounds.top + if (meterLabel == null) 100 else 124,
             13f,
-            muted,
-            false,
             bounds.width() - 20,
-            Paint.Align.CENTER,
         )
         val meterTop = bounds.top + if (meterLabel == null) 113 else 104
+        val meterValueWidth = if (meterValue == null) 0f else 72f
         drawMeter(
             canvas,
-            RectF(bounds.left + 12, meterTop, bounds.right - 12, meterTop + 6),
+            RectF(bounds.left + 12, meterTop, bounds.right - 12 - meterValueWidth, meterTop + 6),
             fraction,
             color,
         )
-        if (meterLabel != null) drawText(
+        if (meterValue != null) drawText(
+            canvas, meterValue, bounds.right - 12, meterTop + 7, 13f,
+            color, true, meterValueWidth - 8, Paint.Align.RIGHT,
+        )
+        if (meterLabel != null) drawTextRuns(
             canvas, meterLabel, bounds.centerX(), bounds.top + 96, 13f,
-            muted, false, bounds.width() - 24, Paint.Align.CENTER,
+            bounds.width() - 24,
         )
         drawChart(
             canvas,
@@ -522,15 +526,21 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             canvas,
             RectF(405f, 8f, 794f, 264f),
             tr("CARGA INTERNA", "INTERNAL LOAD"),
-            load?.let { n -> values?.loadUnit.orEmpty().let { unit -> if (unit.isEmpty()) "$n" else "$n $unit" } }
-                ?: "—",
-            values?.bypassPercent?.let { formatValue("Boost %.0f %%", it) } ?: "Boost —",
+            "",
+            "",
             display.load,
             loadMaximum,
             (load ?: 0) / loadMaximum,
             amber,
-            meterLabel = values?.throttlePercent?.let { formatValue(tr("Mariposa %.0f %%", "Throttle %.0f %%"), it) }
-                ?: tr("Mariposa —", "Throttle —"),
+            meterLabel = listOf(
+                TextRun(tr("Mariposa ", "Throttle "), muted),
+                TextRun(values?.throttlePercent?.let { formatValue("%.0f %%", it) } ?: "—", amber, true),
+            ),
+            detailRuns = listOf(
+                TextRun("Boost ", muted),
+                TextRun(values?.bypassPercent?.let { formatValue("%.0f %%", it) } ?: "—", amber, true),
+            ),
+            meterValue = load?.toString() ?: "—",
         )
         val injColor = if ((duty ?: 0.0) > 100) red else if ((duty ?: 0.0) >= 90) amber else green
         drawMetric(

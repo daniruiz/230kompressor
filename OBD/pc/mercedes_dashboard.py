@@ -1789,13 +1789,18 @@ def spark(values, ceiling, width=48, height=7, color=None, full=False):
     return styled if color else '\n'.join(lines)
 
 
-def metric(title, value, unit, detail, color, fraction, trace, bg, *, bar_label=None):
+def metric(title, value, unit, detail, color, fraction, trace, bg, *, bar_label=None,
+           bar_value=None, bar_width=24):
     text = Text(justify='center')
     text.append(value, style=f'bold {color}')
     text.append(' '+unit, style=MUTED)
-    label = Align.center(Text(bar_label, style=MUTED)) if bar_label is not None else ''
-    content = Group('', text, label, Align.center(bar(fraction,1,color=color)),
-                    Align.center(Text(detail, style=MUTED)),
+    label = Align.center(bar_label if isinstance(bar_label, Text) else Text(bar_label, style=MUTED)) if bar_label is not None else ''
+    progress = bar(fraction,1,width=bar_width,color=color)
+    if bar_value is not None:
+        progress.append(' ')
+        progress.append(bar_value)
+    content = Group('', text, label, Align.center(progress),
+                    Align.center(detail if isinstance(detail, Text) else Text(detail, style=MUTED)),
                     Align.center(trace if isinstance(trace, Text) else Text(trace, style=color)))
     return Panel(content, title=Text(title, style=f'bold {color}'),
                  border_style=color, box=box.ROUNDED, style=f'on {bg}', padding=(0,0))
@@ -1829,13 +1834,16 @@ def render(model, args, width=110, height=44, now=None):
         layout['rpm'].update(metric(tr('RÉGIMEN', 'ENGINE SPEED'), rpm_text(rpm) if shown and values.rpm is not None else '—', 'rpm',
             tr('0–6.500 rpm', '0–6,500 rpm'), CYAN, rpm/6500,
             spark(model.history['rpm'],6500,trace_width,color=CYAN),bg))
-        throttle = (tr(f'Mariposa {values.throttle_percent:.0f} %', f'Throttle {values.throttle_percent:.0f} %')
-                    if shown and values.throttle_percent is not None else tr('Mariposa —', 'Throttle —'))
-        boost = f'Boost {values.bypass_percent:.0f} %' if shown and values.bypass_percent is not None else 'Boost —'
-        layout['load'].update(metric(tr('CARGA INTERNA', 'INTERNAL LOAD'), str(load) if shown and values.load is not None else '—', values.load_unit,
+        throttle = Text(tr('Mariposa ', 'Throttle '), style=MUTED)
+        throttle.append(f'{values.throttle_percent:.0f} %' if shown and values.throttle_percent is not None else '—', style=f'bold {AMBER}')
+        boost = Text('Boost ', style=MUTED)
+        boost.append(f'{values.bypass_percent:.0f} %' if shown and values.bypass_percent is not None else '—', style=f'bold {AMBER}')
+        load_text = Text(str(load) if shown and values.load is not None else '—', style=f'bold {AMBER}')
+        layout['load'].update(metric(tr('CARGA INTERNA', 'INTERNAL LOAD'), '', '',
             boost, AMBER, load/values.load_maximum,
             spark(model.history['load'],values.load_maximum,trace_width,color=AMBER),bg,
-            bar_label=throttle))
+            bar_label=throttle, bar_value=load_text,
+            bar_width=max(1, min(20, trace_width-len(load_text.plain)-1))))
         duty = values.duty_percent or 0
         duty_color = RED if shown and duty > 100 else AMBER if shown and duty >= 90 else GREEN
         detail = (
