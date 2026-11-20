@@ -40,6 +40,7 @@ class Journal(
             "session",
             "demo" to demo,
             "platform" to "android_native",
+            "app_version" to BuildConfig.BUILD_DATE,
             "adapter_tuning" to (adapterTuning && !demo),
         )
     }
@@ -112,6 +113,7 @@ class Journal(
         val v =
             linkedMapOf<String, Any?>(
                 "utc" to CsvLog.utc(),
+                "app_version" to BuildConfig.BUILD_DATE,
                 "demo" to demo,
                 "rpm" to values.rpm,
                 "load_raw" to s.load,

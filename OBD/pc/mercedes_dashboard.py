@@ -54,6 +54,7 @@ import time
 from contextlib import contextmanager
 
 if __package__:
+    from .build_version import APP_VERSION, BUILD_DATE
     from .ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from .auto_reader import AutoReader
     from .ecu_preferences import EcuPreferences
@@ -68,6 +69,7 @@ if __package__:
     from .dashboard_i18n import tr, rpm_text, mode_text, profile_text, localized_arguments
     from .maf_calibration import flow_g_s, MAF_CURVE_SHA256, MAF_CALIBRATION_SOURCE
 else:
+    from build_version import APP_VERSION, BUILD_DATE
     from ecu_reader import EcuReader, DiagnosticError, NegativeResponse, LinkTimeout
     from auto_reader import AutoReader
     from ecu_preferences import EcuPreferences
@@ -699,7 +701,7 @@ class Journal:
             self.csv_fields += [f'knock_channel_{i}_deg' for i in range(1,5)]
             self.csv_fields += ['stft_pct','ltft_pct',
                                 'coolant_C','iat_C','oxygen_voltage_V','adapter_voltage_V']
-            self.csv_fields += EXTRA_FIELDS
+            self.csv_fields += EXTRA_FIELDS + ('app_version',)
             self.csv_writer = csv.DictWriter(self.csv_stream, fieldnames=self.csv_fields)
             self.csv_writer.writeheader()
 
@@ -771,6 +773,8 @@ class Journal:
     def write(self, kind, *, csv_sample_at=None, **values):
         if self.stream:
             row = {'utc': dt.datetime.now(dt.timezone.utc).isoformat(), 'type': kind, **values}
+            if kind in ('session', 'csv_sample'):
+                row['app_version'] = APP_VERSION
             self.stream.write(json.dumps(row, ensure_ascii=False) + '\n')
             if kind == 'csv_sample':
                 if self.ecu_family is None and row.get('ecu_family') in ('ME2.1', 'SIM4LE'):
@@ -1967,13 +1971,18 @@ def render(model, args, width=110, height=44, now=None):
         footer.append(tr(' salir', ' exit'))
         mode_label = (tr('DEMO · SIN COCHE', 'DEMO · NO CAR') + ' · ' + args.demo_ecu) if args.demo else mode_text(model.mode) + (' · '+profile_text(model.adapter_profile) if model.adapter_profile else '')
         footer.append('\n')
-        voltage = (values.ecu_voltage_v if sim4le else s.adapter_voltage_v if s.adapter_voltage_status == 'ok' else None) if shown else None
-        voltage_text = f'{voltage:.1f} V' if voltage is not None else '— V'
-        footer.append(('ECU ' if sim4le else 'OBD ')+voltage_text+' · ', style=f'bold {CYAN}')
-        if not args.demo:
-            software_label = model.ecu_software or tr('no identificada', 'unidentified')
-            footer.append('SW '+software_label+' · ', style=f'bold {CYAN}')
-        footer.append(mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
+        if not args.demo and not shown:
+            version = tr('Versión ', 'Build ') + BUILD_DATE if BUILD_DATE else tr('Versión de desarrollo', 'Development build')
+            footer.append(version+' · ', style=f'bold {CYAN}')
+            footer.append(model.status, style=AMBER)
+        else:
+            voltage = (values.ecu_voltage_v if sim4le else s.adapter_voltage_v if s.adapter_voltage_status == 'ok' else None) if shown else None
+            voltage_text = f'{voltage:.1f} V' if voltage is not None else '— V'
+            footer.append(('ECU ' if sim4le else 'OBD ')+voltage_text+' · ', style=f'bold {CYAN}')
+            if not args.demo:
+                software_label = model.ecu_software or tr('no identificada', 'unidentified')
+                footer.append('SW '+software_label+' · ', style=f'bold {CYAN}')
+            footer.append(mode_label+' · '+model.status, style=AMBER if stale or args.demo else GREEN)
         layout['foot'].update(Panel(footer, border_style='#334d6d', box=box.ROUNDED, style=f'on {bg}'))
         return layout
 

@@ -214,6 +214,8 @@ class MainActivity : Activity() {
                 true
             }
         }
+        popup.menu.add(tr("Versión ${BuildConfig.BUILD_DATE}", "Build ${BuildConfig.BUILD_DATE}"))
+            .isEnabled = false
         popup.show()
     }
 

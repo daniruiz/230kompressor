@@ -46,7 +46,7 @@ class Model {
     private val times = ArrayDeque<Long>()
 
     @Synchronized
-    fun clear() {
+    fun clear(demo: Boolean = false) {
         sample = null
         previous = null
         count = 0
@@ -60,7 +60,7 @@ class Model {
         failed = false
         ecuProfile = null
         ecuSoftware = null
-        ecuIdentificationStatus = "pending"
+        ecuIdentificationStatus = if (demo) "demo" else "pending"
         rpm.clear()
         load.clear()
         duty.clear()

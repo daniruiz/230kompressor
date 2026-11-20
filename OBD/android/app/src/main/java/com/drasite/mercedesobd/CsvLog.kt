@@ -16,7 +16,7 @@ internal object CsvLog {
         listOf(
             "stft_pct", "ltft_pct",
             "coolant_C", "iat_C", "oxygen_voltage_V", "adapter_voltage_V",
-        ) + Sim4leLog.fields
+        ) + Sim4leLog.fields + "app_version"
 
     private val utcSeconds = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss", Locale.ROOT)
         .withZone(ZoneOffset.UTC)

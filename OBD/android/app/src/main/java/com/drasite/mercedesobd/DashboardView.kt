@@ -851,6 +851,13 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
             canvas.drawText(text.toString(), margin, baseline, footerPaint)
         }
 
+        val status = display.status.replace('\r', ' ').replace('\n', ' ').take(180)
+        if (sample == null && display.ecuIdentificationStatus != "demo") {
+            drawLine(tr("Versión ${BuildConfig.BUILD_DATE}", "Build ${BuildConfig.BUILD_DATE}") +
+                " · $status", firstBaseline, amber)
+            return
+        }
+
         val sim4le = sample?.ecuFamily == "SIM4LE"
         val voltage = if (sim4le) sample?.values?.ecuVoltageV?.takeIf { valid }
         else sample?.takeIf { valid && it.adapterVoltageStatus == "ok" }?.adapterVoltage
@@ -864,7 +871,6 @@ class DashboardView(context: Context, private val model: Model) : View(context) 
                 "${sample?.cycleMs ?: "—"} ms/cycle · $voltageSource $volts$software"
             ) +
                     " · ${I18n.mode(display.mode)} ${I18n.profile(display.profile)}"
-        val status = display.status.replace('\r', ' ').replace('\n', ' ').take(180)
         drawLine(if (valid) "$perf · $status" else "$status · $perf", firstBaseline, if (valid) green else amber)
     }
 

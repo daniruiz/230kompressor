@@ -33,7 +33,7 @@ class Session(
     @Synchronized
     fun start(demo: Boolean, address: String?, adapterTuning: Boolean = true, automatic: Boolean = false): Boolean {
         if (running) return false
-        model.clear()
+        model.clear(demo)
         stopped = false
         diagnosticsReady = false
         faultScope = null

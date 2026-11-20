@@ -5,7 +5,7 @@ import org.junit.Test
 
 class CsvLogTest {
     @Test fun bothFamiliesExportTheirCanonicalLogKeysWithoutTranslation() {
-        assertEquals(239, CsvLog.fields.size)
+        assertEquals(240, CsvLog.fields.size)
         assertEquals(CsvLog.fields.size, CsvLog.fields.toSet().size)
         assertTrue(CsvLog.fields.none { it.contains("_est") })
         assertTrue(CsvLog.fields.none { it in listOf("stft_a_pct", "ltft_a_pct",
