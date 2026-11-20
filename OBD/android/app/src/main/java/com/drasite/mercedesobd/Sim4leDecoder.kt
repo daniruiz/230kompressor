@@ -48,7 +48,6 @@ internal object Sim4leDecoder {
             retardDegrees = listOf(37, 39, 40, 38).map { maxOf(0, 128 - raw(it)) * .375 },
             coolantC = temperature(raw(0)), iatC = temperature(raw(1)),
             stftPercent = percent(51), ltftPercent = percent(45),
-            trimLabels = listOf("Lambda corr.", "LTFT applied"),
             throttlePercent = throttle * 100.0 / 255,
             mafGramsPerSecond = maf, ecuMafGramsPerSecond = maf,
             mapKpa = pressure(word(4)).toDouble(), ecuVoltageV = raw(73) / 10.0,

@@ -65,7 +65,7 @@ def decode_snapshot(payload, **timing):
         injection_basis='base_4us_nominal_720deg',
         retard_degrees=tuple(max(0, 128 - data[i]) * .375 for i in (37, 39, 40, 38)),
         temperatures_c=(temperature(data[0]), temperature(data[1])),
-        trims_percent=(percent(51), percent(45)), trim_labels=('Lambda corr.', 'LTFT applied'),
+        trims_percent=(percent(51), percent(45)),
         throttle_percent=throttle * 100 / 255, maf_g_s=maf, ecu_maf_g_s=maf,
         map_kpa=pressure(word(4)), ecu_voltage_v=data[73] / 10,
         advance_degrees=angle(30), oxygen_v=min(word(74), 200) / 200,

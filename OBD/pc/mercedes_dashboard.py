@@ -749,7 +749,7 @@ class Journal:
                           ltft_low_address=f'0x{profile.ltft_low_address:04X}' if profile else None,
                           ltft_high_address=f'0x{profile.ltft_high_address:04X}' if profile else None)
         if sample.measurements is not None:
-            # Other readers must not inherit ME2.1 addresses or sensor-curve claims.
+            # Other ECU families must not inherit ME2.1 addresses or metadata.
             legacy = {'diagnostic_ids', 'maf_ecu_source', 'maf_ecu_at_limit',
                       'ltft_low_address', 'ltft_high_address',
                       'ecu_voltage_V', 'ecu_voltage_scale_V_per_raw'}

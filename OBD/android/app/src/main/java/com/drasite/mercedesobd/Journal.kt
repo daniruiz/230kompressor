@@ -170,7 +170,7 @@ class Journal(
             v["knock_channel_${i+1}_deg"] = n
         }
         if (s.measurements != null) {
-            // A different reader must not inherit ME2.1 addresses or sensor-curve claims.
+            // Other ECU families must not inherit ME2.1 addresses or metadata.
             val legacyMetadata = setOf("diagnostic_ids", "maf_ecu_source", "maf_ecu_at_limit",
                 "ltft_low_address", "ltft_high_address")
             v.keys.removeAll { it.endsWith("_raw") || it in legacyMetadata }
