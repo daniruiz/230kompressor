@@ -33,11 +33,12 @@ class MercedesApplication : Application() {
         }, ecuMemory = EcuMemory(
             { key -> prefs.getString(key, null) },
             { key, family -> prefs.edit().putString(key, family).apply() },
-        )) { temperature ->
+        )) { retard, temperature ->
             val generation = startGeneration
             handler.post {
-                if (generation == startGeneration && !stopping && session.running &&
-                    (temperature || prefs.getBoolean("sound", true))) alerts.play(demoMode, temperature)
+                if (generation == startGeneration && !stopping && session.running) {
+                    alerts.update(demoMode, retard && prefs.getBoolean("sound", true), temperature)
+                }
             }
         }
     }

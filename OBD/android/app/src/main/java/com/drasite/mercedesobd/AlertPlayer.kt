@@ -7,7 +7,7 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
 
-/** Owns focus and volume for a complete burst, including Bluetooth drain time. */
+/** Owns focus and volume through bursts, repeating while temperatures remain high. */
 internal class AlertPlayer(context: Context, private val model: Model) {
     private val handler = Handler(Looper.getMainLooper())
     private val audio = context.getSystemService(AudioManager::class.java)
@@ -36,26 +36,40 @@ internal class AlertPlayer(context: Context, private val model: Model) {
         }
     }
 
-    fun play(demo: Boolean, temperature: Boolean) {
+    fun update(demo: Boolean, retard: Boolean, temperature: Boolean) {
+        if (temperatureWarning && !temperature) cancel()
+        temperatureWarning = temperature
+        if (temperature || retard) play(demo)
+    }
+
+    private fun play(demo: Boolean) {
         // Coalesce overlapping alerts instead of accumulating delayed warnings.
-        if (playing) {
-            // Muting retard must not cut a burst that also warns about temperature.
-            temperatureWarning = temperatureWarning || temperature
-            return
-        }
-        if (!prepare()) return
+        if (playing || !prepare()) return
         try {
             if (audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return
             playing = true
-            temperatureWarning = temperature
             volume.begin(demo)
             // Audio focus is transient system coordination, not a user permission dialog.
-            tone!!.play()
-            handler.postDelayed({ cancel() }, AlertTone.DURATION_MS + 250)
+            playBurst()
         } catch (e: RuntimeException) {
-            release()
-            model.notice(tr("No se pudo reproducir el aviso: ${e.message}", "Could not play alert: ${e.message}"))
+            playbackFailed(e)
         }
+    }
+
+    private fun playBurst() {
+        try {
+            tone!!.play()
+            handler.postDelayed({
+                if (temperatureWarning) playBurst() else cancel()
+            }, AlertTone.DURATION_MS + 250)
+        } catch (e: RuntimeException) {
+            playbackFailed(e)
+        }
+    }
+
+    private fun playbackFailed(e: RuntimeException) {
+        release()
+        model.notice(tr("No se pudo reproducir el aviso: ${e.message}", "Could not play alert: ${e.message}"))
     }
 
     fun cancelRetard() {

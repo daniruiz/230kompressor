@@ -1,17 +1,14 @@
 package com.drasite.mercedesobd
 
-/** One audible warning on entry, rearmed when the corresponding temperature recovers. */
+/** Keep warning until valid readings confirm that both temperatures have recovered. */
 internal class TemperatureAlerts {
     private var motorHot = false
     private var intakeHot = false
 
     fun accept(sample: Sample): Boolean {
-        val motor = isHot(sample.values.coolantC, MOTOR_LIMIT)
-        val intake = isHot(sample.values.iatC, INTAKE_LIMIT)
-        val raised = (motor && !motorHot) || (intake && !intakeHot)
-        motorHot = motor
-        intakeHot = intake
-        return raised
+        sample.values.coolantC?.let { motorHot = isHot(it, MOTOR_LIMIT) }
+        sample.values.iatC?.let { intakeHot = isHot(it, INTAKE_LIMIT) }
+        return motorHot || intakeHot
     }
 
     companion object {
